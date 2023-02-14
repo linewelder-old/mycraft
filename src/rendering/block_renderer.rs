@@ -3,7 +3,11 @@ use cgmath::{Matrix4, Vector2, Vector3};
 use crate::{
     camera::Camera,
     context::Context,
-    rendering::{texture::Texture, uniform::Uniform, vertex_array::VertexArray},
+    rendering::{
+        texture::{Texture, DEPTH_FORMAT},
+        uniform::Uniform,
+        vertex_array::VertexArray,
+    },
 };
 
 #[derive(Clone, Copy)]
@@ -28,6 +32,11 @@ pub struct Object<'a> {
 
 pub struct BlockRenderer {
     render_pipeline: wgpu::RenderPipeline,
+}
+
+pub struct BlockRendererTarget<'a> {
+    pub output: &'a wgpu::TextureView,
+    pub depth_buffer: &'a wgpu::TextureView,
 }
 
 impl BlockRenderer {
@@ -79,7 +88,13 @@ impl BlockRenderer {
                         unclipped_depth: false,
                         conservative: false,
                     },
-                    depth_stencil: None,
+                    depth_stencil: Some(wgpu::DepthStencilState {
+                        format: DEPTH_FORMAT,
+                        depth_write_enabled: true,
+                        depth_compare: wgpu::CompareFunction::Less,
+                        stencil: wgpu::StencilState::default(),
+                        bias: wgpu::DepthBiasState::default(),
+                    }),
                     multisample: wgpu::MultisampleState::default(),
                     multiview: None,
                 });
@@ -90,7 +105,7 @@ impl BlockRenderer {
     pub fn draw(
         &self,
         context: &Context,
-        target: &wgpu::TextureView,
+        target: BlockRendererTarget,
         camera: &Camera,
         objects: &[Object],
     ) {
@@ -103,14 +118,21 @@ impl BlockRenderer {
         let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: Some("Render Pass"),
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                view: target,
+                view: target.output,
                 resolve_target: None,
                 ops: wgpu::Operations {
                     load: wgpu::LoadOp::Load,
                     store: true,
                 },
             })],
-            depth_stencil_attachment: None,
+            depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
+                view: target.depth_buffer,
+                depth_ops: Some(wgpu::Operations {
+                    load: wgpu::LoadOp::Clear(1.0),
+                    store: true,
+                }),
+                stencil_ops: None,
+            }),
         });
 
         render_pass.set_pipeline(&self.render_pipeline);

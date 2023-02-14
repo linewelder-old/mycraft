@@ -8,14 +8,15 @@ use crate::{
     cube::create_cube_vertices,
     input1d::Input1d,
     rendering::{
-        block_renderer::{BlockRenderer, Object, Vertex},
-        texture::Texture,
+        block_renderer::{BlockRenderer, BlockRendererTarget, Object, Vertex},
+        texture::{create_depth_buffer, Texture},
         uniform::Uniform,
         vertex_array::VertexArray,
     },
 };
 
 pub struct Mycraft {
+    depth_buffer: wgpu::TextureView,
     block_renderer: BlockRenderer,
     camera: Camera,
 
@@ -46,6 +47,12 @@ impl Mycraft {
         let image = image::load_from_memory(include_bytes!("test.png")).unwrap();
         let cube_texture = Texture::new(context, "Cube Texture", image);
 
+        let depth_buffer = create_depth_buffer(
+            context,
+            "Block Depth Buffer",
+            context.surface_config.width,
+            context.surface_config.height,
+        );
         let block_renderer = BlockRenderer::new(context, "Block Renderer");
         let camera = Camera::new(context, "Camera");
 
@@ -57,6 +64,7 @@ impl Mycraft {
         let rotation_y_input = Input1d::new(Up, Down);
 
         Mycraft {
+            depth_buffer,
             block_renderer,
             camera,
 
@@ -80,8 +88,9 @@ impl Mycraft {
             || self.rotation_y_input.update(event)
     }
 
-    pub fn resize(&mut self, _context: &mut Context, size: Vector2<u32>) {
+    pub fn resize(&mut self, context: &mut Context, size: Vector2<u32>) {
         self.camera.resize_projection(size.x as f32 / size.y as f32);
+        self.depth_buffer = create_depth_buffer(context, "Block Depth Buffer", size.x, size.y);
     }
 
     pub fn update(&mut self, context: &mut Context, delta: std::time::Duration) {
@@ -108,7 +117,10 @@ impl Mycraft {
     pub fn render(&mut self, context: &Context, target: &wgpu::TextureView) {
         self.block_renderer.draw(
             context,
-            &target,
+            BlockRendererTarget {
+                output: target,
+                depth_buffer: &self.depth_buffer,
+            },
             &self.camera,
             &[Object {
                 shape: &self.cube_shape,
