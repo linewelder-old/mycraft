@@ -1,6 +1,6 @@
 use cgmath::{Matrix4, Vector2, Vector3};
 use winit::{
-    event::{Event, WindowEvent},
+    event::{DeviceEvent, Event, WindowEvent},
     window::CursorGrabMode,
 };
 
@@ -26,8 +26,6 @@ pub struct Mycraft {
     movement_x_input: Input1d,
     movement_y_input: Input1d,
     movement_z_input: Input1d,
-    rotation_x_input: Input1d,
-    rotation_y_input: Input1d,
 
     cube_shape: VertexArray<Vertex>,
     cube_transform: Uniform<Matrix4<f32>>,
@@ -63,8 +61,6 @@ impl Mycraft {
         let movement_x_input = Input1d::new(D, A);
         let movement_y_input = Input1d::new(E, Q);
         let movement_z_input = Input1d::new(W, S);
-        let rotation_x_input = Input1d::new(Right, Left);
-        let rotation_y_input = Input1d::new(Up, Down);
 
         Mycraft {
             depth_buffer,
@@ -74,28 +70,48 @@ impl Mycraft {
             movement_x_input,
             movement_y_input,
             movement_z_input,
-            rotation_x_input,
-            rotation_y_input,
 
-            cube_shape,
-            cube_transform,
-            cube_texture,
+            world_mesh,
+            world_transform: cube_transform,
+            test_texture: cube_texture,
         }
     }
 
     pub fn event(&mut self, context: &mut Context, event: &Event<()>) {
         match event {
-            Event::WindowEvent { window_id, event } if *window_id == context.window.id() => match event {
-                WindowEvent::KeyboardInput { input, .. } => {
-                    self.movement_x_input.update(input);
-                    self.movement_y_input.update(input);
-                    self.movement_z_input.update(input);
-                    self.rotation_y_input.update(input);
-                    self.rotation_x_input.update(input);
-                }
+            Event::WindowEvent { window_id, event } if *window_id == context.window.id() => {
+                match event {
+                    WindowEvent::CursorEntered { .. } => {
+                        let _ = context.window.set_cursor_grab(CursorGrabMode::Confined);
+                        context.window.set_cursor_visible(false);
+                    }
 
-                _ => {}
-            },
+                    WindowEvent::CursorLeft { .. } => {
+                        let _ = context.window.set_cursor_grab(CursorGrabMode::None);
+                        context.window.set_cursor_visible(true);
+                    }
+
+                    WindowEvent::KeyboardInput { input, .. } => {
+                        self.movement_x_input.update(input);
+                        self.movement_y_input.update(input);
+                        self.movement_z_input.update(input);
+                    }
+
+                    _ => {}
+                }
+            }
+
+            Event::DeviceEvent {
+                event: DeviceEvent::MouseMotion { delta },
+                ..
+            } => {
+                self.camera.rotate(
+                    Vector2 {
+                        x: delta.0 as f32,
+                        y: -delta.1 as f32,
+                    } * MOUSE_SENSITIVITY,
+                );
+            }
 
             _ => {}
         }
@@ -109,12 +125,6 @@ impl Mycraft {
     pub fn update(&mut self, context: &mut Context, delta: std::time::Duration) {
         let delta_secs = delta.as_secs_f32();
 
-        let rotation = Vector2 {
-            x: self.rotation_x_input.get_value(),
-            y: self.rotation_y_input.get_value(),
-        } * CAMERA_ROTATION_SPEED
-            * delta_secs;
-
         let movement = Vector3 {
             x: self.movement_x_input.get_value(),
             y: self.movement_y_input.get_value(),
@@ -122,7 +132,6 @@ impl Mycraft {
         } * CAMERA_MOVEMENT_SPEED
             * delta_secs;
 
-        self.camera.rotate(rotation);
         self.camera.move_relative_to_view(movement);
         self.camera.update_matrix(context);
     }
