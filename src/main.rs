@@ -1,11 +1,11 @@
 mod camera;
 mod consts;
 mod context;
-mod cube;
 mod game;
 mod input1d;
 mod rendering;
 mod utils;
+mod world;
 
 use std::time::{Duration, Instant};
 

@@ -1,4 +1,4 @@
-use cgmath::{Matrix4, Vector2, Vector3};
+use cgmath::{Matrix4, Vector2, Vector3, SquareMatrix};
 use winit::{
     event::{DeviceEvent, Event, WindowEvent},
     window::CursorGrabMode,
@@ -8,7 +8,6 @@ use crate::{
     camera::Camera,
     consts::*,
     context::Context,
-    cube::create_cube_vertices,
     input1d::Input1d,
     rendering::{
         block_renderer::{BlockRenderer, BlockRendererTarget, Object, Vertex},
@@ -16,6 +15,7 @@ use crate::{
         uniform::Uniform,
         vertex_array::VertexArray,
     },
+    world::{Chunk, generation::generate_chunk, mesh::generate_chunk_mesh},
 };
 
 pub struct Mycraft {
@@ -27,26 +27,21 @@ pub struct Mycraft {
     movement_y_input: Input1d,
     movement_z_input: Input1d,
 
-    cube_shape: VertexArray<Vertex>,
-    cube_transform: Uniform<Matrix4<f32>>,
-    cube_texture: Texture,
+    world_mesh: VertexArray<Vertex>,
+    world_transform: Uniform<Matrix4<f32>>,
+    test_texture: Texture,
 }
 
 impl Mycraft {
     pub fn new(context: &mut Context) -> Self {
-        let cube_transform = Uniform::new(
-            context,
-            "Cube Transform",
-            Matrix4::from_translation(Vector3 {
-                x: -0.5,
-                y: 0.,
-                z: -0.5,
-            }),
-        );
-        let cube_shape = VertexArray::new(context, "Cube Shape", &create_cube_vertices());
+        let world_transform = Uniform::new(context, "World Transform", Matrix4::identity());
+
+        let mut chunk = Chunk::new();
+        generate_chunk(&mut chunk);
+        let world_mesh = generate_chunk_mesh(context, &chunk);
 
         let image = image::load_from_memory(include_bytes!("test.png")).unwrap();
-        let cube_texture = Texture::new(context, "Cube Texture", image);
+        let test_texture = Texture::new(context, "Cube Texture", image);
 
         let depth_buffer = create_depth_buffer(
             context,
@@ -72,8 +67,8 @@ impl Mycraft {
             movement_z_input,
 
             world_mesh,
-            world_transform: cube_transform,
-            test_texture: cube_texture,
+            world_transform,
+            test_texture,
         }
     }
 
@@ -145,9 +140,9 @@ impl Mycraft {
             },
             &self.camera,
             &[Object {
-                shape: &self.cube_shape,
-                transform: &self.cube_transform,
-                texture: &self.cube_texture,
+                shape: &self.world_mesh,
+                transform: &self.world_transform,
+                texture: &self.test_texture,
             }],
         );
     }
