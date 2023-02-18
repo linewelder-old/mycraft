@@ -40,7 +40,7 @@ fn main() {
         .expect("Failed to create the window");
     env_logger::init();
 
-    let mut context = pollster::block_on(Context::new(&window));
+    let mut context = pollster::block_on(Context::new(window));
     let mut game = Mycraft::new(&mut context);
 
     let frame_duration = Duration::new(1, 0) / FPS;
@@ -54,29 +54,32 @@ fn main() {
             last_frame_time = current_frame_time;
 
             game.update(&mut context, delta);
-            window.request_redraw();
+            context.window.request_redraw();
             control_flow.set_wait_until(current_frame_time + frame_duration);
         }
 
-        Event::WindowEvent { event, window_id } if window_id == window.id() => {
-            if !game.input(&mut context, &event) {
-                match event {
-                    WindowEvent::CloseRequested => control_flow.set_exit(),
-
-                    WindowEvent::Resized(size) => {
-                        resize(&mut context, &mut game, size);
-                    }
-
-                    WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
-                        resize(&mut context, &mut game, *new_inner_size);
-                    }
-
-                    _ => {}
-                }
-            }
+        Event::WindowEvent {
+            event: WindowEvent::CloseRequested,
+            window_id,
+        } if window_id == context.window.id() => {
+            control_flow.set_exit();
         }
 
-        Event::RedrawRequested(window_id) if window_id == window.id() => {
+        Event::WindowEvent {
+            event: WindowEvent::Resized(size),
+            window_id,
+        } if window_id == context.window.id() => {
+            resize(&mut context, &mut game, size);
+        }
+
+        Event::WindowEvent {
+            event: WindowEvent::ScaleFactorChanged { new_inner_size, .. },
+            window_id,
+        } if window_id == context.window.id() => {
+            resize(&mut context, &mut game, *new_inner_size);
+        }
+
+        Event::RedrawRequested(window_id) if window_id == context.window.id() => {
             match context.surface.get_current_texture() {
                 Ok(output) => {
                     let target = output
@@ -100,6 +103,8 @@ fn main() {
             }
         }
 
-        _ => {}
+        event => {
+            game.event(&mut context, &event);
+        }
     });
 }

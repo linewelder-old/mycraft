@@ -1,4 +1,4 @@
-use winit::event::{ElementState, KeyboardInput, VirtualKeyCode, WindowEvent};
+use winit::event::{ElementState, KeyboardInput, VirtualKeyCode};
 
 pub struct Input1d {
     pos: VirtualKeyCode,
@@ -18,29 +18,14 @@ impl Input1d {
         }
     }
 
-    pub fn update(&mut self, event: &WindowEvent) -> bool {
-        if let WindowEvent::KeyboardInput {
-            input:
-                KeyboardInput {
-                    state,
-                    virtual_keycode: Some(code),
-                    ..
-                },
-            ..
-        } = event
-        {
-            let state = *state == ElementState::Pressed;
-            if *code == self.pos {
+    pub fn update(&mut self, input: &KeyboardInput) {
+        if let Some(code) = input.virtual_keycode {
+            let state = input.state == ElementState::Pressed;
+            if code == self.pos {
                 self.pos_pressed = state;
-            } else if *code == self.neg {
+            } else if code == self.neg {
                 self.neg_pressed = state;
-            } else {
-                return false;
             }
-
-            true
-        } else {
-            false
         }
     }
 

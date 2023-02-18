@@ -1,5 +1,8 @@
 use cgmath::{Matrix4, Vector2, Vector3};
-use winit::event::WindowEvent;
+use winit::{
+    event::{Event, WindowEvent},
+    window::CursorGrabMode,
+};
 
 use crate::{
     camera::Camera,
@@ -80,12 +83,22 @@ impl Mycraft {
         }
     }
 
-    pub fn input(&mut self, _context: &mut Context, event: &WindowEvent) -> bool {
-        self.movement_x_input.update(event)
-            || self.movement_y_input.update(event)
-            || self.movement_z_input.update(event)
-            || self.rotation_x_input.update(event)
-            || self.rotation_y_input.update(event)
+    pub fn event(&mut self, context: &mut Context, event: &Event<()>) {
+        match event {
+            Event::WindowEvent { window_id, event } if *window_id == context.window.id() => match event {
+                WindowEvent::KeyboardInput { input, .. } => {
+                    self.movement_x_input.update(input);
+                    self.movement_y_input.update(input);
+                    self.movement_z_input.update(input);
+                    self.rotation_y_input.update(input);
+                    self.rotation_x_input.update(input);
+                }
+
+                _ => {}
+            },
+
+            _ => {}
+        }
     }
 
     pub fn resize(&mut self, context: &mut Context, size: Vector2<u32>) {
