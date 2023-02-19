@@ -137,10 +137,7 @@ impl Mycraft {
                 depth_buffer: &self.depth_buffer,
             },
             &self.camera,
-            self.world
-                .chunks
-                .iter()
-                .filter_map(|(_, chunk)| chunk.graphics.as_ref()),
+            self.world.chunk_graphics.values().into_iter(),
             &self.test_texture,
         );
     }
