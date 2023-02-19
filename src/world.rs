@@ -65,7 +65,7 @@ impl World {
                     z: coords.y as f32 * Chunk::SIZE.z as f32,
                 };
 
-                let mesh = generate_chunk_mesh(context, &chunk);
+                let mesh = generate_chunk_mesh(context, self, &chunk, *coords);
                 let transform = Uniform::new(
                     context,
                     "Chunk Transform",
