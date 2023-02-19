@@ -1,4 +1,4 @@
-use cgmath::{Matrix4, Vector2, Vector3, SquareMatrix};
+use cgmath::{Vector2, Vector3};
 use winit::{
     event::{DeviceEvent, Event, WindowEvent},
     window::CursorGrabMode,
@@ -10,35 +10,34 @@ use crate::{
     context::Context,
     input1d::Input1d,
     rendering::{
-        block_renderer::{BlockRenderer, BlockRendererTarget, Object, Vertex},
+        chunk_renderer::{ChunkRenderer, ChunkRendererTarget},
         texture::{create_depth_buffer, Texture},
-        uniform::Uniform,
-        vertex_array::VertexArray,
     },
-    world::{Chunk, generation::generate_chunk, mesh::generate_chunk_mesh},
+    world::{ChunkCoords, World},
 };
 
 pub struct Mycraft {
     depth_buffer: wgpu::TextureView,
-    block_renderer: BlockRenderer,
+    chunk_renderer: ChunkRenderer,
     camera: Camera,
 
     movement_x_input: Input1d,
     movement_y_input: Input1d,
     movement_z_input: Input1d,
 
-    world_mesh: VertexArray<Vertex>,
-    world_transform: Uniform<Matrix4<f32>>,
+    world: World,
     test_texture: Texture,
 }
 
 impl Mycraft {
     pub fn new(context: &mut Context) -> Self {
-        let world_transform = Uniform::new(context, "World Transform", Matrix4::identity());
-
-        let mut chunk = Chunk::new();
-        generate_chunk(&mut chunk);
-        let world_mesh = generate_chunk_mesh(context, &chunk);
+        let mut world = World::new();
+        for x in -5..5 {
+            for y in -5..5 {
+                world.load_chunk(ChunkCoords { x, y });
+            }
+        }
+        world.update_chunk_graphics(context);
 
         let image = image::load_from_memory(include_bytes!("test.png")).unwrap();
         let test_texture = Texture::new(context, "Cube Texture", image);
@@ -49,7 +48,7 @@ impl Mycraft {
             context.surface_config.width,
             context.surface_config.height,
         );
-        let block_renderer = BlockRenderer::new(context, "Block Renderer");
+        let chunk_renderer = ChunkRenderer::new(context, "Block Renderer");
         let camera = Camera::new(context, "Camera");
 
         use winit::event::VirtualKeyCode::*;
@@ -59,15 +58,14 @@ impl Mycraft {
 
         Mycraft {
             depth_buffer,
-            block_renderer,
+            chunk_renderer,
             camera,
 
             movement_x_input,
             movement_y_input,
             movement_z_input,
 
-            world_mesh,
-            world_transform,
+            world,
             test_texture,
         }
     }
@@ -132,18 +130,18 @@ impl Mycraft {
     }
 
     pub fn render(&mut self, context: &Context, target: &wgpu::TextureView) {
-        self.block_renderer.draw(
+        self.chunk_renderer.draw(
             context,
-            BlockRendererTarget {
+            ChunkRendererTarget {
                 output: target,
                 depth_buffer: &self.depth_buffer,
             },
             &self.camera,
-            &[Object {
-                shape: &self.world_mesh,
-                transform: &self.world_transform,
-                texture: &self.test_texture,
-            }],
+            self.world
+                .chunks
+                .iter()
+                .filter_map(|(_, chunk)| chunk.graphics.as_ref()),
+            &self.test_texture,
         );
     }
 }

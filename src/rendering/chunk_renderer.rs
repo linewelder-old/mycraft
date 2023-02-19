@@ -24,22 +24,21 @@ impl Vertex {
     };
 }
 
-pub struct Object<'a> {
-    pub shape: &'a VertexArray<Vertex>,
-    pub transform: &'a Uniform<Matrix4<f32>>,
-    pub texture: &'a Texture,
-}
-
-pub struct BlockRenderer {
+pub struct ChunkRenderer {
     render_pipeline: wgpu::RenderPipeline,
 }
 
-pub struct BlockRendererTarget<'a> {
+pub struct ChunkRendererTarget<'a> {
     pub output: &'a wgpu::TextureView,
     pub depth_buffer: &'a wgpu::TextureView,
 }
 
-impl BlockRenderer {
+pub struct ChunkGraphics {
+    pub mesh: VertexArray<Vertex>,
+    pub transform: Uniform<Matrix4<f32>>,
+}
+
+impl ChunkRenderer {
     pub fn new(context: &Context, label: &str) -> Self {
         let bind_group_layouts = &[
             &Uniform::<Matrix4<f32>>::create_bind_group_layout(context),
@@ -57,7 +56,7 @@ impl BlockRenderer {
 
         let shader = context
             .device
-            .create_shader_module(wgpu::include_wgsl!("block_shader.wgsl"));
+            .create_shader_module(wgpu::include_wgsl!("chunk_shader.wgsl"));
 
         let render_pipeline =
             context
@@ -99,15 +98,16 @@ impl BlockRenderer {
                     multiview: None,
                 });
 
-        BlockRenderer { render_pipeline }
+        ChunkRenderer { render_pipeline }
     }
 
-    pub fn draw(
+    pub fn draw<'a>(
         &self,
         context: &Context,
-        target: BlockRendererTarget,
+        target: ChunkRendererTarget,
         camera: &Camera,
-        objects: &[Object],
+        chunks: impl Iterator<Item = &'a ChunkGraphics>,
+        texture: &Texture,
     ) {
         let mut encoder = context
             .device
@@ -137,14 +137,12 @@ impl BlockRenderer {
 
         render_pass.set_pipeline(&self.render_pipeline);
         render_pass.set_bind_group(0, camera.get_bind_group(), &[]);
+        render_pass.set_bind_group(2, texture.get_bind_group(), &[]);
 
-        for object in objects {
-            render_pass.set_bind_group(1, object.transform.get_bind_group(), &[]);
-            render_pass.set_bind_group(2, object.texture.get_bind_group(), &[]);
-
-            let vertex_array = &object.shape;
-            render_pass.set_vertex_buffer(0, vertex_array.vertices.slice(..));
-            render_pass.draw(0..vertex_array.vertex_count, 0..1);
+        for chunk in chunks {
+            render_pass.set_bind_group(1, chunk.transform.get_bind_group(), &[]);
+            render_pass.set_vertex_buffer(0, chunk.mesh.vertices.slice(..));
+            render_pass.draw(0..chunk.mesh.vertex_count, 0..1);
         }
 
         drop(render_pass);

@@ -2,7 +2,7 @@ use cgmath::{Vector2, Vector3};
 
 use crate::{
     context::Context,
-    rendering::{block_renderer::Vertex, vertex_array::VertexArray},
+    rendering::{chunk_renderer::Vertex, vertex_array::VertexArray},
     world::Chunk,
 };
 

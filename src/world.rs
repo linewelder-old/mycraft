@@ -7,14 +7,9 @@ use cgmath::{Matrix4, Vector2, Vector3};
 
 use crate::{
     context::Context,
-    rendering::{block_renderer::Vertex, uniform::Uniform, vertex_array::VertexArray},
+    rendering::{chunk_renderer::ChunkGraphics, uniform::Uniform},
     world::{generation::generate_chunk, mesh::generate_chunk_mesh},
 };
-
-pub struct ChunkGraphics {
-    pub mesh: VertexArray<Vertex>,
-    pub transform: Uniform<Matrix4<f32>>,
-}
 
 pub struct Chunk {
     pub blocks: [[[bool; Self::SIZE.z]; Self::SIZE.y]; Self::SIZE.x],
