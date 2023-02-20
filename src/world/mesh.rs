@@ -76,6 +76,7 @@ fn emit_face(vertices: &mut Vec<Vertex>, i: usize, offset: Vector3<f32>) {
         .map(|(&pos, tex)| Vertex {
             pos: pos + offset,
             tex,
+            normal: NEIGHBOR_OFFSETS[i].map(|x| x as f32),
         })
         .for_each(|x| vertices.push(x));
 
