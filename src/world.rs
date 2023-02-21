@@ -33,6 +33,7 @@ impl Chunk {
 }
 
 pub type ChunkCoords = Vector2<i32>;
+pub type BlockCoords = Vector3<i32>;
 
 pub struct World {
     pub chunks: HashMap<ChunkCoords, Chunk>,

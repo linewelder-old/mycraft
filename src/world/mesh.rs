@@ -5,12 +5,12 @@ use crate::{
     rendering::{chunk_renderer::Vertex, vertex_array::VertexArray},
     world::{
         blocks::{Block, BLOCKS},
-        Chunk, ChunkCoords, World,
+        BlockCoords, Chunk, ChunkCoords, World,
     },
 };
 
 #[rustfmt::skip]
-const FACES: [[Vector3<f32>; 4]; 6] = [
+const SOLID_BLOCK_FACES: [[Vector3<f32>; 4]; 6] = [
     // Neg Z
     [
         Vector3 { x: 1., y: 0., z: 0. },
@@ -122,19 +122,25 @@ impl<'a> MeshGenerationContext<'a> {
         }
     }
 
-    fn emit_face(&mut self, i: usize, texture_id: u32, offset: Vector3<f32>) {
+    fn emit_face(
+        &mut self,
+        block_coords: BlockCoords,
+        face: &[Vector3<f32>; 4],
+        texture_id: u32,
+        normal: Vector3<f32>,
+    ) {
+        let offset = block_coords.map(|x| x as f32);
         let base_texture_coords = Vector2 {
             x: (texture_id % 4) as f32,
             y: (texture_id / 4) as f32,
         };
 
-        FACES[i]
-            .iter()
+        face.iter()
             .zip(TEX_COORDS)
             .map(|(&pos, tex)| Vertex {
                 pos: pos + offset,
                 tex: (base_texture_coords + tex) / 4.,
-                normal: NEIGHBOR_OFFSETS[i].map(|x| x as f32),
+                normal,
             })
             .for_each(|x| self.vertices.push(x));
 
@@ -149,17 +155,12 @@ impl<'a> MeshGenerationContext<'a> {
         );
     }
 
-    fn emit_block(&mut self, x: i32, y: i32, z: i32, texture_ids: &[u32; 6]) {
-        let block_offset = Vector3 {
-            x: x as f32,
-            y: y as f32,
-            z: z as f32,
-        };
-
+    fn emit_solid_block(&mut self, block_coords: BlockCoords, texture_ids: &[u32; 6]) {
         for (i, neighbor_offset) in NEIGHBOR_OFFSETS.iter().enumerate() {
-            let neighbor_coords = Vector3 { x, y, z } + neighbor_offset;
+            let neighbor_coords = block_coords + neighbor_offset;
             if self.is_transparent(neighbor_coords) {
-                self.emit_face(i, texture_ids[i], block_offset);
+                let normal = NEIGHBOR_OFFSETS[i].map(|x| x as f32);
+                self.emit_face(block_coords, &SOLID_BLOCK_FACES[i], texture_ids[i], normal);
             }
         }
     }
@@ -177,10 +178,12 @@ pub fn generate_chunk_mesh(
         for y in 0..Chunk::SIZE.y as i32 {
             for z in 0..Chunk::SIZE.z as i32 {
                 let block_id = chunk.blocks[x as usize][y as usize][z as usize];
+                let block_coords = BlockCoords { x, y, z };
+
                 match &BLOCKS[block_id] {
                     Block::Empty => {}
                     Block::Solid { texture_ids } => {
-                        generation_context.emit_block(x, y, z, texture_ids);
+                        generation_context.emit_solid_block(block_coords, texture_ids);
                     }
                 }
             }
