@@ -1,44 +1,42 @@
-pub struct Block {
-    pub transparent: bool,
-    pub texture_ids: Option<[u32; 6]>,
+pub enum Block {
+    Empty,
+    Solid { texture_ids: [u32; 6] },
+}
+
+impl Block {
+    pub fn is_transparent(&self) -> bool {
+        match self {
+            Block::Empty => true,
+            Block::Solid { .. } => false,
+        }
+    }
 }
 
 #[rustfmt::skip]
 pub const BLOCKS: &[Block] = &[
-    Block {  // Air
-        transparent: true,
-        texture_ids: None,
+    Block::Empty, // Air
+    Block::Solid {  // Stone
+        texture_ids: [0; 6],
     },
-    Block {  // Stone
-        transparent: false,
-        texture_ids: Some([0; 6]),
+    Block::Solid {  // Grass
+        texture_ids: [2, 2, 3, 1, 2, 2],
     },
-    Block {  // Grass
-        transparent: false,
-        texture_ids: Some([2, 2, 3, 1, 2, 2]),
+    Block::Solid {  // Dirt
+        texture_ids: [3; 6],
     },
-    Block {  // Dirt
-        transparent: false,
-        texture_ids: Some([3; 6]),
+    Block::Solid {  // Trunk
+        texture_ids: [5, 5, 4, 4, 5, 5],
     },
-    Block {  // Trunk
-        transparent: false,
-        texture_ids: Some([5, 5, 4, 4, 5, 5]),
+    Block::Solid {  // Leaves
+        texture_ids: [6; 6],
     },
-    Block {  // Leaves
-        transparent: false,
-        texture_ids: Some([6; 6]),
+    Block::Solid {  // Water
+        texture_ids: [7; 6],
     },
-    Block {  // Water
-        transparent: false,
-        texture_ids: Some([7; 6]),
+    Block::Solid {  // Sand
+        texture_ids: [8; 6],
     },
-    Block {  // Sand
-        transparent: false,
-        texture_ids: Some([8; 6]),
-    },
-    Block {  // Planks
-        transparent: false,
-        texture_ids: Some([9; 6]),
+    Block::Solid {  // Planks
+        texture_ids: [9; 6],
     },
 ];

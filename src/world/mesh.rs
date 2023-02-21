@@ -116,7 +116,7 @@ impl<'a> MeshGenerationContext<'a> {
             let block_z = relative_z % Chunk::SIZE.z;
 
             let block_id = chunk.blocks[block_x][coords.y as usize][block_z];
-            BLOCKS[block_id].transparent
+            BLOCKS[block_id].is_transparent()
         } else {
             true
         }
@@ -149,19 +149,17 @@ impl<'a> MeshGenerationContext<'a> {
         );
     }
 
-    fn emit_block(&mut self, x: i32, y: i32, z: i32, block: &Block) {
-        if let Some(textures) = &block.texture_ids {
-            let block_offset = Vector3 {
-                x: x as f32,
-                y: y as f32,
-                z: z as f32,
-            };
+    fn emit_block(&mut self, x: i32, y: i32, z: i32, texture_ids: &[u32; 6]) {
+        let block_offset = Vector3 {
+            x: x as f32,
+            y: y as f32,
+            z: z as f32,
+        };
 
-            for (i, neighbor_offset) in NEIGHBOR_OFFSETS.iter().enumerate() {
-                let neighbor_coords = Vector3 { x, y, z } + neighbor_offset;
-                if self.is_transparent(neighbor_coords) {
-                    self.emit_face(i, textures[i], block_offset);
-                }
+        for (i, neighbor_offset) in NEIGHBOR_OFFSETS.iter().enumerate() {
+            let neighbor_coords = Vector3 { x, y, z } + neighbor_offset;
+            if self.is_transparent(neighbor_coords) {
+                self.emit_face(i, texture_ids[i], block_offset);
             }
         }
     }
@@ -179,9 +177,12 @@ pub fn generate_chunk_mesh(
         for y in 0..Chunk::SIZE.y as i32 {
             for z in 0..Chunk::SIZE.z as i32 {
                 let block_id = chunk.blocks[x as usize][y as usize][z as usize];
-                let block = &BLOCKS[block_id];
-
-                generation_context.emit_block(x, y, z, block);
+                match &BLOCKS[block_id] {
+                    Block::Empty => {}
+                    Block::Solid { texture_ids } => {
+                        generation_context.emit_block(x, y, z, texture_ids);
+                    }
+                }
             }
         }
     }
