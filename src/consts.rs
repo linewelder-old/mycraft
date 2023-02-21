@@ -4,3 +4,6 @@ pub const FPS: u32 = 60;
 
 pub const CAMERA_MOVEMENT_SPEED: f32 = 4.;
 pub const MOUSE_SENSITIVITY: f32 = 0.2;
+
+#[rustfmt::skip]
+pub const SKY_COLOR: wgpu::Color = wgpu::Color { r: 0.43, g: 0.77, b: 0.98, a: 1. };

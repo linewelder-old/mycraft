@@ -2,6 +2,7 @@ use cgmath::{Matrix4, Vector2, Vector3};
 
 use crate::{
     camera::Camera,
+    consts::SKY_COLOR,
     context::Context,
     rendering::{
         texture::{Texture, DEPTH_FORMAT},
@@ -122,7 +123,7 @@ impl ChunkRenderer {
                 view: target.output,
                 resolve_target: None,
                 ops: wgpu::Operations {
-                    load: wgpu::LoadOp::Load,
+                    load: wgpu::LoadOp::Clear(SKY_COLOR),
                     store: true,
                 },
             })],
