@@ -3,7 +3,7 @@ use cgmath::{Vector2, Vector3};
 use crate::{
     context::Context,
     rendering::{chunk_renderer::Vertex, vertex_array::VertexArray},
-    world::{Chunk, ChunkCoords, World},
+    world::{blocks::BLOCKS, Chunk, ChunkCoords, World},
 };
 
 #[rustfmt::skip]
@@ -69,13 +69,18 @@ const TEX_COORDS: [Vector2<f32>; 4] = [
     Vector2 { x: 1., y: 0. },
 ];
 
-fn emit_face(vertices: &mut Vec<Vertex>, i: usize, offset: Vector3<f32>) {
+fn emit_face(vertices: &mut Vec<Vertex>, i: usize, texture_id: u32, offset: Vector3<f32>) {
+    let base_texture_coords = Vector2 {
+        x: (texture_id % 4) as f32,
+        y: (texture_id / 4) as f32,
+    };
+
     FACES[i]
         .iter()
         .zip(TEX_COORDS)
         .map(|(&pos, tex)| Vertex {
             pos: pos + offset,
-            tex,
+            tex: (base_texture_coords + tex) / 4.,
             normal: NEIGHBOR_OFFSETS[i].map(|x| x as f32),
         })
         .for_each(|x| vertices.push(x));
@@ -95,15 +100,18 @@ pub fn generate_chunk_mesh(
     let mut chunks: [[Option<&Chunk>; 3]; 3] = [[None; 3]; 3];
     for x in 0..3 {
         for y in 0..3 {
-            let offset = ChunkCoords { x: x as i32- 1, y: y as i32 - 1 };
+            let offset = ChunkCoords {
+                x: x as i32 - 1,
+                y: y as i32 - 1,
+            };
             chunks[x][y] = world.chunks.get(&(chunk_coords + offset));
         }
     }
 
     // Coords are relative to middle chunk in chunks array
-    fn get_block(chunks: &[[Option<&Chunk>; 3]; 3], coords: Vector3<i32>) -> bool {
+    fn is_transparent(chunks: &[[Option<&Chunk>; 3]; 3], coords: Vector3<i32>) -> bool {
         if coords.y > Chunk::SIZE.y as i32 || coords.y < 0 {
-            return false;
+            return true;
         }
 
         // Coords relative to chunks array start
@@ -118,9 +126,10 @@ pub fn generate_chunk_mesh(
             let block_x = relative_x % Chunk::SIZE.x;
             let block_z = relative_z % Chunk::SIZE.z;
 
-            chunk.blocks[block_x][coords.y as usize][block_z]
+            let block_id = chunk.blocks[block_x][coords.y as usize][block_z];
+            BLOCKS[block_id].transparent
         } else {
-            false
+            true
         }
     }
 
@@ -129,7 +138,10 @@ pub fn generate_chunk_mesh(
     for x in 0..Chunk::SIZE.x as i32 {
         for y in 0..Chunk::SIZE.y as i32 {
             for z in 0..Chunk::SIZE.z as i32 {
-                if chunk.blocks[x as usize][y as usize][z as usize] {
+                let block_id = chunk.blocks[x as usize][y as usize][z as usize];
+                let block = &BLOCKS[block_id];
+
+                if let Some(textures) = &block.texture_ids {
                     let block_offset = Vector3 {
                         x: x as f32,
                         y: y as f32,
@@ -138,8 +150,8 @@ pub fn generate_chunk_mesh(
 
                     for (i, neighbor_offset) in NEIGHBOR_OFFSETS.iter().enumerate() {
                         let neighbor_coords = Vector3 { x, y, z } + neighbor_offset;
-                        if !get_block(&chunks, neighbor_coords) {
-                            emit_face(&mut vertices, i, block_offset);
+                        if is_transparent(&chunks, neighbor_coords) {
+                            emit_face(&mut vertices, i, textures[i], block_offset);
                         }
                     }
                 }

@@ -39,7 +39,7 @@ impl Mycraft {
         }
         world.update_chunk_graphics(context);
 
-        let image = image::load_from_memory(include_bytes!("test.png")).unwrap();
+        let image = image::load_from_memory(include_bytes!("blocks.png")).unwrap();
         let test_texture = Texture::new(context, "Cube Texture", image);
 
         let depth_buffer = create_depth_buffer(

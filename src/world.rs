@@ -1,3 +1,4 @@
+pub mod blocks;
 pub mod generation;
 pub mod mesh;
 
@@ -12,7 +13,7 @@ use crate::{
 };
 
 pub struct Chunk {
-    pub blocks: [[[bool; Self::SIZE.z]; Self::SIZE.y]; Self::SIZE.x],
+    pub blocks: [[[usize; Self::SIZE.z]; Self::SIZE.y]; Self::SIZE.x],
     needs_update: bool,
 }
 
@@ -25,7 +26,7 @@ impl Chunk {
 
     pub fn new() -> Self {
         Chunk {
-            blocks: [[[false; Self::SIZE.z]; Self::SIZE.y]; Self::SIZE.x],
+            blocks: [[[0; Self::SIZE.z]; Self::SIZE.y]; Self::SIZE.x],
             needs_update: true,
         }
     }
