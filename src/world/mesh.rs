@@ -1,4 +1,4 @@
-use cgmath::{Vector2, Vector3};
+use cgmath::{InnerSpace, Vector2, Vector3};
 
 use crate::{
     context::Context,
@@ -122,18 +122,14 @@ impl<'a> MeshGenerationContext<'a> {
         }
     }
 
-    fn emit_face(
-        &mut self,
-        block_coords: BlockCoords,
-        face: &[Vector3<f32>; 4],
-        texture_id: u32,
-        normal: Vector3<f32>,
-    ) {
+    fn emit_face(&mut self, block_coords: BlockCoords, face: &[Vector3<f32>; 4], texture_id: u32) {
         let offset = block_coords.map(|x| x as f32);
         let base_texture_coords = Vector2 {
             x: (texture_id % 4) as f32,
             y: (texture_id / 4) as f32,
         };
+
+        let normal = (face[1] - face[0]).cross(face[2] - face[0]).normalize();
 
         face.iter()
             .zip(TEX_COORDS)
@@ -159,8 +155,7 @@ impl<'a> MeshGenerationContext<'a> {
         for (i, neighbor_offset) in NEIGHBOR_OFFSETS.iter().enumerate() {
             let neighbor_coords = block_coords + neighbor_offset;
             if self.is_transparent(neighbor_coords) {
-                let normal = NEIGHBOR_OFFSETS[i].map(|x| x as f32);
-                self.emit_face(block_coords, &SOLID_BLOCK_FACES[i], texture_ids[i], normal);
+                self.emit_face(block_coords, &SOLID_BLOCK_FACES[i], texture_ids[i]);
             }
         }
     }
