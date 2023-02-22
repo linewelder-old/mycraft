@@ -56,6 +56,34 @@ const SOLID_BLOCK_FACES: [[Vector3<f32>; 4]; 6] = [
 ];
 
 #[rustfmt::skip]
+const FLOWER_BLOCK_FACES: [[Vector3<f32>; 4]; 4] = [
+    [
+        Vector3 { x: 14./16., y: 0., z: 2./16.  },
+        Vector3 { x: 2./16.,  y: 0., z: 14./16. },
+        Vector3 { x: 14./16., y: 1., z: 2./16.  },
+        Vector3 { x: 2./16.,  y: 1., z: 14./16. },
+    ],
+    [
+        Vector3 { x: 2./16.,  y: 0., z: 2./16.  },
+        Vector3 { x: 14./16., y: 0., z: 14./16. },
+        Vector3 { x: 2./16.,  y: 1., z: 2./16.  },
+        Vector3 { x: 14./16., y: 1., z: 14./16. },
+    ],
+    [
+        Vector3 { x: 2./16.,  y: 0., z: 14./16. },
+        Vector3 { x: 14./16., y: 0., z: 2./16.  },
+        Vector3 { x: 2./16.,  y: 1., z: 14./16. },
+        Vector3 { x: 14./16., y: 1., z: 2./16.  },
+    ],
+    [
+        Vector3 { x: 14./16., y: 0., z: 14./16. },
+        Vector3 { x: 2./16.,  y: 0., z: 2./16.  },
+        Vector3 { x: 14./16., y: 1., z: 14./16. },
+        Vector3 { x: 2./16.,  y: 1., z: 2./16.  },
+    ],
+];
+
+#[rustfmt::skip]
 const NEIGHBOR_OFFSETS: [Vector3<i32>; 6] = [
     Vector3 { x:  0, y:  0, z: -1 },
     Vector3 { x:  0, y:  0, z:  1 },
@@ -159,6 +187,12 @@ impl<'a> MeshGenerationContext<'a> {
             }
         }
     }
+
+    fn emit_flower_block(&mut self, block_coords: BlockCoords, texture_id: u32) {
+        for face in &FLOWER_BLOCK_FACES {
+            self.emit_face(block_coords, face, texture_id);
+        }
+    }
 }
 
 pub fn generate_chunk_mesh(
@@ -179,6 +213,9 @@ pub fn generate_chunk_mesh(
                     Block::Empty => {}
                     Block::Solid { texture_ids } => {
                         generation_context.emit_solid_block(block_coords, texture_ids);
+                    }
+                    Block::Flower { texture_id } => {
+                        generation_context.emit_flower_block(block_coords, *texture_id);
                     }
                 }
             }
