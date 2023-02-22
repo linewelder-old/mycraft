@@ -32,7 +32,12 @@ var sampler_test: sampler;
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
+    let texture_color = textureSample(texture_test, sampler_test, in.tex_coords);
+    if (texture_color.a == 0.) {
+        discard;
+    }
+
     let sun_direction = normalize(vec3<f32>(1., 2., 0.));
     let light = dot(in.normal, sun_direction) * 0.4 + 0.6;
-    return light * textureSample(texture_test, sampler_test, in.tex_coords);
+    return light * texture_color;
 }
