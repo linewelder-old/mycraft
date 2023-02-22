@@ -9,7 +9,7 @@ use cgmath::{Matrix4, Vector2, Vector3};
 use crate::{
     context::Context,
     rendering::{chunk_renderer::ChunkGraphics, uniform::Uniform},
-    world::{generation::generate_chunk, mesh::generate_chunk_mesh},
+    world::{generation::Generator, mesh::generate_chunk_mesh},
 };
 
 pub struct Chunk {
@@ -38,6 +38,8 @@ pub type BlockCoords = Vector3<i32>;
 pub struct World {
     pub chunks: HashMap<ChunkCoords, Chunk>,
     pub chunk_graphics: HashMap<ChunkCoords, ChunkGraphics>,
+
+    generator: Generator,
 }
 
 impl World {
@@ -45,6 +47,8 @@ impl World {
         World {
             chunks: HashMap::new(),
             chunk_graphics: HashMap::new(),
+
+            generator: Generator::new(0),
         }
     }
 
@@ -54,7 +58,7 @@ impl World {
         }
 
         let mut chunk = Chunk::new();
-        generate_chunk(&mut chunk, coords);
+        self.generator.generate_chunk(&mut chunk, coords);
         self.chunks.insert(coords, chunk);
     }
 
