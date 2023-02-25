@@ -1,7 +1,7 @@
 use cgmath::Vector2;
 use noise::{NoiseFn, Perlin};
 
-use crate::world::{blocks::BLOCKS, Chunk, ChunkCoords};
+use crate::world::{Chunk, ChunkCoords};
 
 pub struct Generator {
     noise: Perlin,
@@ -69,8 +69,8 @@ impl Generator {
         }
 
         if chunk_coords == (ChunkCoords { x: 0, y: 0 }) {
-            for id in 0..BLOCKS.len() {
-                chunk.blocks[0][15 + 2 * id][0] = id;
+            for i in 0..256 {
+                chunk.blocks[0][i][0] = 6;
             }
         }
     }
