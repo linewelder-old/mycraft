@@ -1,4 +1,4 @@
-use cgmath::{Matrix4, Vector2, Vector3};
+use cgmath::Matrix4;
 
 use crate::{
     camera::Camera,
@@ -7,40 +7,15 @@ use crate::{
     rendering::{
         texture::{Texture, DEPTH_FORMAT},
         uniform::Uniform,
-        vertex_array::VertexArray,
+        ChunkGraphics, ChunkRendererTarget, Vertex,
     },
 };
 
-#[derive(Clone, Copy)]
-pub struct Vertex {
-    pub pos: Vector3<f32>,
-    pub tex: Vector2<f32>,
-    pub normal: Vector3<f32>,
-}
-
-impl Vertex {
-    const BUFFER_LAYOUT: wgpu::VertexBufferLayout<'static> = wgpu::VertexBufferLayout {
-        array_stride: std::mem::size_of::<Vertex>() as wgpu::BufferAddress,
-        step_mode: wgpu::VertexStepMode::Vertex,
-        attributes: &wgpu::vertex_attr_array![0 => Float32x3, 1 => Float32x2, 2 => Float32x3],
-    };
-}
-
-pub struct ChunkRenderer {
+pub struct SolidBlockRenderer {
     render_pipeline: wgpu::RenderPipeline,
 }
 
-pub struct ChunkRendererTarget<'a> {
-    pub output: &'a wgpu::TextureView,
-    pub depth_buffer: &'a wgpu::TextureView,
-}
-
-pub struct ChunkGraphics {
-    pub mesh: VertexArray<Vertex>,
-    pub transform: Uniform<Matrix4<f32>>,
-}
-
-impl ChunkRenderer {
+impl SolidBlockRenderer {
     pub fn new(context: &Context, label: &str) -> Self {
         let bind_group_layouts = &[
             &Uniform::<Matrix4<f32>>::create_bind_group_layout(context),
@@ -58,7 +33,7 @@ impl ChunkRenderer {
 
         let shader = context
             .device
-            .create_shader_module(wgpu::include_wgsl!("chunk_shader.wgsl"));
+            .create_shader_module(wgpu::include_wgsl!("solid_block_shader.wgsl"));
 
         let render_pipeline =
             context
@@ -100,7 +75,7 @@ impl ChunkRenderer {
                     multiview: None,
                 });
 
-        ChunkRenderer { render_pipeline }
+        SolidBlockRenderer { render_pipeline }
     }
 
     pub fn draw<'a>(
@@ -143,8 +118,8 @@ impl ChunkRenderer {
 
         for chunk in chunks {
             render_pass.set_bind_group(1, chunk.transform.get_bind_group(), &[]);
-            render_pass.set_vertex_buffer(0, chunk.mesh.vertices.slice(..));
-            render_pass.draw(0..chunk.mesh.vertex_count, 0..1);
+            render_pass.set_vertex_buffer(0, chunk.solid_mesh.vertices.slice(..));
+            render_pass.draw(0..chunk.solid_mesh.vertex_count, 0..1);
         }
 
         drop(render_pass);

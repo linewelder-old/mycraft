@@ -10,15 +10,16 @@ use crate::{
     context::Context,
     input1d::Input1d,
     rendering::{
-        chunk_renderer::{ChunkRenderer, ChunkRendererTarget},
+        solid_block_renderer::SolidBlockRenderer,
         texture::{create_depth_buffer, Texture},
+        ChunkRendererTarget,
     },
     world::{ChunkCoords, World},
 };
 
 pub struct Mycraft {
     depth_buffer: wgpu::TextureView,
-    chunk_renderer: ChunkRenderer,
+    chunk_renderer: SolidBlockRenderer,
     camera: Camera,
 
     movement_x_input: Input1d,
@@ -48,7 +49,7 @@ impl Mycraft {
             context.surface_config.width,
             context.surface_config.height,
         );
-        let chunk_renderer = ChunkRenderer::new(context, "Block Renderer");
+        let chunk_renderer = SolidBlockRenderer::new(context, "Block Renderer");
         let camera = Camera::new(context, "Camera");
 
         use winit::event::VirtualKeyCode::*;

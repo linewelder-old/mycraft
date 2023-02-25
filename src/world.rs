@@ -8,7 +8,7 @@ use cgmath::{Matrix4, Vector2, Vector3};
 
 use crate::{
     context::Context,
-    rendering::{chunk_renderer::ChunkGraphics, uniform::Uniform},
+    rendering::{uniform::Uniform, ChunkGraphics},
     world::{generation::Generator, mesh::generate_chunk_mesh},
 };
 
@@ -77,7 +77,13 @@ impl World {
                     "Chunk Transform",
                     Matrix4::from_translation(translation),
                 );
-                self.chunk_graphics.insert(*coords, ChunkGraphics { mesh, transform });
+                self.chunk_graphics.insert(
+                    *coords,
+                    ChunkGraphics {
+                        solid_mesh: mesh,
+                        transform,
+                    },
+                );
             }
         }
     }
