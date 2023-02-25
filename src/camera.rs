@@ -25,7 +25,7 @@ impl Camera {
 
             fov: 60.,
             near: 0.01,
-            far: 100.,
+            far: 500.,
 
             position: Vector3::zero(),
             rotation: Vector2::zero(),
