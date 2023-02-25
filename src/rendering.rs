@@ -4,9 +4,14 @@ pub mod uniform;
 pub mod vertex_array;
 pub mod water_renderer;
 
-use cgmath::{Matrix4, Vector2, Vector3};
+use std::{cmp::Reverse, rc::Rc};
 
-use crate::rendering::{uniform::Uniform, vertex_array::VertexArray};
+use cgmath::{Matrix4, MetricSpace, Vector2, Vector3};
+
+use crate::{
+    rendering::{uniform::Uniform, vertex_array::VertexArray},
+    world::{ChunkCoords, World},
+};
 
 #[derive(Clone, Copy)]
 pub struct Vertex {
@@ -32,4 +37,29 @@ pub struct ChunkGraphics {
     pub solid_mesh: VertexArray<Vertex>,
     pub water_mesh: VertexArray<Vertex>,
     pub transform: Uniform<Matrix4<f32>>,
+}
+
+pub struct RenderQueue(Vec<(ChunkCoords, Rc<ChunkGraphics>)>);
+
+impl RenderQueue {
+    pub fn new(cam_chunk_coords: ChunkCoords, world: &World) -> RenderQueue {
+        let mut queue = RenderQueue(
+            world
+                .chunk_graphics
+                .iter()
+                .map(|(coords, graphics)| (*coords, graphics.clone()))
+                .collect(),
+        );
+        queue.sort(cam_chunk_coords);
+        queue
+    }
+
+    pub fn sort(&mut self, cam_chunk_coords: ChunkCoords) {
+        self.0
+            .sort_unstable_by_key(|x| Reverse(cam_chunk_coords.distance2(x.0)));
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = &ChunkGraphics> {
+        self.0.iter().map(|x| x.1.as_ref())
+    }
 }

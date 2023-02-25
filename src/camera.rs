@@ -10,7 +10,7 @@ pub struct Camera {
     near: f32,
     far: f32,
 
-    position: Vector3<f32>,
+    pub position: Vector3<f32>,
     rotation: Vector2<f32>,
 }
 

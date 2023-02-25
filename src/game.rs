@@ -13,9 +13,9 @@ use crate::{
         solid_block_renderer::SolidBlockRenderer,
         texture::{create_depth_buffer, Texture},
         water_renderer::WaterRenderer,
-        ChunkRendererTarget,
+        ChunkRendererTarget, RenderQueue,
     },
-    world::{ChunkCoords, World},
+    world::{Chunk, ChunkCoords, World},
 };
 
 pub struct Mycraft {
@@ -29,6 +29,8 @@ pub struct Mycraft {
     movement_z_input: Input1d,
 
     world: World,
+    render_queue: RenderQueue,
+    prev_cam_chunk_coords: ChunkCoords,
     test_texture: Texture,
 }
 
@@ -53,7 +55,13 @@ impl Mycraft {
         );
         let solid_block_renderer = SolidBlockRenderer::new(context);
         let water_renderer = WaterRenderer::new(context);
+
         let camera = Camera::new(context, "Camera");
+        let cam_chunk_coords = ChunkCoords {
+            x: (camera.position.x / Chunk::SIZE.x as f32) as i32,
+            y: (camera.position.z / Chunk::SIZE.z as f32) as i32,
+        };
+        let render_queue = RenderQueue::new(cam_chunk_coords, &world);
 
         use winit::event::VirtualKeyCode::*;
         let movement_x_input = Input1d::new(D, A);
@@ -71,6 +79,8 @@ impl Mycraft {
             movement_z_input,
 
             world,
+            render_queue,
+            prev_cam_chunk_coords: cam_chunk_coords,
             test_texture,
         }
     }
@@ -132,6 +142,15 @@ impl Mycraft {
 
         self.camera.move_relative_to_view(movement);
         self.camera.update_matrix(context);
+
+        let cam_chunk_coords = ChunkCoords {
+            x: (self.camera.position.x / Chunk::SIZE.x as f32) as i32,
+            y: (self.camera.position.z / Chunk::SIZE.z as f32) as i32,
+        };
+        if cam_chunk_coords != self.prev_cam_chunk_coords {
+            self.render_queue.sort(cam_chunk_coords);
+            self.prev_cam_chunk_coords = cam_chunk_coords;
+        }
     }
 
     pub fn render(&mut self, context: &Context, target: &wgpu::TextureView) {
@@ -141,7 +160,6 @@ impl Mycraft {
                 label: Some("Render Encoder"),
             });
 
-        let chunk_graphics = self.world.chunk_graphics.values();
         self.solid_block_renderer.draw(
             &mut encoder,
             ChunkRendererTarget {
@@ -149,7 +167,7 @@ impl Mycraft {
                 depth_buffer: &self.depth_buffer,
             },
             &self.camera,
-            chunk_graphics.clone(),
+            self.render_queue.iter(),
             &self.test_texture,
         );
         self.water_renderer.draw(
@@ -159,7 +177,7 @@ impl Mycraft {
                 depth_buffer: &self.depth_buffer,
             },
             &self.camera,
-            chunk_graphics,
+            self.render_queue.iter(),
             &self.test_texture,
         );
 

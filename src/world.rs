@@ -2,7 +2,7 @@ pub mod blocks;
 pub mod generation;
 pub mod mesh;
 
-use std::collections::HashMap;
+use std::{collections::HashMap, rc::Rc};
 
 use cgmath::{Matrix4, Vector2, Vector3};
 
@@ -37,7 +37,7 @@ pub type BlockCoords = Vector3<i32>;
 
 pub struct World {
     pub chunks: HashMap<ChunkCoords, Chunk>,
-    pub chunk_graphics: HashMap<ChunkCoords, ChunkGraphics>,
+    pub chunk_graphics: HashMap<ChunkCoords, Rc<ChunkGraphics>>,
 
     generator: Generator,
 }
@@ -79,11 +79,11 @@ impl World {
                 );
                 self.chunk_graphics.insert(
                     *coords,
-                    ChunkGraphics {
+                    Rc::new(ChunkGraphics {
                         solid_mesh: meshes.solid_mesh,
                         water_mesh: meshes.water_mesh,
                         transform,
-                    },
+                    }),
                 );
             }
         }
