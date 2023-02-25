@@ -12,6 +12,7 @@ use crate::{
     rendering::{
         solid_block_renderer::SolidBlockRenderer,
         texture::{create_depth_buffer, Texture},
+        water_renderer::WaterRenderer,
         ChunkRendererTarget,
     },
     world::{ChunkCoords, World},
@@ -19,7 +20,8 @@ use crate::{
 
 pub struct Mycraft {
     depth_buffer: wgpu::TextureView,
-    chunk_renderer: SolidBlockRenderer,
+    solid_block_renderer: SolidBlockRenderer,
+    water_renderer: WaterRenderer,
     camera: Camera,
 
     movement_x_input: Input1d,
@@ -49,7 +51,8 @@ impl Mycraft {
             context.surface_config.width,
             context.surface_config.height,
         );
-        let chunk_renderer = SolidBlockRenderer::new(context, "Block Renderer");
+        let solid_block_renderer = SolidBlockRenderer::new(context, "Solid Block Renderer");
+        let water_renderer = WaterRenderer::new(context, "Water Renderer");
         let camera = Camera::new(context, "Camera");
 
         use winit::event::VirtualKeyCode::*;
@@ -59,7 +62,8 @@ impl Mycraft {
 
         Mycraft {
             depth_buffer,
-            chunk_renderer,
+            solid_block_renderer,
+            water_renderer,
             camera,
 
             movement_x_input,
@@ -131,15 +135,34 @@ impl Mycraft {
     }
 
     pub fn render(&mut self, context: &Context, target: &wgpu::TextureView) {
-        self.chunk_renderer.draw(
-            context,
+        let mut encoder = context
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("Render Encoder"),
+            });
+
+        let chunk_graphics = self.world.chunk_graphics.values();
+        self.solid_block_renderer.draw(
+            &mut encoder,
             ChunkRendererTarget {
                 output: target,
                 depth_buffer: &self.depth_buffer,
             },
             &self.camera,
-            self.world.chunk_graphics.values().into_iter(),
+            chunk_graphics.clone(),
             &self.test_texture,
         );
+        self.water_renderer.draw(
+            &mut encoder,
+            ChunkRendererTarget {
+                output: target,
+                depth_buffer: &self.depth_buffer,
+            },
+            &self.camera,
+            chunk_graphics,
+            &self.test_texture,
+        );
+
+        context.queue.submit(std::iter::once(encoder.finish()));
     }
 }

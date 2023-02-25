@@ -80,18 +80,12 @@ impl SolidBlockRenderer {
 
     pub fn draw<'a>(
         &self,
-        context: &Context,
+        encoder: &mut wgpu::CommandEncoder,
         target: ChunkRendererTarget,
         camera: &Camera,
         chunks: impl Iterator<Item = &'a ChunkGraphics>,
         texture: &Texture,
     ) {
-        let mut encoder = context
-            .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("Render Encoder"),
-            });
-
         let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: Some("Render Pass"),
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
@@ -121,8 +115,5 @@ impl SolidBlockRenderer {
             render_pass.set_vertex_buffer(0, chunk.solid_mesh.vertices.slice(..));
             render_pass.draw(0..chunk.solid_mesh.vertex_count, 0..1);
         }
-
-        drop(render_pass);
-        context.queue.submit(std::iter::once(encoder.finish()));
     }
 }
