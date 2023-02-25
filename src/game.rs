@@ -56,7 +56,9 @@ impl Mycraft {
         let solid_block_renderer = SolidBlockRenderer::new(context);
         let water_renderer = WaterRenderer::new(context);
 
-        let camera = Camera::new(context, "Camera");
+        let mut camera = Camera::new(context, "Camera");
+        camera.position = Vector3::new(0., 40., 0.);
+
         let cam_chunk_coords = ChunkCoords {
             x: (camera.position.x / Chunk::SIZE.x as f32) as i32,
             y: (camera.position.z / Chunk::SIZE.z as f32) as i32,
