@@ -9,7 +9,7 @@ use cgmath::{Matrix4, Vector2, Vector3};
 use crate::{
     context::Context,
     rendering::{uniform::Uniform, ChunkGraphics},
-    world::{generation::Generator, mesh::generate_chunk_mesh},
+    world::{generation::Generator, mesh::ChunkMeshes},
 };
 
 pub struct Chunk {
@@ -71,7 +71,7 @@ impl World {
                     z: coords.y as f32 * Chunk::SIZE.z as f32,
                 };
 
-                let mesh = generate_chunk_mesh(context, self, &chunk, *coords);
+                let meshes = ChunkMeshes::generate(context, self, chunk, *coords);
                 let transform = Uniform::new(
                     context,
                     "Chunk Transform",
@@ -80,7 +80,8 @@ impl World {
                 self.chunk_graphics.insert(
                     *coords,
                     ChunkGraphics {
-                        solid_mesh: mesh,
+                        solid_mesh: meshes.solid_mesh,
+                        water_mesh: meshes.water_mesh,
                         transform,
                     },
                 );

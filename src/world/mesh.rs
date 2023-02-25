@@ -148,7 +148,8 @@ const TEX_COORDS: [Vector2<f32>; 4] = [
 
 struct MeshGenerationContext<'a> {
     neighbor_chunks: [[Option<&'a Chunk>; 3]; 3],
-    vertices: Vec<Vertex>,
+    solid_vertices: Vec<Vertex>,
+    water_vertices: Vec<Vertex>,
 }
 
 impl<'a> MeshGenerationContext<'a> {
@@ -167,13 +168,14 @@ impl<'a> MeshGenerationContext<'a> {
 
         MeshGenerationContext {
             neighbor_chunks,
-            vertices: vec![],
+            solid_vertices: vec![],
+            water_vertices: vec![],
         }
     }
 
     // Coords are relative to middle chunk in chunks array
     fn get_block(&self, coords: Vector3<i32>) -> Option<&Block> {
-        if coords.y > Chunk::SIZE.y as i32 || coords.y < 0 {
+        if coords.y >= Chunk::SIZE.y as i32 || coords.y < 0 {
             return None;
         }
 
@@ -200,11 +202,16 @@ impl<'a> MeshGenerationContext<'a> {
         if let Some(block) = self.get_block(coords) {
             block.is_transparent()
         } else {
-            false
+            true
         }
     }
 
-    fn emit_face(&mut self, block_coords: BlockCoords, face: &[Vector3<f32>; 4], texture_id: u32) {
+    fn emit_face(
+        vertex_array: &mut Vec<Vertex>,
+        block_coords: BlockCoords,
+        face: &[Vector3<f32>; 4],
+        texture_id: u32,
+    ) {
         let offset = block_coords.map(|x| x as f32);
         let base_texture_coords = Vector2 {
             x: (texture_id % 4) as f32,
@@ -220,29 +227,28 @@ impl<'a> MeshGenerationContext<'a> {
                 tex: (base_texture_coords + tex) / 4.,
                 normal,
             })
-            .for_each(|x| self.vertices.push(x));
+            .for_each(|x| vertex_array.push(x));
 
         // Split into triangles
-        self.vertices.insert(
-            self.vertices.len() - 1,
-            self.vertices[self.vertices.len() - 2],
-        );
-        self.vertices.insert(
-            self.vertices.len() - 1,
-            self.vertices[self.vertices.len() - 4],
-        );
+        vertex_array.insert(vertex_array.len() - 1, vertex_array[vertex_array.len() - 2]);
+        vertex_array.insert(vertex_array.len() - 1, vertex_array[vertex_array.len() - 4]);
     }
 
     fn emit_solid_block(&mut self, block_coords: BlockCoords, texture_ids: &[u32; 6]) {
         for (i, neighbor_offset) in NEIGHBOR_OFFSETS.iter().enumerate() {
             let neighbor_coords = block_coords + neighbor_offset;
             if self.is_transparent(neighbor_coords) {
-                self.emit_face(block_coords, &SOLID_BLOCK_FACES[i], texture_ids[i]);
+                Self::emit_face(
+                    &mut self.solid_vertices,
+                    block_coords,
+                    &SOLID_BLOCK_FACES[i],
+                    texture_ids[i],
+                );
             }
         }
     }
 
-    fn emit_fluid_block(&mut self, block_coords: BlockCoords, texture_id: u32) {
+    fn emit_water_block(&mut self, block_coords: BlockCoords, texture_id: u32) {
         const TOP_NEIGHBOR_OFFSET_INDEX: usize = 3;
 
         let top_neighbor =
@@ -258,56 +264,81 @@ impl<'a> MeshGenerationContext<'a> {
             let neighbor_coords = block_coords + neighbor_offset;
             if let Some(neighbor_block) = self.get_block(neighbor_coords) {
                 let checking_top_neighbor = i == TOP_NEIGHBOR_OFFSET_INDEX;
-                let should_emit_face = if checking_top_neighbor {
-                    !top_neighbor_is_fluid
+                let should_not_emit_face = if checking_top_neighbor {
+                    top_neighbor_is_fluid
                 } else {
-                    !matches!(neighbor_block, Block::Fluid { .. })
-                        && self.is_transparent(neighbor_coords)
+                    matches!(neighbor_block, Block::Fluid { .. })
+                        || !self.is_transparent(neighbor_coords)
                 };
 
-                if should_emit_face {
-                    self.emit_face(block_coords, &model[i], texture_id);
+                if should_not_emit_face {
+                    continue;
                 }
             }
+
+            Self::emit_face(
+                &mut self.water_vertices,
+                block_coords,
+                &model[i],
+                texture_id,
+            );
         }
     }
 
     fn emit_flower_block(&mut self, block_coords: BlockCoords, texture_id: u32) {
         for face in &FLOWER_BLOCK_FACES {
-            self.emit_face(block_coords, face, texture_id);
+            Self::emit_face(&mut self.solid_vertices, block_coords, face, texture_id);
         }
     }
 }
 
-pub fn generate_chunk_mesh(
-    context: &Context,
-    world: &World,
-    chunk: &Chunk,
-    chunk_coords: ChunkCoords,
-) -> VertexArray<Vertex> {
-    let mut generation_context = MeshGenerationContext::new(world, chunk_coords);
+pub struct ChunkMeshes {
+    pub solid_mesh: VertexArray<Vertex>,
+    pub water_mesh: VertexArray<Vertex>,
+}
 
-    for x in 0..Chunk::SIZE.x as i32 {
-        for y in 0..Chunk::SIZE.y as i32 {
-            for z in 0..Chunk::SIZE.z as i32 {
-                let block_id = chunk.blocks[x as usize][y as usize][z as usize];
-                let block_coords = BlockCoords { x, y, z };
+impl ChunkMeshes {
+    pub fn generate(
+        context: &Context,
+        world: &World,
+        chunk: &Chunk,
+        chunk_coords: ChunkCoords,
+    ) -> Self {
+        let mut generation_context = MeshGenerationContext::new(world, chunk_coords);
 
-                match &BLOCKS[block_id] {
-                    Block::Empty => {}
-                    Block::Solid { texture_ids } => {
-                        generation_context.emit_solid_block(block_coords, texture_ids);
-                    }
-                    Block::Fluid { texture_id } => {
-                        generation_context.emit_fluid_block(block_coords, *texture_id);
-                    }
-                    Block::Flower { texture_id } => {
-                        generation_context.emit_flower_block(block_coords, *texture_id);
+        for x in 0..Chunk::SIZE.x as i32 {
+            for y in 0..Chunk::SIZE.y as i32 {
+                for z in 0..Chunk::SIZE.z as i32 {
+                    let block_id = chunk.blocks[x as usize][y as usize][z as usize];
+                    let block_coords = BlockCoords { x, y, z };
+
+                    match &BLOCKS[block_id] {
+                        Block::Empty => {}
+                        Block::Solid { texture_ids } => {
+                            generation_context.emit_solid_block(block_coords, texture_ids);
+                        }
+                        Block::Fluid { texture_id } => {
+                            generation_context.emit_water_block(block_coords, *texture_id);
+                        }
+                        Block::Flower { texture_id } => {
+                            generation_context.emit_flower_block(block_coords, *texture_id);
+                        }
                     }
                 }
             }
         }
-    }
 
-    VertexArray::new(context, "Chunk Mesh", &generation_context.vertices)
+        ChunkMeshes {
+            solid_mesh: VertexArray::new(
+                context,
+                "Solid Chunk Mesh",
+                &generation_context.solid_vertices,
+            ),
+            water_mesh: VertexArray::new(
+                context,
+                "Water Chunk Mesh",
+                &generation_context.water_vertices,
+            ),
+        }
+    }
 }

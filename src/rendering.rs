@@ -2,6 +2,7 @@ pub mod solid_block_renderer;
 pub mod texture;
 pub mod uniform;
 pub mod vertex_array;
+pub mod water_renderer;
 
 use cgmath::{Matrix4, Vector2, Vector3};
 
@@ -29,5 +30,6 @@ pub struct ChunkRendererTarget<'a> {
 
 pub struct ChunkGraphics {
     pub solid_mesh: VertexArray<Vertex>,
+    pub water_mesh: VertexArray<Vertex>,
     pub transform: Uniform<Matrix4<f32>>,
 }
