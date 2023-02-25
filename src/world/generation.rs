@@ -8,22 +8,44 @@ pub struct Generator {
 }
 
 impl Generator {
+    const BASE_HEIGHT: f64 = 10.;
+    const WATER_HEIGHT: usize = 27;
+
     pub fn new(seed: u32) -> Self {
         Generator {
             noise: Perlin::new(seed),
         }
     }
 
+    #[inline]
+    fn get_noise(&self, offset: Vector2<f64>, freq: f64, scale: f64) -> f64 {
+        (self.noise.get((offset / freq).into()) / 2. + 0.5) * scale
+    }
+
+    fn get_height(&self, x: i32, z: i32) -> usize {
+        let offset = Vector2 {
+            x: x as f64,
+            y: z as f64,
+        };
+
+        let octaves = [
+            self.get_noise(offset, 80., 24.),
+            self.get_noise(offset, 30., 12.),
+            self.get_noise(offset, 15., 4.),
+            self.get_noise(offset, 10., 3.),
+        ];
+
+        let height = Self::BASE_HEIGHT + octaves.iter().sum::<f64>();
+        height as usize
+    }
+
     pub fn generate_chunk(&self, chunk: &mut Chunk, chunk_coords: ChunkCoords) {
         for x in 0..Chunk::SIZE.x {
             for z in 0..Chunk::SIZE.z {
-                let offset = Vector2 {
-                    x: (x as i32 + chunk_coords.x * Chunk::SIZE.x as i32) as f64,
-                    y: (z as i32 + chunk_coords.y * Chunk::SIZE.z as i32) as f64,
-                };
-
-                let height = self.noise.get((offset / 20.).into()) as f32 * 3. + 10.;
-                let height = height as usize;
+                let height = self.get_height(
+                    x as i32 + chunk_coords.x * Chunk::SIZE.x as i32,
+                    z as i32 + chunk_coords.y * Chunk::SIZE.z as i32,
+                );
 
                 for y in 0..(height - 3) {
                     chunk.blocks[x][y][z] = 1;
@@ -33,7 +55,16 @@ impl Generator {
                     chunk.blocks[x][y][z] = 3;
                 }
 
-                chunk.blocks[x][height][z] = 2;
+                let offset = Vector2 {
+                    x: x as f64,
+                    y: z as f64,
+                };
+                let sand_height = Self::WATER_HEIGHT + self.get_noise(offset, 30., 3.) as usize;
+                chunk.blocks[x][height][z] = if height <= sand_height { 7 } else { 2 };
+
+                for y in (height + 1)..=Self::WATER_HEIGHT {
+                    chunk.blocks[x][y][z] = 6;
+                }
             }
         }
 
