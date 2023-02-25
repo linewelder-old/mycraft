@@ -56,6 +56,52 @@ const SOLID_BLOCK_FACES: [[Vector3<f32>; 4]; 6] = [
 ];
 
 #[rustfmt::skip]
+const FLUID_BLOCK_FACES: [[Vector3<f32>; 4]; 6] = [
+    // Neg Z
+    [
+        Vector3 { x: 1., y: 0.,      z: 0. },
+        Vector3 { x: 0., y: 0.,      z: 0. },
+        Vector3 { x: 1., y: 14./16., z: 0. },
+        Vector3 { x: 0., y: 14./16., z: 0. },
+    ],
+    // Pos Z
+    [
+        Vector3 { x: 0., y: 0.,      z: 1. },
+        Vector3 { x: 1., y: 0.,      z: 1. },
+        Vector3 { x: 0., y: 14./16., z: 1. },
+        Vector3 { x: 1., y: 14./16., z: 1. },
+    ],
+    // Neg Y
+    [
+        Vector3 { x: 0., y: 0., z: 0. },
+        Vector3 { x: 1., y: 0., z: 0. },
+        Vector3 { x: 0., y: 0., z: 1. },
+        Vector3 { x: 1., y: 0., z: 1. },
+    ],
+    // Pos Y
+    [
+        Vector3 { x: 1., y: 14./16., z: 0. },
+        Vector3 { x: 0., y: 14./16., z: 0. },
+        Vector3 { x: 1., y: 14./16., z: 1. },
+        Vector3 { x: 0., y: 14./16., z: 1. },
+    ],
+    // Neg X
+    [
+        Vector3 { x: 0., y: 0.,      z: 0. },
+        Vector3 { x: 0., y: 0.,      z: 1. },
+        Vector3 { x: 0., y: 14./16., z: 0. },
+        Vector3 { x: 0., y: 14./16., z: 1. },
+    ],
+    // Pos X
+    [
+        Vector3 { x: 1., y: 0.,      z: 1. },
+        Vector3 { x: 1., y: 0.,      z: 0. },
+        Vector3 { x: 1., y: 14./16., z: 1. },
+        Vector3 { x: 1., y: 14./16., z: 0. },
+    ],
+];
+
+#[rustfmt::skip]
 const FLOWER_BLOCK_FACES: [[Vector3<f32>; 4]; 4] = [
     [
         Vector3 { x: 14./16., y: 0., z: 2./16.  },
@@ -126,9 +172,9 @@ impl<'a> MeshGenerationContext<'a> {
     }
 
     // Coords are relative to middle chunk in chunks array
-    fn is_transparent(&self, coords: Vector3<i32>) -> bool {
+    fn get_block(&self, coords: Vector3<i32>) -> Option<&Block> {
         if coords.y > Chunk::SIZE.y as i32 || coords.y < 0 {
-            return true;
+            return None;
         }
 
         // Coords relative to chunks array start
@@ -144,9 +190,17 @@ impl<'a> MeshGenerationContext<'a> {
             let block_z = relative_z % Chunk::SIZE.z;
 
             let block_id = chunk.blocks[block_x][coords.y as usize][block_z];
-            BLOCKS[block_id].is_transparent()
+            Some(&BLOCKS[block_id])
         } else {
-            true
+            None
+        }
+    }
+
+    fn is_transparent(&self, coords: Vector3<i32>) -> bool {
+        if let Some(block) = self.get_block(coords) {
+            block.is_transparent()
+        } else {
+            false
         }
     }
 
@@ -188,6 +242,36 @@ impl<'a> MeshGenerationContext<'a> {
         }
     }
 
+    fn emit_fluid_block(&mut self, block_coords: BlockCoords, texture_id: u32) {
+        const TOP_NEIGHBOR_OFFSET_INDEX: usize = 3;
+
+        let top_neighbor =
+            self.get_block(block_coords + NEIGHBOR_OFFSETS[TOP_NEIGHBOR_OFFSET_INDEX]);
+        let top_neighbor_is_fluid = matches!(top_neighbor, Some(Block::Fluid { .. }));
+        let model = if top_neighbor_is_fluid {
+            &SOLID_BLOCK_FACES
+        } else {
+            &FLUID_BLOCK_FACES
+        };
+
+        for (i, neighbor_offset) in NEIGHBOR_OFFSETS.iter().enumerate() {
+            let neighbor_coords = block_coords + neighbor_offset;
+            if let Some(neighbor_block) = self.get_block(neighbor_coords) {
+                let checking_top_neighbor = i == TOP_NEIGHBOR_OFFSET_INDEX;
+                let should_emit_face = if checking_top_neighbor {
+                    !top_neighbor_is_fluid
+                } else {
+                    !matches!(neighbor_block, Block::Fluid { .. })
+                        && self.is_transparent(neighbor_coords)
+                };
+
+                if should_emit_face {
+                    self.emit_face(block_coords, &model[i], texture_id);
+                }
+            }
+        }
+    }
+
     fn emit_flower_block(&mut self, block_coords: BlockCoords, texture_id: u32) {
         for face in &FLOWER_BLOCK_FACES {
             self.emit_face(block_coords, face, texture_id);
@@ -213,6 +297,9 @@ pub fn generate_chunk_mesh(
                     Block::Empty => {}
                     Block::Solid { texture_ids } => {
                         generation_context.emit_solid_block(block_coords, texture_ids);
+                    }
+                    Block::Fluid { texture_id } => {
+                        generation_context.emit_fluid_block(block_coords, *texture_id);
                     }
                     Block::Flower { texture_id } => {
                         generation_context.emit_flower_block(block_coords, *texture_id);

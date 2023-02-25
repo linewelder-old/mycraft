@@ -1,13 +1,14 @@
 pub enum Block {
     Empty,
     Solid { texture_ids: [u32; 6] },
+    Fluid { texture_id: u32 },
     Flower { texture_id: u32 },
 }
 
 impl Block {
     pub fn is_transparent(&self) -> bool {
         match self {
-            Block::Empty | Block::Flower { .. } => true,
+            Block::Empty | Block::Fluid { .. } | Block::Flower { .. } => true,
             Block::Solid { .. } => false,
         }
     }
@@ -31,8 +32,8 @@ pub const BLOCKS: &[Block] = &[
     Block::Solid {  // Leaves
         texture_ids: [6; 6],
     },
-    Block::Solid {  // Water
-        texture_ids: [7; 6],
+    Block::Fluid {  // Water
+        texture_id: 7,
     },
     Block::Solid {  // Sand
         texture_ids: [8; 6],
