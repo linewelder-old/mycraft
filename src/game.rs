@@ -51,8 +51,8 @@ impl Mycraft {
             context.surface_config.width,
             context.surface_config.height,
         );
-        let solid_block_renderer = SolidBlockRenderer::new(context, "Solid Block Renderer");
-        let water_renderer = WaterRenderer::new(context, "Water Renderer");
+        let solid_block_renderer = SolidBlockRenderer::new(context);
+        let water_renderer = WaterRenderer::new(context);
         let camera = Camera::new(context, "Camera");
 
         use winit::event::VirtualKeyCode::*;

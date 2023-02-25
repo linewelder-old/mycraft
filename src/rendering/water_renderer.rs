@@ -15,7 +15,7 @@ pub struct WaterRenderer {
 }
 
 impl WaterRenderer {
-    pub fn new(context: &Context, label: &str) -> Self {
+    pub fn new(context: &Context) -> Self {
         let bind_group_layouts = &[
             &Uniform::<Matrix4<f32>>::create_bind_group_layout(context),
             &Uniform::<Matrix4<f32>>::create_bind_group_layout(context),
@@ -25,7 +25,7 @@ impl WaterRenderer {
         let layout = context
             .device
             .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-                label: Some(&format!("{} Render Pipeline Layout", label)),
+                label: Some("Water Render Pipeline Layout"),
                 bind_group_layouts,
                 push_constant_ranges: &[],
             });
@@ -38,7 +38,7 @@ impl WaterRenderer {
             context
                 .device
                 .create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-                    label: Some(&format!("{} Render Pipeline", label)),
+                    label: Some("Water Render Pipeline"),
                     layout: Some(&layout),
                     vertex: wgpu::VertexState {
                         module: &shader,
@@ -86,7 +86,7 @@ impl WaterRenderer {
         texture: &Texture,
     ) {
         let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            label: Some("Render Pass"),
+            label: Some("Water Render Pass"),
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                 view: target.output,
                 resolve_target: None,

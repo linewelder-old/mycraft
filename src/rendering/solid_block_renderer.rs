@@ -16,7 +16,7 @@ pub struct SolidBlockRenderer {
 }
 
 impl SolidBlockRenderer {
-    pub fn new(context: &Context, label: &str) -> Self {
+    pub fn new(context: &Context) -> Self {
         let bind_group_layouts = &[
             &Uniform::<Matrix4<f32>>::create_bind_group_layout(context),
             &Uniform::<Matrix4<f32>>::create_bind_group_layout(context),
@@ -26,7 +26,7 @@ impl SolidBlockRenderer {
         let layout = context
             .device
             .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-                label: Some(&format!("{} Render Pipeline Layout", label)),
+                label: Some("Solid Block Render Pipeline Layout"),
                 bind_group_layouts,
                 push_constant_ranges: &[],
             });
@@ -39,7 +39,7 @@ impl SolidBlockRenderer {
             context
                 .device
                 .create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-                    label: Some(&format!("{} Render Pipeline", label)),
+                    label: Some("Solid Block Render Pipeline"),
                     layout: Some(&layout),
                     vertex: wgpu::VertexState {
                         module: &shader,
@@ -87,7 +87,7 @@ impl SolidBlockRenderer {
         texture: &Texture,
     ) {
         let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            label: Some("Render Pass"),
+            label: Some("Solid Block Render Pass"),
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                 view: target.output,
                 resolve_target: None,
