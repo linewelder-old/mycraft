@@ -4,20 +4,28 @@ use crate::{context::Context, rendering::Vertex, utils::as_bytes_slice};
 
 pub struct ChunkMesh {
     pub vertices: wgpu::Buffer,
-    pub vertex_count: u32,
+    pub indices: wgpu::Buffer,
+    pub index_count: u32,
 }
 
 impl ChunkMesh {
-    pub fn new(context: &Context, label: &str, vertices: &[Vertex]) -> Self {
+    pub fn new(context: &Context, label: &str, vertices: &[Vertex], indices: &[u32]) -> Self {
         ChunkMesh {
             vertices: context
                 .device
                 .create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                    label: Some(label),
+                    label: Some(&format!("{} Vertices", label)),
                     usage: wgpu::BufferUsages::VERTEX,
                     contents: as_bytes_slice(vertices),
                 }),
-            vertex_count: vertices.len() as u32,
+            indices: context
+                .device
+                .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                    label: Some(&format!("{} Indices", label)),
+                    usage: wgpu::BufferUsages::INDEX,
+                    contents: as_bytes_slice(indices),
+                }),
+            index_count: indices.len() as u32,
         }
     }
 }

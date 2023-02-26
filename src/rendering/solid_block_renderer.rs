@@ -113,7 +113,11 @@ impl SolidBlockRenderer {
         for chunk in chunks {
             render_pass.set_bind_group(1, chunk.transform.get_bind_group(), &[]);
             render_pass.set_vertex_buffer(0, chunk.solid_mesh.vertices.slice(..));
-            render_pass.draw(0..chunk.solid_mesh.vertex_count, 0..1);
+            render_pass.set_index_buffer(
+                chunk.solid_mesh.indices.slice(..),
+                wgpu::IndexFormat::Uint32,
+            );
+            render_pass.draw_indexed(0..chunk.solid_mesh.index_count, 0, 0..1);
         }
     }
 }

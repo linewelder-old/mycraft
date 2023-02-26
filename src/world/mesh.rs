@@ -228,10 +228,6 @@ impl<'a> MeshGenerationContext<'a> {
                 normal,
             })
             .for_each(|x| vertex_array.push(x));
-
-        // Split into triangles
-        vertex_array.insert(vertex_array.len() - 1, vertex_array[vertex_array.len() - 2]);
-        vertex_array.insert(vertex_array.len() - 1, vertex_array[vertex_array.len() - 4]);
     }
 
     fn emit_solid_block(&mut self, block_coords: BlockCoords, texture_ids: &[u32; 6]) {
@@ -297,6 +293,15 @@ pub struct ChunkMeshes {
     pub water_mesh: ChunkMesh,
 }
 
+fn generate_face_indices(face_count: usize) -> Vec<u32> {
+    [0, 1, 2, 2, 1, 3].iter()
+        .cycle()
+        .enumerate()
+        .map(|(i, x)| x + (i as u32 / 6) * 4)
+        .take(face_count * 6)
+        .collect()
+}
+
 impl ChunkMeshes {
     pub fn generate(
         context: &Context,
@@ -333,11 +338,13 @@ impl ChunkMeshes {
                 context,
                 "Solid Chunk Mesh",
                 &generation_context.solid_vertices,
+                &generate_face_indices(generation_context.solid_vertices.len() * 4)
             ),
             water_mesh: ChunkMesh::new(
                 context,
                 "Water Chunk Mesh",
                 &generation_context.water_vertices,
+                &generate_face_indices(generation_context.solid_vertices.len() * 4)
             ),
         }
     }
