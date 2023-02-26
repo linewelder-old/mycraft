@@ -1,7 +1,7 @@
+pub mod chunk_mesh;
 pub mod solid_block_renderer;
 pub mod texture;
 pub mod uniform;
-pub mod chunk_mesh;
 pub mod water_renderer;
 
 use std::{cmp::Reverse, rc::Rc};
@@ -9,7 +9,7 @@ use std::{cmp::Reverse, rc::Rc};
 use cgmath::{Matrix4, MetricSpace, Vector2, Vector3};
 
 use crate::{
-    rendering::{uniform::Uniform, chunk_mesh::ChunkMesh},
+    rendering::{chunk_mesh::ChunkMesh, uniform::Uniform},
     world::{ChunkCoords, World},
 };
 
