@@ -1,7 +1,7 @@
 pub mod solid_block_renderer;
 pub mod texture;
 pub mod uniform;
-pub mod vertex_array;
+pub mod chunk_mesh;
 pub mod water_renderer;
 
 use std::{cmp::Reverse, rc::Rc};
@@ -9,7 +9,7 @@ use std::{cmp::Reverse, rc::Rc};
 use cgmath::{Matrix4, MetricSpace, Vector2, Vector3};
 
 use crate::{
-    rendering::{uniform::Uniform, vertex_array::VertexArray},
+    rendering::{uniform::Uniform, chunk_mesh::ChunkMesh},
     world::{ChunkCoords, World},
 };
 
@@ -34,8 +34,8 @@ pub struct ChunkRendererTarget<'a> {
 }
 
 pub struct ChunkGraphics {
-    pub solid_mesh: VertexArray<Vertex>,
-    pub water_mesh: VertexArray<Vertex>,
+    pub solid_mesh: ChunkMesh,
+    pub water_mesh: ChunkMesh,
     pub transform: Uniform<Matrix4<f32>>,
 }
 

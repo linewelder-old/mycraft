@@ -2,7 +2,7 @@ use cgmath::{InnerSpace, Vector2, Vector3};
 
 use crate::{
     context::Context,
-    rendering::{vertex_array::VertexArray, Vertex},
+    rendering::{chunk_mesh::ChunkMesh, Vertex},
     world::{
         blocks::{Block, BLOCKS},
         BlockCoords, Chunk, ChunkCoords, World,
@@ -293,8 +293,8 @@ impl<'a> MeshGenerationContext<'a> {
 }
 
 pub struct ChunkMeshes {
-    pub solid_mesh: VertexArray<Vertex>,
-    pub water_mesh: VertexArray<Vertex>,
+    pub solid_mesh: ChunkMesh,
+    pub water_mesh: ChunkMesh,
 }
 
 impl ChunkMeshes {
@@ -329,12 +329,12 @@ impl ChunkMeshes {
         }
 
         ChunkMeshes {
-            solid_mesh: VertexArray::new(
+            solid_mesh: ChunkMesh::new(
                 context,
                 "Solid Chunk Mesh",
                 &generation_context.solid_vertices,
             ),
-            water_mesh: VertexArray::new(
+            water_mesh: ChunkMesh::new(
                 context,
                 "Water Chunk Mesh",
                 &generation_context.water_vertices,
