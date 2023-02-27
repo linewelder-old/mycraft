@@ -28,6 +28,33 @@ impl Vertex {
     };
 }
 
+pub struct Face {
+    pub base_index: u32,
+    pub center: Vector3<f32>,
+    pub distance: f32,
+}
+
+impl Face {
+    const VERTEX_INDICES: [u32; 6] = [0, 1, 2, 2, 1, 3];
+
+    pub fn generate_default_indices(face_count: usize) -> Vec<u32> {
+        Self::VERTEX_INDICES
+            .iter()
+            .cycle()
+            .enumerate()
+            .map(|(i, x)| x + (i as u32 / 6) * 4)
+            .take(face_count * 6)
+            .collect()
+    }
+
+    pub fn generate_indices(faces: &[Face]) -> Vec<u32> {
+        faces
+            .iter()
+            .flat_map(|face| Self::VERTEX_INDICES.iter().map(|x| x + face.base_index))
+            .collect()
+    }
+}
+
 pub struct ChunkRendererTarget<'a> {
     pub output: &'a wgpu::TextureView,
     pub depth_buffer: &'a wgpu::TextureView,

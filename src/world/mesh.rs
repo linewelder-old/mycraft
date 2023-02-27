@@ -2,7 +2,7 @@ use cgmath::{InnerSpace, Vector2, Vector3};
 
 use crate::{
     context::Context,
-    rendering::{chunk_mesh::ChunkMesh, Vertex},
+    rendering::{chunk_mesh::ChunkMesh, Vertex, Face},
     world::{
         blocks::{Block, BLOCKS},
         BlockCoords, Chunk, ChunkCoords, World,
@@ -150,6 +150,7 @@ struct MeshGenerationContext<'a> {
     neighbor_chunks: [[Option<&'a Chunk>; 3]; 3],
     solid_vertices: Vec<Vertex>,
     water_vertices: Vec<Vertex>,
+    water_faces: Vec<Face>,
 }
 
 impl<'a> MeshGenerationContext<'a> {
@@ -170,6 +171,7 @@ impl<'a> MeshGenerationContext<'a> {
             neighbor_chunks,
             solid_vertices: vec![],
             water_vertices: vec![],
+            water_faces: vec![],
         }
     }
 
@@ -206,7 +208,7 @@ impl<'a> MeshGenerationContext<'a> {
         }
     }
 
-    fn emit_face(
+    fn emit_face_vertices(
         vertex_array: &mut Vec<Vertex>,
         block_coords: BlockCoords,
         face: &[Vector3<f32>; 4],
@@ -230,16 +232,36 @@ impl<'a> MeshGenerationContext<'a> {
             .for_each(|x| vertex_array.push(x));
     }
 
+    fn emit_solid_face(
+        &mut self,
+        block_coords: BlockCoords,
+        face: &[Vector3<f32>; 4],
+        texture_id: u32,
+    ) {
+        Self::emit_face_vertices(&mut self.solid_vertices, block_coords, face, texture_id);
+    }
+
+    fn emit_water_face(
+        &mut self,
+        block_coords: BlockCoords,
+        face: &[Vector3<f32>; 4],
+        texture_id: u32,
+    ) {
+        let offset = block_coords.map(|x| x as f32);
+        self.water_faces.push(Face {
+            base_index: self.water_vertices.len() as u32,
+            center: offset + face.iter().sum::<Vector3<f32>>() / 4.,
+            distance: 0.,
+        });
+
+        Self::emit_face_vertices(&mut self.water_vertices, block_coords, face, texture_id);
+    }
+
     fn emit_solid_block(&mut self, block_coords: BlockCoords, texture_ids: &[u32; 6]) {
         for (i, neighbor_offset) in NEIGHBOR_OFFSETS.iter().enumerate() {
             let neighbor_coords = block_coords + neighbor_offset;
             if self.is_transparent(neighbor_coords) {
-                Self::emit_face(
-                    &mut self.solid_vertices,
-                    block_coords,
-                    &SOLID_BLOCK_FACES[i],
-                    texture_ids[i],
-                );
+                self.emit_solid_face(block_coords, &SOLID_BLOCK_FACES[i], texture_ids[i]);
             }
         }
     }
@@ -272,18 +294,13 @@ impl<'a> MeshGenerationContext<'a> {
                 }
             }
 
-            Self::emit_face(
-                &mut self.water_vertices,
-                block_coords,
-                &model[i],
-                texture_id,
-            );
+            self.emit_water_face(block_coords, &model[i], texture_id);
         }
     }
 
     fn emit_flower_block(&mut self, block_coords: BlockCoords, texture_id: u32) {
         for face in &FLOWER_BLOCK_FACES {
-            Self::emit_face(&mut self.solid_vertices, block_coords, face, texture_id);
+            self.emit_solid_face(block_coords, face, texture_id);
         }
     }
 }
@@ -291,15 +308,7 @@ impl<'a> MeshGenerationContext<'a> {
 pub struct ChunkMeshes {
     pub solid_mesh: ChunkMesh,
     pub water_mesh: ChunkMesh,
-}
-
-fn generate_face_indices(face_count: usize) -> Vec<u32> {
-    [0, 1, 2, 2, 1, 3].iter()
-        .cycle()
-        .enumerate()
-        .map(|(i, x)| x + (i as u32 / 6) * 4)
-        .take(face_count * 6)
-        .collect()
+    pub water_faces: Vec<Face>,
 }
 
 impl ChunkMeshes {
@@ -338,14 +347,15 @@ impl ChunkMeshes {
                 context,
                 "Solid Chunk Mesh",
                 &generation_context.solid_vertices,
-                &generate_face_indices(generation_context.solid_vertices.len() * 4)
+                &Face::generate_default_indices(generation_context.solid_vertices.len() * 4),
             ),
             water_mesh: ChunkMesh::new(
                 context,
                 "Water Chunk Mesh",
                 &generation_context.water_vertices,
-                &generate_face_indices(generation_context.solid_vertices.len() * 4)
+                &Face::generate_indices(&generation_context.water_faces),
             ),
+            water_faces: generation_context.water_faces,
         }
     }
 }
