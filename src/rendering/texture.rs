@@ -25,6 +25,7 @@ impl Texture {
             dimension: wgpu::TextureDimension::D2,
             format: wgpu::TextureFormat::Rgba8UnormSrgb,
             usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+            view_formats: &[wgpu::TextureFormat::Rgba8UnormSrgb],
         });
 
         context.queue.write_texture(
@@ -127,6 +128,7 @@ pub fn create_depth_buffer(
         dimension: wgpu::TextureDimension::D2,
         format: DEPTH_FORMAT,
         usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+        view_formats: &[DEPTH_FORMAT],
     });
 
     texture.create_view(&wgpu::TextureViewDescriptor::default())
