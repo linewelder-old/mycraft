@@ -2,7 +2,7 @@ pub mod blocks;
 pub mod generation;
 pub mod mesh;
 
-use std::{collections::HashMap, rc::Rc, cell::RefCell};
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use cgmath::{Matrix4, Vector2, Vector3};
 
@@ -83,7 +83,7 @@ impl World {
                         solid_mesh: meshes.solid_mesh,
                         water_mesh: meshes.water_mesh,
                         transform,
-                        
+
                         water_faces: RefCell::new(meshes.water_faces),
                     }),
                 );

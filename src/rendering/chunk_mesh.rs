@@ -31,6 +31,8 @@ impl ChunkMesh {
 
     pub fn write_indices(&self, context: &Context, indices: &[u32]) {
         assert_eq!(indices.len() as u32, self.index_count);
-        context.queue.write_buffer(&self.indices, 0, as_bytes_slice(indices));
+        context
+            .queue
+            .write_buffer(&self.indices, 0, as_bytes_slice(indices));
     }
 }

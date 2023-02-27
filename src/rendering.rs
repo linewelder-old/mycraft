@@ -4,7 +4,7 @@ pub mod texture;
 pub mod uniform;
 pub mod water_renderer;
 
-use std::{cmp::Reverse, rc::Rc, cell::RefCell};
+use std::{cell::RefCell, cmp::Reverse, rc::Rc};
 
 use cgmath::{Matrix4, MetricSpace, Vector2, Vector3};
 

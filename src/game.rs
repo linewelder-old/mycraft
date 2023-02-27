@@ -15,7 +15,7 @@ use crate::{
         water_renderer::WaterRenderer,
         ChunkRendererTarget, RenderQueue,
     },
-    world::{Chunk, ChunkCoords, World, BlockCoords},
+    world::{BlockCoords, Chunk, ChunkCoords, World},
 };
 
 pub struct Mycraft {
