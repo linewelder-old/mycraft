@@ -1,4 +1,4 @@
-use cgmath::{Vector2, Vector3, MetricSpace};
+use cgmath::{Vector2, Vector3};
 use winit::{
     event::{DeviceEvent, Event, WindowEvent},
     window::CursorGrabMode,
@@ -13,7 +13,7 @@ use crate::{
         solid_block_renderer::SolidBlockRenderer,
         texture::{create_depth_buffer, Texture},
         water_renderer::WaterRenderer,
-        ChunkRendererTarget, RenderQueue, Face, ChunkGraphics,
+        ChunkRendererTarget, RenderQueue,
     },
     world::{Chunk, ChunkCoords, World, BlockCoords},
 };
@@ -141,23 +141,6 @@ impl Mycraft {
         self.depth_buffer = create_depth_buffer(context, "Block Depth Buffer", size.x, size.y);
     }
 
-    fn sort_water_geometry(&self, context: &mut Context, chunk_coords: ChunkCoords, graphics: &ChunkGraphics) {
-        let chunk_offset = Vector3 {
-            x: (chunk_coords.x * Chunk::SIZE.x as i32) as f32,
-            y: 0.,
-            z: (chunk_coords.y * Chunk::SIZE.z as i32) as f32,
-        };
-        let relative_cam_pos = self.camera.position - chunk_offset;
-
-        let mut water_faces = graphics.water_faces.borrow_mut();
-        for face in water_faces.iter_mut() {
-            face.distance = relative_cam_pos.distance2(face.center);
-        }
-
-        water_faces.sort_by(|x, y| y.distance.total_cmp(&x.distance));
-        graphics.water_mesh.write_indices(context, &Face::generate_indices(&water_faces));
-    }
-
     pub fn update(&mut self, context: &mut Context, delta: std::time::Duration) {
         let delta_secs = delta.as_secs_f32();
 
@@ -179,7 +162,14 @@ impl Mycraft {
 
         if cam_block_coords != self.prev_cam_block_coords {
             for (coords, graphics) in self.render_queue.iter_with_coords() {
-                self.sort_water_geometry(context, coords, graphics);
+                let chunk_offset = Vector3 {
+                    x: (coords.x * Chunk::SIZE.x as i32) as f32,
+                    y: 0.,
+                    z: (coords.y * Chunk::SIZE.z as i32) as f32,
+                };
+                let relative_cam_pos = self.camera.position - chunk_offset;
+
+                graphics.sort_water_geometry(context, relative_cam_pos);
             }
             self.prev_cam_block_coords = cam_block_coords;
         }

@@ -9,6 +9,7 @@ use std::{cmp::Reverse, rc::Rc, cell::RefCell};
 use cgmath::{Matrix4, MetricSpace, Vector2, Vector3};
 
 use crate::{
+    context::Context,
     rendering::{chunk_mesh::ChunkMesh, uniform::Uniform},
     world::{ChunkCoords, World},
 };
@@ -66,6 +67,19 @@ pub struct ChunkGraphics {
     pub transform: Uniform<Matrix4<f32>>,
 
     pub water_faces: RefCell<Vec<Face>>,
+}
+
+impl ChunkGraphics {
+    pub fn sort_water_geometry(&self, context: &mut Context, relative_cam_pos: Vector3<f32>) {
+        let mut water_faces = self.water_faces.borrow_mut();
+        for face in water_faces.iter_mut() {
+            face.distance = relative_cam_pos.distance2(face.center);
+        }
+
+        water_faces.sort_by(|x, y| y.distance.total_cmp(&x.distance));
+        self.water_mesh
+            .write_indices(context, &Face::generate_indices(&water_faces));
+    }
 }
 
 pub struct RenderQueue(Vec<(ChunkCoords, Rc<ChunkGraphics>)>);
