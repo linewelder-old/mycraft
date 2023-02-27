@@ -36,13 +36,13 @@ pub struct Mycraft {
 }
 
 fn get_chunk_block_coords(position: Vector3<f32>) -> (ChunkCoords, BlockCoords) {
-    let cam_chunk_coords = ChunkCoords {
-        x: (position.x / Chunk::SIZE.x as f32) as i32,
-        y: (position.z / Chunk::SIZE.z as f32) as i32,
+    let block_coords = position.map(|x| x.floor() as i32);
+    let chunk_coords = ChunkCoords {
+        x: block_coords.x.div_euclid(Chunk::SIZE.x as i32),
+        y: block_coords.z.div_euclid(Chunk::SIZE.z as i32),
     };
-    let cam_block_coords = position.map(|x| x as i32);
 
-    (cam_chunk_coords, cam_block_coords)
+    (chunk_coords, block_coords)
 }
 
 impl Mycraft {
