@@ -141,19 +141,7 @@ impl Mycraft {
         self.depth_buffer = create_depth_buffer(context, "Block Depth Buffer", size.x, size.y);
     }
 
-    pub fn update(&mut self, context: &mut Context, delta: std::time::Duration) {
-        let delta_secs = delta.as_secs_f32();
-
-        let movement = Vector3 {
-            x: self.movement_x_input.get_value(),
-            y: self.movement_y_input.get_value(),
-            z: -self.movement_z_input.get_value(),
-        } * CAMERA_MOVEMENT_SPEED
-            * delta_secs;
-
-        self.camera.move_relative_to_view(movement);
-        self.camera.update_matrix(context);
-
+    fn ensure_water_geometry_is_sorted(&mut self, context: &mut Context) {
         let (cam_chunk_coords, cam_block_coords) = get_chunk_block_coords(self.camera.position);
         if cam_chunk_coords != self.prev_cam_chunk_coords {
             self.render_queue.sort(cam_chunk_coords);
@@ -173,6 +161,22 @@ impl Mycraft {
             }
             self.prev_cam_block_coords = cam_block_coords;
         }
+    }
+
+    pub fn update(&mut self, context: &mut Context, delta: std::time::Duration) {
+        let delta_secs = delta.as_secs_f32();
+
+        let movement = Vector3 {
+            x: self.movement_x_input.get_value(),
+            y: self.movement_y_input.get_value(),
+            z: -self.movement_z_input.get_value(),
+        } * CAMERA_MOVEMENT_SPEED
+            * delta_secs;
+
+        self.camera.move_relative_to_view(movement);
+        self.camera.update_matrix(context);
+
+        self.ensure_water_geometry_is_sorted(context);
     }
 
     pub fn render(&mut self, context: &Context, target: &wgpu::TextureView) {
