@@ -22,10 +22,15 @@ impl ChunkMesh {
                 .device
                 .create_buffer_init(&wgpu::util::BufferInitDescriptor {
                     label: Some(&format!("{} Indices", label)),
-                    usage: wgpu::BufferUsages::INDEX,
+                    usage: wgpu::BufferUsages::INDEX | wgpu::BufferUsages::COPY_DST,
                     contents: as_bytes_slice(indices),
                 }),
             index_count: indices.len() as u32,
         }
+    }
+
+    pub fn write_indices(&self, context: &Context, indices: &[u32]) {
+        assert_eq!(indices.len() as u32, self.index_count);
+        context.queue.write_buffer(&self.indices, 0, as_bytes_slice(indices));
     }
 }

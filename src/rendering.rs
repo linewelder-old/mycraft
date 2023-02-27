@@ -4,7 +4,7 @@ pub mod texture;
 pub mod uniform;
 pub mod water_renderer;
 
-use std::{cmp::Reverse, rc::Rc};
+use std::{cmp::Reverse, rc::Rc, cell::RefCell};
 
 use cgmath::{Matrix4, MetricSpace, Vector2, Vector3};
 
@@ -64,6 +64,8 @@ pub struct ChunkGraphics {
     pub solid_mesh: ChunkMesh,
     pub water_mesh: ChunkMesh,
     pub transform: Uniform<Matrix4<f32>>,
+
+    pub water_faces: RefCell<Vec<Face>>,
 }
 
 pub struct RenderQueue(Vec<(ChunkCoords, Rc<ChunkGraphics>)>);
@@ -88,5 +90,9 @@ impl RenderQueue {
 
     pub fn iter(&self) -> impl Iterator<Item = &ChunkGraphics> {
         self.0.iter().map(|x| x.1.as_ref())
+    }
+
+    pub fn iter_with_coords(&self) -> impl Iterator<Item = (ChunkCoords, &ChunkGraphics)> {
+        self.0.iter().map(|x| (x.0, x.1.as_ref()))
     }
 }

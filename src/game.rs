@@ -1,4 +1,4 @@
-use cgmath::{Vector2, Vector3};
+use cgmath::{Vector2, Vector3, MetricSpace};
 use winit::{
     event::{DeviceEvent, Event, WindowEvent},
     window::CursorGrabMode,
@@ -13,9 +13,9 @@ use crate::{
         solid_block_renderer::SolidBlockRenderer,
         texture::{create_depth_buffer, Texture},
         water_renderer::WaterRenderer,
-        ChunkRendererTarget, RenderQueue,
+        ChunkRendererTarget, RenderQueue, Face, ChunkGraphics,
     },
-    world::{Chunk, ChunkCoords, World},
+    world::{Chunk, ChunkCoords, World, BlockCoords},
 };
 
 pub struct Mycraft {
@@ -31,7 +31,18 @@ pub struct Mycraft {
     world: World,
     render_queue: RenderQueue,
     prev_cam_chunk_coords: ChunkCoords,
+    prev_cam_block_coords: BlockCoords,
     test_texture: Texture,
+}
+
+fn get_chunk_block_coords(position: Vector3<f32>) -> (ChunkCoords, BlockCoords) {
+    let cam_chunk_coords = ChunkCoords {
+        x: (position.x / Chunk::SIZE.x as f32) as i32,
+        y: (position.z / Chunk::SIZE.z as f32) as i32,
+    };
+    let cam_block_coords = position.map(|x| x as i32);
+
+    (cam_chunk_coords, cam_block_coords)
 }
 
 impl Mycraft {
@@ -59,10 +70,7 @@ impl Mycraft {
         let mut camera = Camera::new(context, "Camera");
         camera.position = Vector3::new(0., 40., 0.);
 
-        let cam_chunk_coords = ChunkCoords {
-            x: (camera.position.x / Chunk::SIZE.x as f32) as i32,
-            y: (camera.position.z / Chunk::SIZE.z as f32) as i32,
-        };
+        let (cam_chunk_coords, cam_block_coords) = get_chunk_block_coords(camera.position);
         let render_queue = RenderQueue::new(cam_chunk_coords, &world);
 
         use winit::event::VirtualKeyCode::*;
@@ -83,6 +91,7 @@ impl Mycraft {
             world,
             render_queue,
             prev_cam_chunk_coords: cam_chunk_coords,
+            prev_cam_block_coords: cam_block_coords,
             test_texture,
         }
     }
@@ -132,6 +141,23 @@ impl Mycraft {
         self.depth_buffer = create_depth_buffer(context, "Block Depth Buffer", size.x, size.y);
     }
 
+    fn sort_water_geometry(&self, context: &mut Context, chunk_coords: ChunkCoords, graphics: &ChunkGraphics) {
+        let chunk_offset = Vector3 {
+            x: (chunk_coords.x * Chunk::SIZE.x as i32) as f32,
+            y: 0.,
+            z: (chunk_coords.y * Chunk::SIZE.z as i32) as f32,
+        };
+        let relative_cam_pos = self.camera.position - chunk_offset;
+
+        let mut water_faces = graphics.water_faces.borrow_mut();
+        for face in water_faces.iter_mut() {
+            face.distance = relative_cam_pos.distance2(face.center);
+        }
+
+        water_faces.sort_by(|x, y| y.distance.total_cmp(&x.distance));
+        graphics.water_mesh.write_indices(context, &Face::generate_indices(&water_faces));
+    }
+
     pub fn update(&mut self, context: &mut Context, delta: std::time::Duration) {
         let delta_secs = delta.as_secs_f32();
 
@@ -145,13 +171,17 @@ impl Mycraft {
         self.camera.move_relative_to_view(movement);
         self.camera.update_matrix(context);
 
-        let cam_chunk_coords = ChunkCoords {
-            x: (self.camera.position.x / Chunk::SIZE.x as f32) as i32,
-            y: (self.camera.position.z / Chunk::SIZE.z as f32) as i32,
-        };
+        let (cam_chunk_coords, cam_block_coords) = get_chunk_block_coords(self.camera.position);
         if cam_chunk_coords != self.prev_cam_chunk_coords {
             self.render_queue.sort(cam_chunk_coords);
             self.prev_cam_chunk_coords = cam_chunk_coords;
+        }
+
+        if cam_block_coords != self.prev_cam_block_coords {
+            for (coords, graphics) in self.render_queue.iter_with_coords() {
+                self.sort_water_geometry(context, coords, graphics);
+            }
+            self.prev_cam_block_coords = cam_block_coords;
         }
     }
 
