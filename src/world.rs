@@ -14,6 +14,7 @@ use crate::{
     context::Context,
     rendering::{uniform::Uniform, ChunkGraphics, ChunkGraphicsData, RenderQueue},
     world::{
+        blocks::{Block, BLOCKS},
         generation::Generator,
         mesh::ChunkMeshes,
     },
@@ -76,8 +77,6 @@ impl World {
         self.chunks.insert(coords, RefCell::new(chunk));
     }
 
-    
-
     pub fn update_chunk_graphics(&mut self, context: &Context) {
         for (coords, chunk) in &self.chunks {
             let mut chunk = chunk.borrow_mut();
@@ -132,5 +131,36 @@ impl World {
 
     pub fn borrow_chunk(&self, coords: ChunkCoords) -> Option<Ref<Chunk>> {
         self.chunks.get(&coords).map(RefCell::borrow)
+    }
+
+    pub fn get_block(&self, coords: BlockCoords) -> Option<&'static Block> {
+        if coords.y < 0 || coords.y > Chunk::SIZE.y as i32 {
+            return None;
+        }
+
+        let (chunk_coords, block_coords) = Self::to_chunk_block_coords(coords);
+        self.chunks.get(&chunk_coords).map(|chunk| {
+            let chunk = chunk.borrow();
+            let block_id = chunk.blocks[block_coords.x as usize][block_coords.y as usize]
+                [block_coords.z as usize];
+            &BLOCKS[block_id]
+        })
+    }
+
+    pub fn set_block(&mut self, coords: BlockCoords, block_id: usize) {
+        if coords.y < 0 || coords.y > Chunk::SIZE.y as i32 {
+            return;
+        }
+
+        let (chunk_coords, block_coords) = Self::to_chunk_block_coords(coords);
+        if let Some(chunk) = self.chunks.get_mut(&chunk_coords) {
+            let mut chunk = chunk.borrow_mut();
+
+            chunk.blocks[block_coords.x as usize][block_coords.y as usize]
+                [block_coords.z as usize] = block_id;
+            if let Some(graphics) = &chunk.graphics {
+                graphics.graphics_data.borrow_mut().needs_update = true;
+            }
+        }
     }
 }

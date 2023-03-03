@@ -1,3 +1,5 @@
+pub mod raycasting;
+
 #[inline]
 pub(crate) fn as_bytes<T>(value: &T) -> &[u8] {
     unsafe {

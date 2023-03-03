@@ -1,6 +1,6 @@
 use cgmath::{Vector2, Vector3};
 use winit::{
-    event::{DeviceEvent, Event, WindowEvent},
+    event::{DeviceEvent, ElementState, Event, MouseButton, WindowEvent},
     window::CursorGrabMode,
 };
 
@@ -15,6 +15,7 @@ use crate::{
         water_renderer::WaterRenderer,
         ChunkRendererTarget,
     },
+    utils::raycasting,
     world::{BlockCoords, Chunk, ChunkCoords, World},
 };
 
@@ -22,7 +23,9 @@ pub struct Mycraft {
     depth_buffer: wgpu::TextureView,
     solid_block_renderer: SolidBlockRenderer,
     water_renderer: WaterRenderer,
+
     camera: Camera,
+    looking_at: Option<raycasting::Hit>,
 
     movement_x_input: Input1d,
     movement_y_input: Input1d,
@@ -75,7 +78,9 @@ impl Mycraft {
             depth_buffer,
             solid_block_renderer,
             water_renderer,
+
             camera,
+            looking_at: None,
 
             movement_x_input,
             movement_y_input,
@@ -106,6 +111,27 @@ impl Mycraft {
                         self.movement_x_input.update(input);
                         self.movement_y_input.update(input);
                         self.movement_z_input.update(input);
+                    }
+
+                    WindowEvent::MouseInput {
+                        button,
+                        state: ElementState::Pressed,
+                        ..
+                    } => {
+                        if let Some(hit) = &self.looking_at {
+                            match button {
+                                MouseButton::Left => {
+                                    self.world.set_block(hit.coords, 0);
+                                }
+
+                                MouseButton::Right => {
+                                    self.world
+                                        .set_block(hit.coords + hit.side.to_direction(), 3);
+                                }
+
+                                _ => {}
+                            }
+                        }
                     }
 
                     _ => {}
@@ -169,6 +195,13 @@ impl Mycraft {
 
         self.camera.move_relative_to_view(movement);
         self.camera.update_matrix(context);
+
+        self.looking_at = raycasting::cast_ray(
+            &self.world,
+            self.camera.position,
+            self.camera.get_direction(),
+            6.,
+        );
 
         self.world.update_chunk_graphics(context);
         self.ensure_water_geometry_is_sorted(context);

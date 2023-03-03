@@ -1,4 +1,4 @@
-use cgmath::{Matrix4, SquareMatrix, Vector2, Vector3, Zero};
+use cgmath::{Matrix4, SquareMatrix, Vector2, Vector3, Vector4, Zero};
 
 use crate::{context::Context, rendering::uniform::Uniform};
 
@@ -65,6 +65,14 @@ impl Camera {
             y: amount.y,
             z: amount.z * cos + amount.x * sin,
         };
+    }
+
+    pub fn get_direction(&self) -> Vector3<f32> {
+        let vec4 = Matrix4::from_angle_y(cgmath::Deg(-self.rotation.x))
+            * Matrix4::from_angle_x(cgmath::Deg(self.rotation.y))
+            * Vector4::new(0., 0., -1., 0.);
+
+        Vector3::new(vec4.x, vec4.y, vec4.z)
     }
 
     #[inline]
