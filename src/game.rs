@@ -173,33 +173,35 @@ impl Mycraft {
     }
 
     pub fn render(&mut self, context: &Context, target: &wgpu::TextureView) {
-        let mut encoder = context
-            .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("Render Encoder"),
-            });
+        crate::timeit!("Render" => {
+            let mut encoder = context
+                .device
+                .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                    label: Some("Render Encoder"),
+                });
 
-        self.solid_block_renderer.draw(
-            &mut encoder,
-            ChunkRendererTarget {
-                output: target,
-                depth_buffer: &self.depth_buffer,
-            },
-            &self.camera,
-            self.world.render_queue_iter(),
-            &self.test_texture,
-        );
-        self.water_renderer.draw(
-            &mut encoder,
-            ChunkRendererTarget {
-                output: target,
-                depth_buffer: &self.depth_buffer,
-            },
-            &self.camera,
-            self.world.render_queue_iter(),
-            &self.test_texture,
-        );
+            self.solid_block_renderer.draw(
+                &mut encoder,
+                ChunkRendererTarget {
+                    output: target,
+                    depth_buffer: &self.depth_buffer,
+                },
+                &self.camera,
+                self.world.render_queue_iter(),
+                &self.test_texture,
+            );
+            self.water_renderer.draw(
+                &mut encoder,
+                ChunkRendererTarget {
+                    output: target,
+                    depth_buffer: &self.depth_buffer,
+                },
+                &self.camera,
+                self.world.render_queue_iter(),
+                &self.test_texture,
+            );
 
-        context.queue.submit(std::iter::once(encoder.finish()));
+            context.queue.submit(std::iter::once(encoder.finish()));
+        });
     }
 }
