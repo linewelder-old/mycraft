@@ -8,7 +8,7 @@ use std::{
     rc::Rc,
 };
 
-use cgmath::{Matrix4, Vector2, Vector3};
+use cgmath::{Matrix4, Vector2, Vector3, Zero};
 
 use crate::{
     context::Context,
@@ -53,17 +53,29 @@ pub type BlockCoords = Vector3<i32>;
 
 pub struct World {
     pub chunks: HashMap<ChunkCoords, RefCell<Chunk>>,
-    pub render_queue: RenderQueue,
-
     generator: Generator,
+
+    pub render_queue: RenderQueue,
+    prev_cam_chunk_coords: ChunkCoords,
+    prev_cam_block_coords: BlockCoords,
+}
+
+fn get_chunk_block_coords(position: Vector3<f32>) -> (ChunkCoords, BlockCoords) {
+    let block_coords = position.map(|x| x.floor() as i32);
+    let chunk_coords = World::get_chunk_coords(block_coords);
+
+    (chunk_coords, block_coords)
 }
 
 impl World {
     pub fn new() -> Self {
         World {
             chunks: HashMap::new(),
-            render_queue: RenderQueue::new(),
             generator: Generator::new(0),
+
+            render_queue: RenderQueue::new(),
+            prev_cam_block_coords: Vector3::zero(),
+            prev_cam_chunk_coords: Vector2::zero(),
         }
     }
 
@@ -75,6 +87,30 @@ impl World {
         let mut chunk = Chunk::new();
         self.generator.generate_chunk(&mut chunk, coords);
         self.chunks.insert(coords, RefCell::new(chunk));
+    }
+
+    pub fn ensure_water_geometry_is_sorted(&mut self, context: &mut Context, camera_position: Vector3<f32>) {
+        let (cam_chunk_coords, cam_block_coords) = get_chunk_block_coords(camera_position);
+        if cam_chunk_coords != self.prev_cam_chunk_coords {
+            self.render_queue.mark_unsorted();
+            self.prev_cam_chunk_coords = cam_chunk_coords;
+        }
+
+        self.render_queue.sort_if_needed(cam_chunk_coords);
+
+        if cam_block_coords != self.prev_cam_block_coords {
+            for (coords, graphics) in self.render_queue.iter_with_coords() {
+                let chunk_offset = Vector3 {
+                    x: (coords.x * Chunk::SIZE.x as i32) as f32,
+                    y: 0.,
+                    z: (coords.y * Chunk::SIZE.z as i32) as f32,
+                };
+                let relative_cam_pos = camera_position - chunk_offset;
+
+                graphics.sort_water_geometry(context, relative_cam_pos);
+            }
+            self.prev_cam_block_coords = cam_block_coords;
+        }
     }
 
     pub fn update_chunk_graphics(&mut self, context: &Context) {

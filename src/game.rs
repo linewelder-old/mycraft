@@ -16,7 +16,7 @@ use crate::{
         ChunkRendererTarget,
     },
     utils::raycasting,
-    world::{BlockCoords, Chunk, ChunkCoords, World},
+    world::{ChunkCoords, World},
 };
 
 pub struct Mycraft {
@@ -32,16 +32,7 @@ pub struct Mycraft {
     movement_z_input: Input1d,
 
     world: World,
-    prev_cam_chunk_coords: ChunkCoords,
-    prev_cam_block_coords: BlockCoords,
     test_texture: Texture,
-}
-
-fn get_chunk_block_coords(position: Vector3<f32>) -> (ChunkCoords, BlockCoords) {
-    let block_coords = position.map(|x| x.floor() as i32);
-    let chunk_coords = World::get_chunk_coords(block_coords);
-
-    (chunk_coords, block_coords)
 }
 
 impl Mycraft {
@@ -67,7 +58,6 @@ impl Mycraft {
 
         let mut camera = Camera::new(context, "Camera");
         camera.position = Vector3::new(0., 40., 0.);
-        let (cam_chunk_coords, cam_block_coords) = get_chunk_block_coords(camera.position);
 
         use winit::event::VirtualKeyCode::*;
         let movement_x_input = Input1d::new(D, A);
@@ -87,8 +77,6 @@ impl Mycraft {
             movement_z_input,
 
             world,
-            prev_cam_chunk_coords: cam_chunk_coords,
-            prev_cam_block_coords: cam_block_coords,
             test_texture,
         }
     }
@@ -159,30 +147,6 @@ impl Mycraft {
         self.depth_buffer = create_depth_buffer(context, "Block Depth Buffer", size.x, size.y);
     }
 
-    fn ensure_water_geometry_is_sorted(&mut self, context: &mut Context) {
-        let (cam_chunk_coords, cam_block_coords) = get_chunk_block_coords(self.camera.position);
-        if cam_chunk_coords != self.prev_cam_chunk_coords {
-            self.world.render_queue.mark_unsorted();
-            self.prev_cam_chunk_coords = cam_chunk_coords;
-        }
-
-        self.world.render_queue.sort_if_needed(cam_chunk_coords);
-
-        if cam_block_coords != self.prev_cam_block_coords {
-            for (coords, graphics) in self.world.render_queue.iter_with_coords() {
-                let chunk_offset = Vector3 {
-                    x: (coords.x * Chunk::SIZE.x as i32) as f32,
-                    y: 0.,
-                    z: (coords.y * Chunk::SIZE.z as i32) as f32,
-                };
-                let relative_cam_pos = self.camera.position - chunk_offset;
-
-                graphics.sort_water_geometry(context, relative_cam_pos);
-            }
-            self.prev_cam_block_coords = cam_block_coords;
-        }
-    }
-
     pub fn update(&mut self, context: &mut Context, delta: std::time::Duration) {
         let delta_secs = delta.as_secs_f32();
 
@@ -204,7 +168,7 @@ impl Mycraft {
         );
 
         self.world.update_chunk_graphics(context);
-        self.ensure_water_geometry_is_sorted(context);
+        self.world.ensure_water_geometry_is_sorted(context, self.camera.position);
     }
 
     pub fn render(&mut self, context: &Context, target: &wgpu::TextureView) {
