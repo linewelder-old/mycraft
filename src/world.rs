@@ -12,7 +12,10 @@ use cgmath::{Matrix4, Vector2, Vector3, Zero};
 
 use crate::{
     context::Context,
-    rendering::{uniform::Uniform, ChunkGraphics, ChunkGraphicsData, RenderQueue, chunk_mesh::ChunkMesh, Face},
+    rendering::{
+        chunk_mesh::ChunkMesh, uniform::Uniform, ChunkGraphics, ChunkGraphicsData, Face,
+        RenderQueue,
+    },
     world::{
         blocks::{Block, BLOCKS},
         generation::Generator,
@@ -104,7 +107,11 @@ impl World {
         }
     }
 
-    pub fn ensure_water_geometry_is_sorted(&mut self, context: &mut Context, camera_position: Vector3<f32>) {
+    pub fn ensure_water_geometry_is_sorted(
+        &mut self,
+        context: &mut Context,
+        camera_position: Vector3<f32>,
+    ) {
         self.check_what_is_to_sort(camera_position);
 
         self.render_queue.sort_if_needed(self.prev_cam_chunk_coords);

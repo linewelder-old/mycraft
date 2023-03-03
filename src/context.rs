@@ -35,7 +35,9 @@ impl Context {
             .await
             .unwrap();
 
-        let surface_config = surface.get_default_config(&adapter, size.width, size.height).unwrap();
+        let surface_config = surface
+            .get_default_config(&adapter, size.width, size.height)
+            .unwrap();
         surface.configure(&device, &surface_config);
 
         Context {

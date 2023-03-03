@@ -168,7 +168,8 @@ impl Mycraft {
         );
 
         self.world.update_chunk_graphics(context);
-        self.world.ensure_water_geometry_is_sorted(context, self.camera.position);
+        self.world
+            .ensure_water_geometry_is_sorted(context, self.camera.position);
     }
 
     pub fn render(&mut self, context: &Context, target: &wgpu::TextureView) {

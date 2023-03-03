@@ -327,11 +327,7 @@ pub struct ChunkMeshes {
 }
 
 impl ChunkMeshes {
-    pub fn generate(
-        world: &World,
-        chunk: &Chunk,
-        chunk_coords: ChunkCoords,
-    ) -> Self {
+    pub fn generate(world: &World, chunk: &Chunk, chunk_coords: ChunkCoords) -> Self {
         let mut generation_context = MeshGenerationContext::new(world, chunk, chunk_coords);
 
         for x in 0..Chunk::SIZE.x as i32 {
