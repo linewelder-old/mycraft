@@ -8,14 +8,11 @@ use std::{
     rc::Rc,
 };
 
-use cgmath::{Matrix4, Vector2, Vector3, Zero};
+use cgmath::{Vector2, Vector3, Zero};
 
 use crate::{
     context::Context,
-    rendering::{
-        chunk_mesh::ChunkMesh, uniform::Uniform, ChunkGraphics, ChunkGraphicsData, Face,
-        RenderQueue,
-    },
+    rendering::{chunk_mesh::ChunkMesh, ChunkGraphics, ChunkGraphicsData, Face, RenderQueue},
     world::{
         blocks::{Block, BLOCKS},
         generation::Generator,
@@ -136,12 +133,6 @@ impl World {
             let mut chunk = chunk.borrow_mut();
 
             if chunk.needs_graphics_update() {
-                let translation = Vector3 {
-                    x: coords.x as f32 * Chunk::SIZE.x as f32,
-                    y: 0.,
-                    z: coords.y as f32 * Chunk::SIZE.z as f32,
-                };
-
                 let meshes = crate::timeit!("Chunk Mesh Generation" => ChunkMeshes::generate(self, &chunk, *coords));
                 let solid_mesh = ChunkMesh::new(
                     context,
@@ -155,16 +146,10 @@ impl World {
                     &meshes.water_vertices,
                     &Face::generate_indices(&meshes.water_faces),
                 );
-                let transform = Uniform::new(
-                    context,
-                    "Chunk Transform",
-                    Matrix4::from_translation(translation),
-                );
 
                 let graphics = Rc::new(ChunkGraphics {
                     solid_mesh,
                     water_mesh,
-                    transform,
 
                     graphics_data: RefCell::new(ChunkGraphicsData {
                         water_faces: meshes.water_faces,

@@ -13,21 +13,18 @@ struct VertexOutput {
 @group(0) @binding(0)
 var<uniform> camera_matrix: mat4x4<f32>;
 
-@group(1) @binding(0)
-var<uniform> model_matrix: mat4x4<f32>;
-
 @vertex
 fn vs_main(in: VertexInput) -> VertexOutput {
     var out: VertexOutput;
-    out.position = camera_matrix * model_matrix * vec4<f32>(in.position, 1.0);
+    out.position = camera_matrix * vec4<f32>(in.position, 1.0);
     out.tex_coords = in.tex_coords;
     out.normal = in.normal;
     return out;
 }
 
-@group(2) @binding(0)
+@group(1) @binding(0)
 var texture_test: texture_2d<f32>;
-@group(2) @binding(1)
+@group(1) @binding(1)
 var sampler_test: sampler;
 
 @fragment

@@ -6,13 +6,9 @@ pub mod water_renderer;
 
 use std::{cell::RefCell, cmp::Reverse, rc::Rc};
 
-use cgmath::{Matrix4, MetricSpace, Vector2, Vector3};
+use cgmath::{MetricSpace, Vector2, Vector3};
 
-use crate::{
-    context::Context,
-    rendering::{chunk_mesh::ChunkMesh, uniform::Uniform},
-    world::ChunkCoords,
-};
+use crate::{context::Context, rendering::chunk_mesh::ChunkMesh, world::ChunkCoords};
 
 #[derive(Clone, Copy)]
 pub struct Vertex {
@@ -70,7 +66,6 @@ pub struct ChunkGraphicsData {
 pub struct ChunkGraphics {
     pub solid_mesh: ChunkMesh,
     pub water_mesh: ChunkMesh,
-    pub transform: Uniform<Matrix4<f32>>,
 
     pub graphics_data: RefCell<ChunkGraphicsData>,
 }

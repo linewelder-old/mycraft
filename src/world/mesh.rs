@@ -149,6 +149,7 @@ const TEX_COORDS: [Vector2<f32>; 4] = [
 
 struct MeshGenerationContext<'a> {
     chunk: &'a Chunk,
+    chunk_offset: Vector3<f32>,
     neighbor_chunks: [[Option<Ref<'a, Chunk>>; 3]; 3],
     solid_vertices: Vec<Vertex>,
     water_vertices: Vec<Vertex>,
@@ -172,8 +173,15 @@ impl<'a> MeshGenerationContext<'a> {
             }
         }
 
+        let chunk_offset = Vector3 {
+            x: (chunk_coords.x * Chunk::SIZE.x as i32) as f32,
+            y: 0.,
+            z: (chunk_coords.y * Chunk::SIZE.z as i32) as f32,
+        };
+
         MeshGenerationContext {
             chunk,
+            chunk_offset,
             neighbor_chunks,
             solid_vertices: vec![],
             water_vertices: vec![],
@@ -225,11 +233,12 @@ impl<'a> MeshGenerationContext<'a> {
 
     fn emit_face_vertices(
         vertex_array: &mut Vec<Vertex>,
+        chunk_offset: Vector3<f32>,
         block_coords: BlockCoords,
         face: &[Vector3<f32>; 4],
         texture_id: u32,
     ) {
-        let offset = block_coords.map(|x| x as f32);
+        let offset = chunk_offset + block_coords.map(|x| x as f32);
         let base_texture_coords = Vector2 {
             x: (texture_id % 4) as f32,
             y: (texture_id / 4) as f32,
@@ -253,7 +262,13 @@ impl<'a> MeshGenerationContext<'a> {
         face: &[Vector3<f32>; 4],
         texture_id: u32,
     ) {
-        Self::emit_face_vertices(&mut self.solid_vertices, block_coords, face, texture_id);
+        Self::emit_face_vertices(
+            &mut self.solid_vertices,
+            self.chunk_offset,
+            block_coords,
+            face,
+            texture_id,
+        );
     }
 
     fn emit_water_face(
@@ -269,7 +284,13 @@ impl<'a> MeshGenerationContext<'a> {
             distance: 0.,
         });
 
-        Self::emit_face_vertices(&mut self.water_vertices, block_coords, face, texture_id);
+        Self::emit_face_vertices(
+            &mut self.water_vertices,
+            self.chunk_offset,
+            block_coords,
+            face,
+            texture_id,
+        );
     }
 
     fn emit_solid_block(&mut self, block_coords: BlockCoords, texture_ids: &[u32; 6]) {

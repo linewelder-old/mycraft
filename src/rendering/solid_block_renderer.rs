@@ -19,7 +19,6 @@ impl SolidBlockRenderer {
     pub fn new(context: &Context) -> Self {
         let bind_group_layouts = &[
             &Uniform::<Matrix4<f32>>::create_bind_group_layout(context),
-            &Uniform::<Matrix4<f32>>::create_bind_group_layout(context),
             &Texture::create_bind_group_layout(context),
         ];
 
@@ -108,10 +107,9 @@ impl SolidBlockRenderer {
 
         render_pass.set_pipeline(&self.render_pipeline);
         render_pass.set_bind_group(0, camera.get_bind_group(), &[]);
-        render_pass.set_bind_group(2, texture.get_bind_group(), &[]);
+        render_pass.set_bind_group(1, texture.get_bind_group(), &[]);
 
         for chunk in chunks {
-            render_pass.set_bind_group(1, chunk.transform.get_bind_group(), &[]);
             render_pass.set_vertex_buffer(0, chunk.solid_mesh.vertices.slice(..));
             render_pass.set_index_buffer(
                 chunk.solid_mesh.indices.slice(..),
