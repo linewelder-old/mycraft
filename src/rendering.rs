@@ -64,6 +64,7 @@ pub struct ChunkRendererTarget<'a> {
 pub struct ChunkGraphicsData {
     pub water_faces: Vec<Face>,
     pub needs_update: bool,
+    pub water_faces_unsorted: bool,
 }
 
 pub struct ChunkGraphics {
@@ -75,8 +76,12 @@ pub struct ChunkGraphics {
 }
 
 impl ChunkGraphics {
-    pub fn sort_water_geometry(&self, context: &mut Context, relative_cam_pos: Vector3<f32>) {
+    pub fn sort_water_faces_if_needed(&self, context: &mut Context, relative_cam_pos: Vector3<f32>) -> bool {
         let mut data = self.graphics_data.borrow_mut();
+        if !data.water_faces_unsorted {
+            return false;
+        }
+        data.water_faces_unsorted = false;
 
         for face in data.water_faces.iter_mut() {
             face.distance = relative_cam_pos.distance2(face.center);
@@ -86,6 +91,8 @@ impl ChunkGraphics {
             .sort_by(|x, y| y.distance.total_cmp(&x.distance));
         self.water_mesh
             .write_indices(context, &Face::generate_indices(&data.water_faces));
+
+        true
     }
 }
 

@@ -89,27 +89,36 @@ impl World {
         self.chunks.insert(coords, RefCell::new(chunk));
     }
 
-    pub fn ensure_water_geometry_is_sorted(&mut self, context: &mut Context, camera_position: Vector3<f32>) {
+    fn check_what_is_to_sort(&mut self, camera_position: Vector3<f32>) {
         let (cam_chunk_coords, cam_block_coords) = get_chunk_block_coords(camera_position);
         if cam_chunk_coords != self.prev_cam_chunk_coords {
             self.render_queue.mark_unsorted();
             self.prev_cam_chunk_coords = cam_chunk_coords;
         }
 
-        self.render_queue.sort_if_needed(cam_chunk_coords);
-
         if cam_block_coords != self.prev_cam_block_coords {
-            for (coords, graphics) in self.render_queue.iter_for_update() {
-                let chunk_offset = Vector3 {
-                    x: (coords.x * Chunk::SIZE.x as i32) as f32,
-                    y: 0.,
-                    z: (coords.y * Chunk::SIZE.z as i32) as f32,
-                };
-                let relative_cam_pos = camera_position - chunk_offset;
-
-                graphics.sort_water_geometry(context, relative_cam_pos);
+            for (_, graphics) in self.render_queue.iter_for_update() {
+                graphics.graphics_data.borrow_mut().water_faces_unsorted = true;
             }
             self.prev_cam_block_coords = cam_block_coords;
+        }
+    }
+
+    pub fn ensure_water_geometry_is_sorted(&mut self, context: &mut Context, camera_position: Vector3<f32>) {
+        self.check_what_is_to_sort(camera_position);
+
+        self.render_queue.sort_if_needed(self.prev_cam_chunk_coords);
+        for (coords, graphics) in self.render_queue.iter_for_update() {
+            let chunk_offset = Vector3 {
+                x: (coords.x * Chunk::SIZE.x as i32) as f32,
+                y: 0.,
+                z: (coords.y * Chunk::SIZE.z as i32) as f32,
+            };
+            let relative_cam_pos = camera_position - chunk_offset;
+
+            if graphics.sort_water_faces_if_needed(context, relative_cam_pos) {
+                break;
+            }
         }
     }
 
@@ -151,6 +160,7 @@ impl World {
                     graphics_data: RefCell::new(ChunkGraphicsData {
                         water_faces: meshes.water_faces,
                         needs_update: false,
+                        water_faces_unsorted: true,
                     }),
                 });
                 chunk.graphics = Some(graphics.clone());
