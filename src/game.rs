@@ -185,7 +185,7 @@ impl Mycraft {
                 depth_buffer: &self.depth_buffer,
             },
             &self.camera,
-            self.world.render_queue.iter(),
+            self.world.render_queue_iter(),
             &self.test_texture,
         );
         self.water_renderer.draw(
@@ -195,7 +195,7 @@ impl Mycraft {
                 depth_buffer: &self.depth_buffer,
             },
             &self.camera,
-            self.world.render_queue.iter(),
+            self.world.render_queue_iter(),
             &self.test_texture,
         );
 

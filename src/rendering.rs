@@ -125,11 +125,11 @@ impl RenderQueue {
         self.needs_sort = false;
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = &ChunkGraphics> {
+    pub fn iter_for_render(&self) -> impl Iterator<Item = &ChunkGraphics> {
         self.queue.iter().map(|x| x.1.as_ref())
     }
 
-    pub fn iter_with_coords(&self) -> impl Iterator<Item = (ChunkCoords, &ChunkGraphics)> {
-        self.queue.iter().map(|x| (x.0, x.1.as_ref()))
+    pub fn iter_for_update(&self) -> impl Iterator<Item = (ChunkCoords, &ChunkGraphics)> {
+        self.queue.iter().rev().map(|x| (x.0, x.1.as_ref()))
     }
 }

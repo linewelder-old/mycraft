@@ -55,7 +55,7 @@ pub struct World {
     pub chunks: HashMap<ChunkCoords, RefCell<Chunk>>,
     generator: Generator,
 
-    pub render_queue: RenderQueue,
+    render_queue: RenderQueue,
     prev_cam_chunk_coords: ChunkCoords,
     prev_cam_block_coords: BlockCoords,
 }
@@ -99,7 +99,7 @@ impl World {
         self.render_queue.sort_if_needed(cam_chunk_coords);
 
         if cam_block_coords != self.prev_cam_block_coords {
-            for (coords, graphics) in self.render_queue.iter_with_coords() {
+            for (coords, graphics) in self.render_queue.iter_for_update() {
                 let chunk_offset = Vector3 {
                     x: (coords.x * Chunk::SIZE.x as i32) as f32,
                     y: 0.,
@@ -210,5 +210,9 @@ impl World {
                 graphics.graphics_data.borrow_mut().needs_update = true;
             }
         }
+    }
+
+    pub fn render_queue_iter(&self) -> impl Iterator<Item = &ChunkGraphics> {
+        self.render_queue.iter_for_render()
     }
 }
