@@ -11,7 +11,7 @@ use cgmath::{Matrix4, MetricSpace, Vector2, Vector3};
 use crate::{
     context::Context,
     rendering::{chunk_mesh::ChunkMesh, uniform::Uniform},
-    world::{ChunkCoords, World},
+    world::ChunkCoords,
 };
 
 #[derive(Clone, Copy)]
@@ -61,52 +61,75 @@ pub struct ChunkRendererTarget<'a> {
     pub depth_buffer: &'a wgpu::TextureView,
 }
 
+pub struct ChunkGraphicsData {
+    pub water_faces: Vec<Face>,
+    pub needs_update: bool,
+}
+
 pub struct ChunkGraphics {
     pub solid_mesh: ChunkMesh,
     pub water_mesh: ChunkMesh,
     pub transform: Uniform<Matrix4<f32>>,
 
-    pub water_faces: RefCell<Vec<Face>>,
+    pub graphics_data: RefCell<ChunkGraphicsData>,
 }
 
 impl ChunkGraphics {
     pub fn sort_water_geometry(&self, context: &mut Context, relative_cam_pos: Vector3<f32>) {
-        let mut water_faces = self.water_faces.borrow_mut();
-        for face in water_faces.iter_mut() {
+        let mut data = self.graphics_data.borrow_mut();
+
+        for face in data.water_faces.iter_mut() {
             face.distance = relative_cam_pos.distance2(face.center);
         }
 
-        water_faces.sort_by(|x, y| y.distance.total_cmp(&x.distance));
+        data.water_faces
+            .sort_by(|x, y| y.distance.total_cmp(&x.distance));
         self.water_mesh
-            .write_indices(context, &Face::generate_indices(&water_faces));
+            .write_indices(context, &Face::generate_indices(&data.water_faces));
     }
 }
 
-pub struct RenderQueue(Vec<(ChunkCoords, Rc<ChunkGraphics>)>);
+pub struct RenderQueue {
+    queue: Vec<(ChunkCoords, Rc<ChunkGraphics>)>,
+    needs_sort: bool,
+}
 
 impl RenderQueue {
-    pub fn new(cam_chunk_coords: ChunkCoords, world: &World) -> RenderQueue {
-        let mut queue = RenderQueue(
-            world
-                .chunk_graphics
-                .iter()
-                .map(|(coords, graphics)| (*coords, graphics.clone()))
-                .collect(),
-        );
-        queue.sort(cam_chunk_coords);
-        queue
+    pub fn new() -> RenderQueue {
+        RenderQueue {
+            queue: vec![],
+            needs_sort: false,
+        }
     }
 
-    pub fn sort(&mut self, cam_chunk_coords: ChunkCoords) {
-        self.0
+    pub fn insert(&mut self, coords: ChunkCoords, graphics: Rc<ChunkGraphics>) {
+        if let Some(exist) = self.queue.iter_mut().find(|x| x.0 == coords) {
+            exist.1 = graphics;
+        } else {
+            self.queue.push((coords, graphics));
+            self.needs_sort = true;
+        }
+    }
+
+    pub fn mark_unsorted(&mut self) {
+        self.needs_sort = true;
+    }
+
+    pub fn sort_if_needed(&mut self, cam_chunk_coords: ChunkCoords) {
+        if !self.needs_sort {
+            return;
+        }
+
+        self.queue
             .sort_unstable_by_key(|x| Reverse(cam_chunk_coords.distance2(x.0)));
+        self.needs_sort = false;
     }
 
     pub fn iter(&self) -> impl Iterator<Item = &ChunkGraphics> {
-        self.0.iter().map(|x| x.1.as_ref())
+        self.queue.iter().map(|x| x.1.as_ref())
     }
 
     pub fn iter_with_coords(&self) -> impl Iterator<Item = (ChunkCoords, &ChunkGraphics)> {
-        self.0.iter().map(|x| (x.0, x.1.as_ref()))
+        self.queue.iter().map(|x| (x.0, x.1.as_ref()))
     }
 }

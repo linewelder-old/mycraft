@@ -1,3 +1,5 @@
+use std::cell::Ref;
+
 use cgmath::{InnerSpace, Vector2, Vector3};
 
 use crate::{
@@ -147,27 +149,32 @@ const TEX_COORDS: [Vector2<f32>; 4] = [
 ];
 
 struct MeshGenerationContext<'a> {
-    neighbor_chunks: [[Option<&'a Chunk>; 3]; 3],
+    chunk: &'a Chunk,
+    neighbor_chunks: [[Option<Ref<'a, Chunk>>; 3]; 3],
     solid_vertices: Vec<Vertex>,
     water_vertices: Vec<Vertex>,
     water_faces: Vec<Face>,
 }
 
 impl<'a> MeshGenerationContext<'a> {
-    fn new(world: &'a World, chunk_coords: ChunkCoords) -> Self {
+    fn new(world: &'a World, chunk: &'a Chunk, chunk_coords: ChunkCoords) -> Self {
         // Cache neighboring chunks
-        let mut neighbor_chunks: [[Option<&Chunk>; 3]; 3] = [[None; 3]; 3];
+        let mut neighbor_chunks: [[Option<Ref<Chunk>>; 3]; 3] =
+            [[None, None, None], [None, None, None], [None, None, None]];
         for x in 0..3 {
             for y in 0..3 {
-                let offset = ChunkCoords {
-                    x: x as i32 - 1,
-                    y: y as i32 - 1,
-                };
-                neighbor_chunks[x][y] = world.chunks.get(&(chunk_coords + offset));
+                if x != 1 || y != 1 {
+                    let offset = ChunkCoords {
+                        x: x as i32 - 1,
+                        y: y as i32 - 1,
+                    };
+                    neighbor_chunks[x][y] = world.borrow_chunk(chunk_coords + offset);
+                }
             }
         }
 
         MeshGenerationContext {
+            chunk,
             neighbor_chunks,
             solid_vertices: vec![],
             water_vertices: vec![],
@@ -181,15 +188,24 @@ impl<'a> MeshGenerationContext<'a> {
             return None;
         }
 
+        if coords.x >= 0
+            && coords.x < Chunk::SIZE.x as i32
+            && coords.z >= 0
+            && coords.z < Chunk::SIZE.z as i32
+        {
+            let block_id =
+                self.chunk.blocks[coords.x as usize][coords.y as usize][coords.z as usize];
+            return Some(&BLOCKS[block_id]);
+        }
+
         // Coords relative to chunks array start
         let relative_x = (coords.x + Chunk::SIZE.x as i32) as usize;
         let relative_z = (coords.z + Chunk::SIZE.z as i32) as usize;
 
         let chunk_x = relative_x / Chunk::SIZE.x;
         let chunk_z = relative_z / Chunk::SIZE.z;
-        let chunk = self.neighbor_chunks[chunk_x][chunk_z];
 
-        if let Some(chunk) = chunk {
+        if let Some(chunk) = &self.neighbor_chunks[chunk_x][chunk_z] {
             let block_x = relative_x % Chunk::SIZE.x;
             let block_z = relative_z % Chunk::SIZE.z;
 
@@ -318,7 +334,7 @@ impl ChunkMeshes {
         chunk: &Chunk,
         chunk_coords: ChunkCoords,
     ) -> Self {
-        let mut generation_context = MeshGenerationContext::new(world, chunk_coords);
+        let mut generation_context = MeshGenerationContext::new(world, chunk, chunk_coords);
 
         for x in 0..Chunk::SIZE.x as i32 {
             for y in 0..Chunk::SIZE.y as i32 {
