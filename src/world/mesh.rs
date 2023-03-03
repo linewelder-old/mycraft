@@ -3,8 +3,7 @@ use std::cell::Ref;
 use cgmath::{InnerSpace, Vector2, Vector3};
 
 use crate::{
-    context::Context,
-    rendering::{chunk_mesh::ChunkMesh, Face, Vertex},
+    rendering::{Face, Vertex},
     world::{
         blocks::{Block, BLOCKS},
         BlockCoords, Chunk, ChunkCoords, World,
@@ -322,14 +321,13 @@ impl<'a> MeshGenerationContext<'a> {
 }
 
 pub struct ChunkMeshes {
-    pub solid_mesh: ChunkMesh,
-    pub water_mesh: ChunkMesh,
+    pub solid_vertices: Vec<Vertex>,
+    pub water_vertices: Vec<Vertex>,
     pub water_faces: Vec<Face>,
 }
 
 impl ChunkMeshes {
     pub fn generate(
-        context: &Context,
         world: &World,
         chunk: &Chunk,
         chunk_coords: ChunkCoords,
@@ -359,18 +357,8 @@ impl ChunkMeshes {
         }
 
         ChunkMeshes {
-            solid_mesh: ChunkMesh::new(
-                context,
-                "Solid Chunk Mesh",
-                &generation_context.solid_vertices,
-                &Face::generate_default_indices(generation_context.solid_vertices.len() * 4),
-            ),
-            water_mesh: ChunkMesh::new(
-                context,
-                "Water Chunk Mesh",
-                &generation_context.water_vertices,
-                &Face::generate_indices(&generation_context.water_faces),
-            ),
+            solid_vertices: generation_context.solid_vertices,
+            water_vertices: generation_context.water_vertices,
             water_faces: generation_context.water_faces,
         }
     }
