@@ -14,14 +14,14 @@ use crate::{context::Context, rendering::chunk_mesh::ChunkMesh, world::ChunkCoor
 pub struct Vertex {
     pub pos: Vector3<f32>,
     pub tex: Vector2<f32>,
-    pub normal: Vector3<f32>,
+    pub light: f32,
 }
 
 impl Vertex {
     const BUFFER_LAYOUT: wgpu::VertexBufferLayout<'static> = wgpu::VertexBufferLayout {
         array_stride: std::mem::size_of::<Vertex>() as wgpu::BufferAddress,
         step_mode: wgpu::VertexStepMode::Vertex,
-        attributes: &wgpu::vertex_attr_array![0 => Float32x3, 1 => Float32x2, 2 => Float32x3],
+        attributes: &wgpu::vertex_attr_array![0 => Float32x3, 1 => Float32x2, 2 => Float32],
     };
 }
 

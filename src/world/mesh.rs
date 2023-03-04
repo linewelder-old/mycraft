@@ -1,6 +1,6 @@
 use std::cell::Ref;
 
-use cgmath::{InnerSpace, Vector2, Vector3};
+use cgmath::{Vector2, Vector3};
 
 use crate::{
     rendering::{Face, Vertex},
@@ -140,6 +140,8 @@ const NEIGHBOR_OFFSETS: [Vector3<i32>; 6] = [
     Vector3 { x:  1, y:  0, z:  0 },
 ];
 
+const FACE_LIGHTING: [f32; 6] = [0.6, 0.6, 0.4, 1., 0.8, 0.8];
+
 const TEX_COORDS: [Vector2<f32>; 4] = [
     Vector2 { x: 0., y: 1. },
     Vector2 { x: 1., y: 1. },
@@ -237,6 +239,7 @@ impl<'a> MeshGenerationContext<'a> {
         block_coords: BlockCoords,
         face: &[Vector3<f32>; 4],
         texture_id: u32,
+        light: f32,
     ) {
         let offset = chunk_offset + block_coords.map(|x| x as f32);
         let base_texture_coords = Vector2 {
@@ -244,14 +247,12 @@ impl<'a> MeshGenerationContext<'a> {
             y: (texture_id / 4) as f32,
         };
 
-        let normal = (face[1] - face[0]).cross(face[2] - face[0]).normalize();
-
         face.iter()
             .zip(TEX_COORDS)
             .map(|(&pos, tex)| Vertex {
                 pos: pos + offset,
                 tex: (base_texture_coords + tex) / 4.,
-                normal,
+                light,
             })
             .for_each(|x| vertex_array.push(x));
     }
@@ -261,6 +262,7 @@ impl<'a> MeshGenerationContext<'a> {
         block_coords: BlockCoords,
         face: &[Vector3<f32>; 4],
         texture_id: u32,
+        light: f32,
     ) {
         Self::emit_face_vertices(
             &mut self.solid_vertices,
@@ -268,6 +270,7 @@ impl<'a> MeshGenerationContext<'a> {
             block_coords,
             face,
             texture_id,
+            light,
         );
     }
 
@@ -276,6 +279,7 @@ impl<'a> MeshGenerationContext<'a> {
         block_coords: BlockCoords,
         face: &[Vector3<f32>; 4],
         texture_id: u32,
+        light: f32,
     ) {
         let offset = block_coords.map(|x| x as f32);
         self.water_faces.push(Face {
@@ -290,6 +294,7 @@ impl<'a> MeshGenerationContext<'a> {
             block_coords,
             face,
             texture_id,
+            light 
         );
     }
 
@@ -297,7 +302,7 @@ impl<'a> MeshGenerationContext<'a> {
         for (i, neighbor_offset) in NEIGHBOR_OFFSETS.iter().enumerate() {
             let neighbor_coords = block_coords + neighbor_offset;
             if self.is_transparent(neighbor_coords) {
-                self.emit_solid_face(block_coords, &SOLID_BLOCK_FACES[i], texture_ids[i]);
+                self.emit_solid_face(block_coords, &SOLID_BLOCK_FACES[i], texture_ids[i], FACE_LIGHTING[i]);
             }
         }
     }
@@ -330,13 +335,13 @@ impl<'a> MeshGenerationContext<'a> {
                 }
             }
 
-            self.emit_water_face(block_coords, &model[i], texture_id);
+            self.emit_water_face(block_coords, &model[i], texture_id, FACE_LIGHTING[i]);
         }
     }
 
     fn emit_flower_block(&mut self, block_coords: BlockCoords, texture_id: u32) {
         for face in &FLOWER_BLOCK_FACES {
-            self.emit_solid_face(block_coords, face, texture_id);
+            self.emit_solid_face(block_coords, face, texture_id, 1.);
         }
     }
 }
