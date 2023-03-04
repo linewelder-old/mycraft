@@ -1,6 +1,6 @@
 use std::cell::Ref;
 
-use cgmath::{Vector2, Vector3};
+use cgmath::{Vector2, Vector3, Zero};
 
 use crate::{
     rendering::{Face, Vertex},
@@ -149,13 +149,24 @@ const TEX_COORDS: [Vector2<f32>; 4] = [
     Vector2 { x: 1., y: 0. },
 ];
 
+pub struct ChunkMeshes {
+    pub solid_vertices: Vec<Vertex>,
+    pub water_vertices: Vec<Vertex>,
+    pub water_faces: Vec<Face>,
+}
+
 struct MeshGenerationContext<'a> {
     chunk: &'a Chunk,
     chunk_offset: Vector3<f32>,
     neighbor_chunks: [[Option<Ref<'a, Chunk>>; 3]; 3],
-    solid_vertices: Vec<Vertex>,
-    water_vertices: Vec<Vertex>,
-    water_faces: Vec<Face>,
+    current_block_coords: BlockCoords,
+    meshes: ChunkMeshes,
+}
+
+struct FaceDesc<'a> {
+    points: &'a [Vector3<f32>; 4],
+    texture_id: u32,
+    light: f32,
 }
 
 impl<'a> MeshGenerationContext<'a> {
@@ -185,9 +196,12 @@ impl<'a> MeshGenerationContext<'a> {
             chunk,
             chunk_offset,
             neighbor_chunks,
-            solid_vertices: vec![],
-            water_vertices: vec![],
-            water_faces: vec![],
+            current_block_coords: BlockCoords::zero(),
+            meshes: ChunkMeshes {
+                solid_vertices: vec![],
+                water_vertices: vec![],
+                water_faces: vec![],
+            },
         }
     }
 
@@ -237,81 +251,68 @@ impl<'a> MeshGenerationContext<'a> {
         vertex_array: &mut Vec<Vertex>,
         chunk_offset: Vector3<f32>,
         block_coords: BlockCoords,
-        face: &[Vector3<f32>; 4],
-        texture_id: u32,
-        light: f32,
+        desc: FaceDesc,
     ) {
         let offset = chunk_offset + block_coords.map(|x| x as f32);
         let base_texture_coords = Vector2 {
-            x: (texture_id % 4) as f32,
-            y: (texture_id / 4) as f32,
+            x: (desc.texture_id % 4) as f32,
+            y: (desc.texture_id / 4) as f32,
         };
 
-        face.iter()
+        desc.points
+            .iter()
             .zip(TEX_COORDS)
             .map(|(&pos, tex)| Vertex {
                 pos: pos + offset,
                 tex: (base_texture_coords + tex) / 4.,
-                light,
+                light: desc.light,
             })
             .for_each(|x| vertex_array.push(x));
     }
 
-    fn emit_solid_face(
-        &mut self,
-        block_coords: BlockCoords,
-        face: &[Vector3<f32>; 4],
-        texture_id: u32,
-        light: f32,
-    ) {
+    fn emit_solid_face(&mut self, desc: FaceDesc) {
         Self::emit_face_vertices(
-            &mut self.solid_vertices,
+            &mut self.meshes.solid_vertices,
             self.chunk_offset,
-            block_coords,
-            face,
-            texture_id,
-            light,
+            self.current_block_coords,
+            desc,
         );
     }
 
-    fn emit_water_face(
-        &mut self,
-        block_coords: BlockCoords,
-        face: &[Vector3<f32>; 4],
-        texture_id: u32,
-        light: f32,
-    ) {
-        let offset = block_coords.map(|x| x as f32);
-        self.water_faces.push(Face {
-            base_index: self.water_vertices.len() as u32,
-            center: offset + face.iter().sum::<Vector3<f32>>() / 4.,
+    fn emit_water_face(&mut self, desc: FaceDesc) {
+        let offset = self.current_block_coords.map(|x| x as f32);
+        self.meshes.water_faces.push(Face {
+            base_index: self.meshes.water_vertices.len() as u32,
+            center: offset + desc.points.iter().sum::<Vector3<f32>>() / 4.,
             distance: 0.,
         });
 
         Self::emit_face_vertices(
-            &mut self.water_vertices,
+            &mut self.meshes.water_vertices,
             self.chunk_offset,
-            block_coords,
-            face,
-            texture_id,
-            light 
+            self.current_block_coords,
+            desc,
         );
     }
 
-    fn emit_solid_block(&mut self, block_coords: BlockCoords, texture_ids: &[u32; 6]) {
+    fn emit_solid_block(&mut self, texture_ids: &[u32; 6]) {
         for (i, neighbor_offset) in NEIGHBOR_OFFSETS.iter().enumerate() {
-            let neighbor_coords = block_coords + neighbor_offset;
+            let neighbor_coords = self.current_block_coords + neighbor_offset;
             if self.is_transparent(neighbor_coords) {
-                self.emit_solid_face(block_coords, &SOLID_BLOCK_FACES[i], texture_ids[i], FACE_LIGHTING[i]);
+                self.emit_solid_face(FaceDesc {
+                    points: &SOLID_BLOCK_FACES[i],
+                    texture_id: texture_ids[i],
+                    light: FACE_LIGHTING[i],
+                });
             }
         }
     }
 
-    fn emit_water_block(&mut self, block_coords: BlockCoords, texture_id: u32) {
+    fn emit_water_block(&mut self, texture_id: u32) {
         const TOP_NEIGHBOR_OFFSET_INDEX: usize = 3;
 
         let top_neighbor =
-            self.get_block(block_coords + NEIGHBOR_OFFSETS[TOP_NEIGHBOR_OFFSET_INDEX]);
+            self.get_block(self.current_block_coords + NEIGHBOR_OFFSETS[TOP_NEIGHBOR_OFFSET_INDEX]);
         let top_neighbor_is_fluid = matches!(top_neighbor, Some(Block::Fluid { .. }));
         let model = if top_neighbor_is_fluid {
             &SOLID_BLOCK_FACES
@@ -320,7 +321,7 @@ impl<'a> MeshGenerationContext<'a> {
         };
 
         for (i, neighbor_offset) in NEIGHBOR_OFFSETS.iter().enumerate() {
-            let neighbor_coords = block_coords + neighbor_offset;
+            let neighbor_coords = self.current_block_coords + neighbor_offset;
             if let Some(neighbor_block) = self.get_block(neighbor_coords) {
                 let checking_top_neighbor = i == TOP_NEIGHBOR_OFFSET_INDEX;
                 let should_not_emit_face = if checking_top_neighbor {
@@ -335,21 +336,23 @@ impl<'a> MeshGenerationContext<'a> {
                 }
             }
 
-            self.emit_water_face(block_coords, &model[i], texture_id, FACE_LIGHTING[i]);
+            self.emit_water_face(FaceDesc {
+                points: &model[i],
+                texture_id,
+                light: FACE_LIGHTING[i],
+            });
         }
     }
 
-    fn emit_flower_block(&mut self, block_coords: BlockCoords, texture_id: u32) {
-        for face in &FLOWER_BLOCK_FACES {
-            self.emit_solid_face(block_coords, face, texture_id, 1.);
+    fn emit_flower_block(&mut self, texture_id: u32) {
+        for points in &FLOWER_BLOCK_FACES {
+            self.emit_solid_face(FaceDesc {
+                points,
+                texture_id,
+                light: 1.,
+            });
         }
     }
-}
-
-pub struct ChunkMeshes {
-    pub solid_vertices: Vec<Vertex>,
-    pub water_vertices: Vec<Vertex>,
-    pub water_faces: Vec<Face>,
 }
 
 impl ChunkMeshes {
@@ -360,28 +363,24 @@ impl ChunkMeshes {
             for y in 0..Chunk::SIZE.y as i32 {
                 for z in 0..Chunk::SIZE.z as i32 {
                     let block_id = chunk.blocks[x as usize][y as usize][z as usize];
-                    let block_coords = BlockCoords { x, y, z };
+                    generation_context.current_block_coords = BlockCoords { x, y, z };
 
                     match &BLOCKS[block_id] {
                         Block::Empty => {}
                         Block::Solid { texture_ids } => {
-                            generation_context.emit_solid_block(block_coords, texture_ids);
+                            generation_context.emit_solid_block(texture_ids);
                         }
                         Block::Fluid { texture_id } => {
-                            generation_context.emit_water_block(block_coords, *texture_id);
+                            generation_context.emit_water_block(*texture_id);
                         }
                         Block::Flower { texture_id } => {
-                            generation_context.emit_flower_block(block_coords, *texture_id);
+                            generation_context.emit_flower_block(*texture_id);
                         }
                     }
                 }
             }
         }
 
-        ChunkMeshes {
-            solid_vertices: generation_context.solid_vertices,
-            water_vertices: generation_context.water_vertices,
-            water_faces: generation_context.water_faces,
-        }
+        generation_context.meshes
     }
 }
