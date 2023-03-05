@@ -324,7 +324,7 @@ impl<'a> MeshGenerationContext<'a> {
                     top_neighbor_is_fluid
                 } else {
                     matches!(neighbor_block, Block::Fluid { .. })
-                        || !self.is_transparent(neighbor_coords)
+                        || !neighbor_block.is_transparent()
                 };
 
                 if should_not_emit_face {
