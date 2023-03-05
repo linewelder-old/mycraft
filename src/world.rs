@@ -20,8 +20,24 @@ use crate::{
     },
 };
 
+pub type BlockId = u16;
+pub type LightLevel = u8;
+
+#[derive(Clone, Copy)]
+pub struct Cell {
+    pub block_id: BlockId,
+    pub light: LightLevel,
+}
+
+impl Cell {
+    #[inline]
+    pub fn get_block(&self) -> &'static Block {
+        &BLOCKS[self.block_id as usize]
+    }
+}
+
 pub struct Chunk {
-    pub blocks: [[[usize; Self::SIZE.z]; Self::SIZE.y]; Self::SIZE.x],
+    pub data: [[[Cell; Self::SIZE.z]; Self::SIZE.y]; Self::SIZE.x],
     pub graphics: Option<Rc<ChunkGraphics>>,
 }
 
@@ -34,7 +50,10 @@ impl Chunk {
 
     pub fn new() -> Self {
         Chunk {
-            blocks: [[[0; Self::SIZE.z]; Self::SIZE.y]; Self::SIZE.x],
+            data: [[[Cell {
+                block_id: 0,
+                light: 0,
+            }; Self::SIZE.z]; Self::SIZE.y]; Self::SIZE.x],
             graphics: None,
         }
     }
@@ -191,13 +210,12 @@ impl World {
         let (chunk_coords, block_coords) = Self::to_chunk_block_coords(coords);
         self.chunks.get(&chunk_coords).map(|chunk| {
             let chunk = chunk.borrow();
-            let block_id = chunk.blocks[block_coords.x as usize][block_coords.y as usize]
-                [block_coords.z as usize];
-            &BLOCKS[block_id]
+            chunk.data[block_coords.x as usize][block_coords.y as usize][block_coords.z as usize]
+                .get_block()
         })
     }
 
-    pub fn set_block(&mut self, coords: BlockCoords, block_id: usize) {
+    pub fn set_block(&mut self, coords: BlockCoords, block_id: BlockId) {
         if coords.y < 0 || coords.y > Chunk::SIZE.y as i32 {
             return;
         }
@@ -206,8 +224,8 @@ impl World {
         if let Some(chunk) = self.chunks.get_mut(&chunk_coords) {
             let mut chunk = chunk.borrow_mut();
 
-            chunk.blocks[block_coords.x as usize][block_coords.y as usize]
-                [block_coords.z as usize] = block_id;
+            chunk.data[block_coords.x as usize][block_coords.y as usize][block_coords.z as usize]
+                .block_id = block_id;
             if let Some(graphics) = &chunk.graphics {
                 graphics.graphics_data.borrow_mut().needs_update = true;
             }

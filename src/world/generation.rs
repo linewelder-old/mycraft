@@ -48,11 +48,11 @@ impl Generator {
                 );
 
                 for y in 0..(height - 3) {
-                    chunk.blocks[x][y][z] = 1;
+                    chunk.data[x][y][z].block_id = 1;
                 }
 
                 for y in (height - 3)..height {
-                    chunk.blocks[x][y][z] = 3;
+                    chunk.data[x][y][z].block_id = 3;
                 }
 
                 let offset = Vector2 {
@@ -60,17 +60,17 @@ impl Generator {
                     y: z as f64,
                 };
                 let sand_height = Self::WATER_HEIGHT + self.get_noise(offset, 30., 3.) as usize;
-                chunk.blocks[x][height][z] = if height <= sand_height { 7 } else { 2 };
+                chunk.data[x][height][z].block_id = if height <= sand_height { 7 } else { 2 };
 
                 for y in (height + 1)..=Self::WATER_HEIGHT {
-                    chunk.blocks[x][y][z] = 6;
+                    chunk.data[x][y][z].block_id = 6;
                 }
             }
         }
 
         if chunk_coords == (ChunkCoords { x: 0, y: 0 }) {
             for i in 0..256 {
-                chunk.blocks[0][i][0] = 6;
+                chunk.data[0][i][0].block_id = 6;
             }
         }
     }

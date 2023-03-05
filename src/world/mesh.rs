@@ -4,10 +4,7 @@ use cgmath::{Vector2, Vector3, Zero};
 
 use crate::{
     rendering::{Face, Vertex},
-    world::{
-        blocks::{Block, BLOCKS},
-        BlockCoords, Chunk, ChunkCoords, World,
-    },
+    world::{blocks::Block, BlockCoords, Cell, Chunk, ChunkCoords, World},
 };
 
 #[rustfmt::skip]
@@ -206,7 +203,7 @@ impl<'a> MeshGenerationContext<'a> {
     }
 
     // Coords are relative to middle chunk in chunks array
-    fn get_block(&self, coords: Vector3<i32>) -> Option<&Block> {
+    fn get_cell(&self, coords: Vector3<i32>) -> Option<Cell> {
         if coords.y >= Chunk::SIZE.y as i32 || coords.y < 0 {
             return None;
         }
@@ -216,9 +213,7 @@ impl<'a> MeshGenerationContext<'a> {
             && coords.z >= 0
             && coords.z < Chunk::SIZE.z as i32
         {
-            let block_id =
-                self.chunk.blocks[coords.x as usize][coords.y as usize][coords.z as usize];
-            return Some(&BLOCKS[block_id]);
+            return Some(self.chunk.data[coords.x as usize][coords.y as usize][coords.z as usize]);
         }
 
         // Coords relative to chunks array start
@@ -232,16 +227,15 @@ impl<'a> MeshGenerationContext<'a> {
             let block_x = relative_x % Chunk::SIZE.x;
             let block_z = relative_z % Chunk::SIZE.z;
 
-            let block_id = chunk.blocks[block_x][coords.y as usize][block_z];
-            Some(&BLOCKS[block_id])
+            Some(chunk.data[block_x][coords.y as usize][block_z])
         } else {
             None
         }
     }
 
     fn is_transparent(&self, coords: Vector3<i32>) -> bool {
-        if let Some(block) = self.get_block(coords) {
-            block.is_transparent()
+        if let Some(cell) = self.get_cell(coords) {
+            cell.get_block().is_transparent()
         } else {
             true
         }
@@ -312,8 +306,9 @@ impl<'a> MeshGenerationContext<'a> {
         const TOP_NEIGHBOR_OFFSET_INDEX: usize = 3;
 
         let top_neighbor =
-            self.get_block(self.current_block_coords + NEIGHBOR_OFFSETS[TOP_NEIGHBOR_OFFSET_INDEX]);
-        let top_neighbor_is_fluid = matches!(top_neighbor, Some(Block::Fluid { .. }));
+            self.get_cell(self.current_block_coords + NEIGHBOR_OFFSETS[TOP_NEIGHBOR_OFFSET_INDEX]);
+        let top_neighbor_block = top_neighbor.as_ref().map(Cell::get_block);
+        let top_neighbor_is_fluid = matches!(top_neighbor_block, Some(Block::Fluid { .. }));
         let model = if top_neighbor_is_fluid {
             &SOLID_BLOCK_FACES
         } else {
@@ -322,7 +317,8 @@ impl<'a> MeshGenerationContext<'a> {
 
         for (i, neighbor_offset) in NEIGHBOR_OFFSETS.iter().enumerate() {
             let neighbor_coords = self.current_block_coords + neighbor_offset;
-            if let Some(neighbor_block) = self.get_block(neighbor_coords) {
+            if let Some(neighbor_cell) = self.get_cell(neighbor_coords) {
+                let neighbor_block = neighbor_cell.get_block();
                 let checking_top_neighbor = i == TOP_NEIGHBOR_OFFSET_INDEX;
                 let should_not_emit_face = if checking_top_neighbor {
                     top_neighbor_is_fluid
@@ -362,10 +358,10 @@ impl ChunkMeshes {
         for x in 0..Chunk::SIZE.x as i32 {
             for y in 0..Chunk::SIZE.y as i32 {
                 for z in 0..Chunk::SIZE.z as i32 {
-                    let block_id = chunk.blocks[x as usize][y as usize][z as usize];
+                    let current_cell = chunk.data[x as usize][y as usize][z as usize];
                     generation_context.current_block_coords = BlockCoords { x, y, z };
 
-                    match &BLOCKS[block_id] {
+                    match current_cell.get_block() {
                         Block::Empty => {}
                         Block::Solid { texture_ids } => {
                             generation_context.emit_solid_block(texture_ids);
