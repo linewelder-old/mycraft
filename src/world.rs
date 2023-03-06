@@ -203,7 +203,7 @@ impl World {
     }
 
     pub fn get_block(&self, coords: BlockCoords) -> Option<&'static Block> {
-        if coords.y < 0 || coords.y > Chunk::SIZE.y as i32 {
+        if coords.y < 0 || coords.y >= Chunk::SIZE.y as i32 {
             return None;
         }
 
@@ -216,7 +216,7 @@ impl World {
     }
 
     pub fn set_block(&mut self, coords: BlockCoords, block_id: BlockId) {
-        if coords.y < 0 || coords.y > Chunk::SIZE.y as i32 {
+        if coords.y < 0 || coords.y >= Chunk::SIZE.y as i32 {
             return;
         }
 
