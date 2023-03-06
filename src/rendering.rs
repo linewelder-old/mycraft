@@ -11,6 +11,7 @@ use cgmath::{MetricSpace, Vector2, Vector3};
 use crate::{context::Context, rendering::chunk_mesh::ChunkMesh, world::ChunkCoords};
 
 #[derive(Clone, Copy)]
+#[repr(C)]
 pub struct Vertex {
     pub pos: Vector3<f32>,
     pub tex: Vector2<f32>,
