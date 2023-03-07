@@ -54,7 +54,7 @@ impl Generator {
                 let sand_height = Self::WATER_HEIGHT + self.get_noise(offset, 30., 3.) as i32;
 
                 for y in 0..=Chunk::SIZE.y {
-                    let coords = BlockCoords { x: x as i32, y: y as i32, z: z as i32 };
+                    let coords = BlockCoords { x, y, z };
                     chunk[coords].block_id = if y < height - 3 {
                         BlockId::Stone
                     } else if y < height {
