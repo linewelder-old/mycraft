@@ -1,3 +1,5 @@
+use num_enum::{IntoPrimitive, TryFromPrimitive};
+
 pub enum Block {
     Empty,
     Solid { texture_ids: [u32; 6] },
@@ -12,10 +14,31 @@ impl Block {
             Block::Solid { .. } => false,
         }
     }
+
+    #[inline]
+    pub fn by_id(id: BlockId) -> &'static Self {
+        &BLOCKS[Into::<u16>::into(id) as usize]
+    }
+}
+
+#[derive(Clone, Copy, IntoPrimitive, TryFromPrimitive)]
+#[repr(u16)]
+pub enum BlockId {
+    Air,
+    Stone,
+    Grass,
+    Dirt,
+    Trunk,
+    Leaves,
+    Water,
+    Sand,
+    Planks,
+    RedFlower,
+    YellowFlower,
 }
 
 #[rustfmt::skip]
-pub const BLOCKS: &[Block] = &[
+const BLOCKS: &[Block] = &[
     Block::Empty, // Air
     Block::Solid {  // Stone
         texture_ids: [0; 6],

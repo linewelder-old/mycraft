@@ -16,7 +16,7 @@ use crate::{
         ChunkRendererTarget,
     },
     utils::raycasting,
-    world::{ChunkCoords, World},
+    world::{blocks::BlockId, ChunkCoords, World},
 };
 
 pub struct Mycraft {
@@ -109,12 +109,12 @@ impl Mycraft {
                         if let Some(hit) = &self.looking_at {
                             match button {
                                 MouseButton::Left => {
-                                    self.world.set_block(hit.coords, 0);
+                                    self.world.set_block(hit.coords, BlockId::Air);
                                 }
 
                                 MouseButton::Right => {
                                     self.world
-                                        .set_block(hit.coords + hit.side.to_direction(), 3);
+                                        .set_block(hit.coords + hit.side.to_direction(), BlockId::Dirt);
                                 }
 
                                 _ => {}

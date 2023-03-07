@@ -12,6 +12,7 @@ log = "0.4.17"
 env_logger = "0.10.0"
 pollster = "0.3.0"
 noise = "0.8.2"
+num_enum = "0.5.11"
 
 [profile.dev]
 opt-level = 1

@@ -14,13 +14,12 @@ use crate::{
     context::Context,
     rendering::{chunk_mesh::ChunkMesh, ChunkGraphics, ChunkGraphicsData, Face, RenderQueue},
     world::{
-        blocks::{Block, BLOCKS},
+        blocks::{Block, BlockId},
         generation::Generator,
         mesh::ChunkMeshes,
     },
 };
 
-pub type BlockId = u16;
 pub type LightLevel = u8;
 
 #[derive(Clone, Copy)]
@@ -32,7 +31,7 @@ pub struct Cell {
 impl Cell {
     #[inline]
     pub fn get_block(&self) -> &'static Block {
-        &BLOCKS[self.block_id as usize]
+        Block::by_id(self.block_id)
     }
 }
 
@@ -51,7 +50,7 @@ impl Chunk {
     pub fn new() -> Self {
         Chunk {
             data: [[[Cell {
-                block_id: 0,
+                block_id: BlockId::Air,
                 light: 0,
             }; Self::SIZE.z]; Self::SIZE.y]; Self::SIZE.x],
             graphics: None,

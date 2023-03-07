@@ -1,7 +1,7 @@
 use cgmath::Vector2;
 use noise::{NoiseFn, Perlin};
 
-use crate::world::{Chunk, ChunkCoords};
+use crate::world::{blocks::BlockId, Chunk, ChunkCoords};
 
 pub struct Generator {
     noise: Perlin,
@@ -47,30 +47,35 @@ impl Generator {
                     z as i32 + chunk_coords.y * Chunk::SIZE.z as i32,
                 );
 
-                for y in 0..(height - 3) {
-                    chunk.data[x][y][z].block_id = 1;
-                }
-
-                for y in (height - 3)..height {
-                    chunk.data[x][y][z].block_id = 3;
-                }
-
                 let offset = Vector2 {
                     x: x as f64,
                     y: z as f64,
                 };
                 let sand_height = Self::WATER_HEIGHT + self.get_noise(offset, 30., 3.) as usize;
-                chunk.data[x][height][z].block_id = if height <= sand_height { 7 } else { 2 };
 
-                for y in (height + 1)..=Self::WATER_HEIGHT {
-                    chunk.data[x][y][z].block_id = 6;
+                for y in 0..=Chunk::SIZE.y {
+                    chunk.data[x][y][z].block_id = if y < height - 3 {
+                        BlockId::Stone
+                    } else if y < height {
+                        BlockId::Dirt
+                    } else if y == height {
+                        if height <= sand_height {
+                            BlockId::Sand
+                        } else {
+                            BlockId::Grass
+                        }
+                    } else if y <= Self::WATER_HEIGHT {
+                        BlockId::Water
+                    } else {
+                        break;
+                    };
                 }
             }
         }
 
         if chunk_coords == (ChunkCoords { x: 0, y: 0 }) {
             for i in 0..256 {
-                chunk.data[0][i][0].block_id = 6;
+                chunk.data[0][i][0].block_id = BlockId::Water;
             }
         }
     }
