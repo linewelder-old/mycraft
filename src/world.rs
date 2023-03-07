@@ -5,6 +5,7 @@ pub mod mesh;
 use std::{
     cell::{Ref, RefCell},
     collections::HashMap,
+    ops::{Index, IndexMut},
     rc::Rc,
 };
 
@@ -36,8 +37,8 @@ impl Cell {
 }
 
 pub struct Chunk {
-    pub data: [[[Cell; Self::SIZE.z]; Self::SIZE.y]; Self::SIZE.x],
-    pub graphics: Option<Rc<ChunkGraphics>>,
+    data: [[[Cell; Self::SIZE.z]; Self::SIZE.y]; Self::SIZE.x],
+    graphics: Option<Rc<ChunkGraphics>>,
 }
 
 impl Chunk {
@@ -47,7 +48,7 @@ impl Chunk {
         z: 16,
     };
 
-    pub fn new() -> Self {
+    fn new() -> Self {
         Chunk {
             data: [[[Cell {
                 block_id: BlockId::Air,
@@ -57,7 +58,7 @@ impl Chunk {
         }
     }
 
-    pub fn needs_graphics_update(&self) -> bool {
+    fn needs_graphics_update(&self) -> bool {
         if let Some(graphics) = &self.graphics {
             graphics.graphics_data.borrow().needs_update
         } else {
@@ -66,11 +67,27 @@ impl Chunk {
     }
 }
 
+impl Index<BlockCoords> for Chunk {
+    type Output = Cell;
+
+    #[inline]
+    fn index(&self, coords: BlockCoords) -> &Self::Output {
+        &self.data[coords.x as usize][coords.y as usize][coords.z as usize]
+    }
+}
+
+impl IndexMut<BlockCoords> for Chunk {
+    #[inline]
+    fn index_mut(&mut self, coords: BlockCoords) -> &mut Self::Output {
+        &mut self.data[coords.x as usize][coords.y as usize][coords.z as usize]
+    }
+}
+
 pub type ChunkCoords = Vector2<i32>;
 pub type BlockCoords = Vector3<i32>;
 
 pub struct World {
-    pub chunks: HashMap<ChunkCoords, RefCell<Chunk>>,
+    chunks: HashMap<ChunkCoords, RefCell<Chunk>>,
     generator: Generator,
 
     render_queue: RenderQueue,
@@ -209,8 +226,7 @@ impl World {
         let (chunk_coords, block_coords) = Self::to_chunk_block_coords(coords);
         self.chunks.get(&chunk_coords).map(|chunk| {
             let chunk = chunk.borrow();
-            chunk.data[block_coords.x as usize][block_coords.y as usize][block_coords.z as usize]
-                .get_block()
+            chunk[block_coords].get_block()
         })
     }
 
@@ -223,8 +239,7 @@ impl World {
         if let Some(chunk) = self.chunks.get_mut(&chunk_coords) {
             let mut chunk = chunk.borrow_mut();
 
-            chunk.data[block_coords.x as usize][block_coords.y as usize][block_coords.z as usize]
-                .block_id = block_id;
+            chunk[block_coords].block_id = block_id;
             if let Some(graphics) = &chunk.graphics {
                 graphics.graphics_data.borrow_mut().needs_update = true;
             }

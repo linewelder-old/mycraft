@@ -4,7 +4,7 @@ use cgmath::{Vector2, Vector3, Zero};
 
 use crate::{
     rendering::{Face, Vertex},
-    world::{blocks::Block, BlockCoords, Cell, Chunk, ChunkCoords, World, LightLevel},
+    world::{blocks::Block, BlockCoords, Cell, Chunk, ChunkCoords, LightLevel, World},
 };
 
 #[rustfmt::skip]
@@ -214,21 +214,27 @@ impl<'a> MeshGenerationContext<'a> {
             && coords.z >= 0
             && coords.z < Chunk::SIZE.z as i32
         {
-            return Some(self.chunk.data[coords.x as usize][coords.y as usize][coords.z as usize]);
+            return Some(self.chunk[coords]);
         }
 
         // Coords relative to chunks array start
-        let relative_x = (coords.x + Chunk::SIZE.x as i32) as usize;
-        let relative_z = (coords.z + Chunk::SIZE.z as i32) as usize;
+        let relative_x = coords.x + Chunk::SIZE.x as i32;
+        let relative_z = coords.z + Chunk::SIZE.z as i32;
 
-        let chunk_x = relative_x / Chunk::SIZE.x;
-        let chunk_z = relative_z / Chunk::SIZE.z;
+        let chunk_x = relative_x / Chunk::SIZE.x as i32;
+        let chunk_z = relative_z / Chunk::SIZE.z as i32;
 
-        if let Some(chunk) = &self.neighbor_chunks[chunk_x][chunk_z] {
-            let block_x = relative_x % Chunk::SIZE.x;
-            let block_z = relative_z % Chunk::SIZE.z;
+        if let Some(chunk) = &self.neighbor_chunks[chunk_x as usize][chunk_z as usize] {
+            let block_x = relative_x % Chunk::SIZE.x as i32;
+            let block_z = relative_z % Chunk::SIZE.z as i32;
 
-            Some(chunk.data[block_x][coords.y as usize][block_z])
+            Some(
+                chunk[BlockCoords {
+                    x: block_x,
+                    y: coords.y,
+                    z: block_z,
+                }],
+            )
         } else {
             None
         }
@@ -382,8 +388,8 @@ impl ChunkMeshes {
         for x in 0..Chunk::SIZE.x as i32 {
             for y in 0..Chunk::SIZE.y as i32 {
                 for z in 0..Chunk::SIZE.z as i32 {
-                    let current_cell = chunk.data[x as usize][y as usize][z as usize];
                     generation_context.current_block_coords = BlockCoords { x, y, z };
+                    let current_cell = chunk[generation_context.current_block_coords];
 
                     match current_cell.get_block() {
                         Block::Empty => {}

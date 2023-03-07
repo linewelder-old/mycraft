@@ -1,7 +1,7 @@
 use cgmath::Vector2;
 use noise::{NoiseFn, Perlin};
 
-use crate::world::{blocks::BlockId, Chunk, ChunkCoords};
+use crate::world::{blocks::BlockId, BlockCoords, Chunk, ChunkCoords};
 
 pub struct Generator {
     noise: Perlin,
@@ -54,7 +54,8 @@ impl Generator {
                 let sand_height = Self::WATER_HEIGHT + self.get_noise(offset, 30., 3.) as usize;
 
                 for y in 0..=Chunk::SIZE.y {
-                    chunk.data[x][y][z].block_id = if y < height - 3 {
+                    let coords = BlockCoords { x: x as i32, y: y as i32, z: z as i32 };
+                    chunk[coords].block_id = if y < height - 3 {
                         BlockId::Stone
                     } else if y < height {
                         BlockId::Dirt
