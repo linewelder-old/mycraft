@@ -185,9 +185,9 @@ impl<'a> MeshGenerationContext<'a> {
         }
 
         let chunk_offset = Vector3 {
-            x: (chunk_coords.x * Chunk::SIZE.x as i32) as f32,
+            x: (chunk_coords.x * Chunk::SIZE.x) as f32,
             y: 0.,
-            z: (chunk_coords.y * Chunk::SIZE.z as i32) as f32,
+            z: (chunk_coords.y * Chunk::SIZE.z) as f32,
         };
 
         MeshGenerationContext {
@@ -205,28 +205,28 @@ impl<'a> MeshGenerationContext<'a> {
 
     // Coords are relative to middle chunk in chunks array
     fn get_cell(&self, coords: Vector3<i32>) -> Option<Cell> {
-        if coords.y >= Chunk::SIZE.y as i32 || coords.y < 0 {
+        if coords.y >= Chunk::SIZE.y || coords.y < 0 {
             return None;
         }
 
         if coords.x >= 0
-            && coords.x < Chunk::SIZE.x as i32
+            && coords.x < Chunk::SIZE.x
             && coords.z >= 0
-            && coords.z < Chunk::SIZE.z as i32
+            && coords.z < Chunk::SIZE.z
         {
             return Some(self.chunk[coords]);
         }
 
         // Coords relative to chunks array start
-        let relative_x = coords.x + Chunk::SIZE.x as i32;
-        let relative_z = coords.z + Chunk::SIZE.z as i32;
+        let relative_x = coords.x + Chunk::SIZE.x;
+        let relative_z = coords.z + Chunk::SIZE.z;
 
-        let chunk_x = relative_x / Chunk::SIZE.x as i32;
-        let chunk_z = relative_z / Chunk::SIZE.z as i32;
+        let chunk_x = relative_x / Chunk::SIZE.x;
+        let chunk_z = relative_z / Chunk::SIZE.z;
 
         if let Some(chunk) = &self.neighbor_chunks[chunk_x as usize][chunk_z as usize] {
-            let block_x = relative_x % Chunk::SIZE.x as i32;
-            let block_z = relative_z % Chunk::SIZE.z as i32;
+            let block_x = relative_x % Chunk::SIZE.x;
+            let block_z = relative_z % Chunk::SIZE.z;
 
             Some(
                 chunk[BlockCoords {
@@ -385,9 +385,9 @@ impl ChunkMeshes {
     pub fn generate(world: &World, chunk: &Chunk, chunk_coords: ChunkCoords) -> Self {
         let mut generation_context = MeshGenerationContext::new(world, chunk, chunk_coords);
 
-        for x in 0..Chunk::SIZE.x as i32 {
-            for y in 0..Chunk::SIZE.y as i32 {
-                for z in 0..Chunk::SIZE.z as i32 {
+        for x in 0..Chunk::SIZE.x {
+            for y in 0..Chunk::SIZE.y {
+                for z in 0..Chunk::SIZE.z {
                     generation_context.current_block_coords = BlockCoords { x, y, z };
                     let current_cell = chunk[generation_context.current_block_coords];
 

@@ -37,12 +37,12 @@ impl Cell {
 }
 
 pub struct Chunk {
-    data: [[[Cell; Self::SIZE.z]; Self::SIZE.y]; Self::SIZE.x],
+    data: [[[Cell; Self::SIZE.z as usize]; Self::SIZE.y as usize]; Self::SIZE.x as usize],
     graphics: Option<Rc<ChunkGraphics>>,
 }
 
 impl Chunk {
-    pub const SIZE: Vector3<usize> = Vector3 {
+    pub const SIZE: Vector3<i32> = Vector3 {
         x: 16,
         y: 256,
         z: 16,
@@ -53,7 +53,7 @@ impl Chunk {
             data: [[[Cell {
                 block_id: BlockId::Air,
                 light: 0,
-            }; Self::SIZE.z]; Self::SIZE.y]; Self::SIZE.x],
+            }; Self::SIZE.z as usize]; Self::SIZE.y as usize]; Self::SIZE.x as usize],
             graphics: None,
         }
     }
@@ -149,9 +149,9 @@ impl World {
         self.render_queue.sort_if_needed(self.prev_cam_chunk_coords);
         for (coords, graphics) in self.render_queue.iter_for_update() {
             let chunk_offset = Vector3 {
-                x: (coords.x * Chunk::SIZE.x as i32) as f32,
+                x: (coords.x * Chunk::SIZE.x) as f32,
                 y: 0.,
-                z: (coords.y * Chunk::SIZE.z as i32) as f32,
+                z: (coords.y * Chunk::SIZE.z) as f32,
             };
             let relative_cam_pos = camera_position - chunk_offset;
 
@@ -198,17 +198,17 @@ impl World {
 
     pub fn get_chunk_coords(block_coords: BlockCoords) -> ChunkCoords {
         ChunkCoords {
-            x: block_coords.x.div_euclid(Chunk::SIZE.x as i32),
-            y: block_coords.z.div_euclid(Chunk::SIZE.z as i32),
+            x: block_coords.x.div_euclid(Chunk::SIZE.x),
+            y: block_coords.z.div_euclid(Chunk::SIZE.z),
         }
     }
 
     pub fn to_chunk_block_coords(block_coords: BlockCoords) -> (ChunkCoords, BlockCoords) {
         let chunk_coords = Self::get_chunk_coords(block_coords);
         let block_coords = BlockCoords {
-            x: block_coords.x.rem_euclid(Chunk::SIZE.x as i32),
+            x: block_coords.x.rem_euclid(Chunk::SIZE.x),
             y: block_coords.y,
-            z: block_coords.z.rem_euclid(Chunk::SIZE.z as i32),
+            z: block_coords.z.rem_euclid(Chunk::SIZE.z),
         };
 
         (chunk_coords, block_coords)
@@ -219,7 +219,7 @@ impl World {
     }
 
     pub fn get_block(&self, coords: BlockCoords) -> Option<&'static Block> {
-        if coords.y < 0 || coords.y >= Chunk::SIZE.y as i32 {
+        if coords.y < 0 || coords.y >= Chunk::SIZE.y {
             return None;
         }
 
@@ -231,7 +231,7 @@ impl World {
     }
 
     pub fn set_block(&mut self, coords: BlockCoords, block_id: BlockId) {
-        if coords.y < 0 || coords.y >= Chunk::SIZE.y as i32 {
+        if coords.y < 0 || coords.y >= Chunk::SIZE.y {
             return;
         }
 

@@ -9,7 +9,7 @@ pub struct Generator {
 
 impl Generator {
     const BASE_HEIGHT: f64 = 10.;
-    const WATER_HEIGHT: usize = 27;
+    const WATER_HEIGHT: i32 = 27;
 
     pub fn new(seed: u32) -> Self {
         Generator {
@@ -22,7 +22,7 @@ impl Generator {
         (self.noise.get((offset / freq).into()) / 2. + 0.5) * scale
     }
 
-    fn get_height(&self, x: i32, z: i32) -> usize {
+    fn get_height(&self, x: i32, z: i32) -> i32 {
         let offset = Vector2 {
             x: x as f64,
             y: z as f64,
@@ -36,22 +36,22 @@ impl Generator {
         ];
 
         let height = Self::BASE_HEIGHT + octaves.iter().sum::<f64>();
-        height as usize
+        height as i32
     }
 
     pub fn generate_chunk(&self, chunk: &mut Chunk, chunk_coords: ChunkCoords) {
         for x in 0..Chunk::SIZE.x {
             for z in 0..Chunk::SIZE.z {
                 let height = self.get_height(
-                    x as i32 + chunk_coords.x * Chunk::SIZE.x as i32,
-                    z as i32 + chunk_coords.y * Chunk::SIZE.z as i32,
+                    x + chunk_coords.x * Chunk::SIZE.x,
+                    z + chunk_coords.y * Chunk::SIZE.z,
                 );
 
                 let offset = Vector2 {
                     x: x as f64,
                     y: z as f64,
                 };
-                let sand_height = Self::WATER_HEIGHT + self.get_noise(offset, 30., 3.) as usize;
+                let sand_height = Self::WATER_HEIGHT + self.get_noise(offset, 30., 3.) as i32;
 
                 for y in 0..=Chunk::SIZE.y {
                     let coords = BlockCoords { x: x as i32, y: y as i32, z: z as i32 };
