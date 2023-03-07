@@ -1,10 +1,11 @@
-use std::cell::Ref;
-
 use cgmath::{Vector2, Vector3, Zero};
 
 use crate::{
     rendering::{Face, Vertex},
-    world::{blocks::Block, BlockCoords, Cell, Chunk, ChunkCoords, LightLevel, World},
+    world::{
+        blocks::Block, utils::ChunkNeighborhood, BlockCoords, Cell, Chunk, ChunkCoords, LightLevel,
+        World,
+    },
 };
 
 #[rustfmt::skip]
@@ -153,9 +154,8 @@ pub struct ChunkMeshes {
 }
 
 struct MeshGenerationContext<'a> {
-    chunk: &'a Chunk,
+    chunks: ChunkNeighborhood<'a>,
     chunk_offset: Vector3<f32>,
-    neighbor_chunks: [[Option<Ref<'a, Chunk>>; 3]; 3],
     current_block_coords: BlockCoords,
     meshes: ChunkMeshes,
 }
@@ -169,20 +169,7 @@ struct FaceDesc<'a> {
 
 impl<'a> MeshGenerationContext<'a> {
     fn new(world: &'a World, chunk: &'a Chunk, chunk_coords: ChunkCoords) -> Self {
-        // Cache neighboring chunks
-        let mut neighbor_chunks: [[Option<Ref<Chunk>>; 3]; 3] =
-            [[None, None, None], [None, None, None], [None, None, None]];
-        for x in 0..3 {
-            for y in 0..3 {
-                if x != 1 || y != 1 {
-                    let offset = ChunkCoords {
-                        x: x as i32 - 1,
-                        y: y as i32 - 1,
-                    };
-                    neighbor_chunks[x][y] = world.borrow_chunk(chunk_coords + offset);
-                }
-            }
-        }
+        let chunks = ChunkNeighborhood::new(world, chunk, chunk_coords);
 
         let chunk_offset = Vector3 {
             x: (chunk_coords.x * Chunk::SIZE.x) as f32,
@@ -191,52 +178,14 @@ impl<'a> MeshGenerationContext<'a> {
         };
 
         MeshGenerationContext {
-            chunk,
+            chunks,
             chunk_offset,
-            neighbor_chunks,
             current_block_coords: BlockCoords::zero(),
             meshes: ChunkMeshes {
                 solid_vertices: vec![],
                 water_vertices: vec![],
                 water_faces: vec![],
             },
-        }
-    }
-
-    // Coords are relative to middle chunk in chunks array
-    fn get_cell(&self, coords: Vector3<i32>) -> Option<Cell> {
-        if coords.y >= Chunk::SIZE.y || coords.y < 0 {
-            return None;
-        }
-
-        if coords.x >= 0
-            && coords.x < Chunk::SIZE.x
-            && coords.z >= 0
-            && coords.z < Chunk::SIZE.z
-        {
-            return Some(self.chunk[coords]);
-        }
-
-        // Coords relative to chunks array start
-        let relative_x = coords.x + Chunk::SIZE.x;
-        let relative_z = coords.z + Chunk::SIZE.z;
-
-        let chunk_x = relative_x / Chunk::SIZE.x;
-        let chunk_z = relative_z / Chunk::SIZE.z;
-
-        if let Some(chunk) = &self.neighbor_chunks[chunk_x as usize][chunk_z as usize] {
-            let block_x = relative_x % Chunk::SIZE.x;
-            let block_z = relative_z % Chunk::SIZE.z;
-
-            Some(
-                chunk[BlockCoords {
-                    x: block_x,
-                    y: coords.y,
-                    z: block_z,
-                }],
-            )
-        } else {
-            None
         }
     }
 
@@ -311,7 +260,7 @@ impl<'a> MeshGenerationContext<'a> {
     fn emit_solid_block(&mut self, texture_ids: &[u32; 6]) {
         for (i, neighbor_offset) in NEIGHBOR_OFFSETS.iter().enumerate() {
             let neighbor_coords = self.current_block_coords + neighbor_offset;
-            let neighbor_cell = self.get_cell(neighbor_coords);
+            let neighbor_cell = self.chunks.get_cell(neighbor_coords);
             let draw_face = Self::is_transparent(neighbor_cell);
             let sun_light = Self::get_light_level(neighbor_cell);
 
@@ -329,8 +278,9 @@ impl<'a> MeshGenerationContext<'a> {
     fn emit_water_block(&mut self, texture_id: u32) {
         const TOP_NEIGHBOR_OFFSET_INDEX: usize = 3;
 
-        let top_neighbor =
-            self.get_cell(self.current_block_coords + NEIGHBOR_OFFSETS[TOP_NEIGHBOR_OFFSET_INDEX]);
+        let top_neighbor = self
+            .chunks
+            .get_cell(self.current_block_coords + NEIGHBOR_OFFSETS[TOP_NEIGHBOR_OFFSET_INDEX]);
         let top_neighbor_block = top_neighbor.as_ref().map(Cell::get_block);
         let top_neighbor_is_fluid = matches!(top_neighbor_block, Some(Block::Fluid { .. }));
         let model = if top_neighbor_is_fluid {
@@ -341,7 +291,7 @@ impl<'a> MeshGenerationContext<'a> {
 
         for (i, neighbor_offset) in NEIGHBOR_OFFSETS.iter().enumerate() {
             let neighbor_coords = self.current_block_coords + neighbor_offset;
-            let neighbor_cell = self.get_cell(neighbor_coords);
+            let neighbor_cell = self.chunks.get_cell(neighbor_coords);
             let sun_light = Self::get_light_level(neighbor_cell);
 
             if let Some(neighbor_cell) = neighbor_cell {
@@ -369,7 +319,7 @@ impl<'a> MeshGenerationContext<'a> {
     }
 
     fn emit_flower_block(&mut self, texture_id: u32) {
-        let sun_light = Self::get_light_level(self.get_cell(self.current_block_coords));
+        let sun_light = Self::get_light_level(self.chunks.get_cell(self.current_block_coords));
         for points in &FLOWER_BLOCK_FACES {
             self.emit_solid_face(FaceDesc {
                 points,

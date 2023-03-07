@@ -1,6 +1,7 @@
 pub mod blocks;
 pub mod generation;
 pub mod mesh;
+mod utils;
 
 use std::{
     cell::{Ref, RefCell},
