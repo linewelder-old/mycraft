@@ -237,14 +237,14 @@ impl World {
         }
 
         let (chunk_coords, block_coords) = Self::to_chunk_block_coords(coords);
-        if let Some(chunk) = self.chunks.get_mut(&chunk_coords) {
+        self.chunks.get(&chunk_coords).map(|chunk| {
             let mut chunk = chunk.borrow_mut();
 
             chunk[block_coords].block_id = block_id;
             if let Some(graphics) = &chunk.graphics {
                 graphics.graphics_data.borrow_mut().needs_update = true;
             }
-        }
+        });
     }
 
     pub fn render_queue_iter(&self) -> impl Iterator<Item = &ChunkGraphics> {
