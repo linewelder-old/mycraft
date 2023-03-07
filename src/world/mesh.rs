@@ -4,7 +4,7 @@ use cgmath::{Vector2, Vector3, Zero};
 
 use crate::{
     rendering::{Face, Vertex},
-    world::{blocks::Block, BlockCoords, Cell, Chunk, ChunkCoords, World},
+    world::{blocks::Block, BlockCoords, Cell, Chunk, ChunkCoords, World, LightLevel},
 };
 
 #[rustfmt::skip]
@@ -163,7 +163,8 @@ struct MeshGenerationContext<'a> {
 struct FaceDesc<'a> {
     points: &'a [Vector3<f32>; 4],
     texture_id: u32,
-    light: f32,
+    diffused_light: f32,
+    sun_light: LightLevel,
 }
 
 impl<'a> MeshGenerationContext<'a> {
@@ -233,12 +234,24 @@ impl<'a> MeshGenerationContext<'a> {
         }
     }
 
-    fn is_transparent(&self, coords: Vector3<i32>) -> bool {
-        if let Some(cell) = self.get_cell(coords) {
+    fn is_transparent(cell: Option<Cell>) -> bool {
+        if let Some(cell) = cell {
             cell.get_block().is_transparent()
         } else {
             true
         }
+    }
+
+    fn get_light_level(cell: Option<Cell>) -> u8 {
+        if let Some(cell) = cell {
+            cell.light
+        } else {
+            15
+        }
+    }
+
+    fn mix_light(diffused: f32, sun: u8) -> f32 {
+        diffused * sun as f32 / 15.
     }
 
     fn emit_face_vertices(
@@ -259,7 +272,7 @@ impl<'a> MeshGenerationContext<'a> {
             .map(|(&pos, tex)| Vertex {
                 pos: pos + offset,
                 tex: (base_texture_coords + tex) / 4.,
-                light: desc.light,
+                light: Self::mix_light(desc.diffused_light, desc.sun_light),
             })
             .for_each(|x| vertex_array.push(x));
     }
@@ -292,11 +305,16 @@ impl<'a> MeshGenerationContext<'a> {
     fn emit_solid_block(&mut self, texture_ids: &[u32; 6]) {
         for (i, neighbor_offset) in NEIGHBOR_OFFSETS.iter().enumerate() {
             let neighbor_coords = self.current_block_coords + neighbor_offset;
-            if self.is_transparent(neighbor_coords) {
+            let neighbor_cell = self.get_cell(neighbor_coords);
+            let draw_face = Self::is_transparent(neighbor_cell);
+            let sun_light = Self::get_light_level(neighbor_cell);
+
+            if draw_face {
                 self.emit_solid_face(FaceDesc {
                     points: &SOLID_BLOCK_FACES[i],
                     texture_id: texture_ids[i],
-                    light: FACE_LIGHTING[i],
+                    diffused_light: FACE_LIGHTING[i],
+                    sun_light,
                 });
             }
         }
@@ -317,7 +335,10 @@ impl<'a> MeshGenerationContext<'a> {
 
         for (i, neighbor_offset) in NEIGHBOR_OFFSETS.iter().enumerate() {
             let neighbor_coords = self.current_block_coords + neighbor_offset;
-            if let Some(neighbor_cell) = self.get_cell(neighbor_coords) {
+            let neighbor_cell = self.get_cell(neighbor_coords);
+            let sun_light = Self::get_light_level(neighbor_cell);
+
+            if let Some(neighbor_cell) = neighbor_cell {
                 let neighbor_block = neighbor_cell.get_block();
                 let checking_top_neighbor = i == TOP_NEIGHBOR_OFFSET_INDEX;
                 let should_not_emit_face = if checking_top_neighbor {
@@ -335,17 +356,20 @@ impl<'a> MeshGenerationContext<'a> {
             self.emit_water_face(FaceDesc {
                 points: &model[i],
                 texture_id,
-                light: FACE_LIGHTING[i],
+                diffused_light: FACE_LIGHTING[i],
+                sun_light,
             });
         }
     }
 
     fn emit_flower_block(&mut self, texture_id: u32) {
+        let sun_light = Self::get_light_level(self.get_cell(self.current_block_coords));
         for points in &FLOWER_BLOCK_FACES {
             self.emit_solid_face(FaceDesc {
                 points,
                 texture_id,
-                light: 1.,
+                diffused_light: 1.,
+                sun_light,
             });
         }
     }
