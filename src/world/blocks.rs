@@ -21,53 +21,50 @@ impl Block {
     }
 }
 
-#[derive(Clone, Copy, IntoPrimitive, TryFromPrimitive)]
-#[repr(u16)]
-pub enum BlockId {
-    Air,
-    Stone,
-    Grass,
-    Dirt,
-    Trunk,
-    Leaves,
-    Water,
-    Sand,
-    Planks,
-    RedFlower,
-    YellowFlower,
+macro_rules! define_blocks {
+    ($($name:ident => $def:expr),+ $(,)?) => {
+        #[derive(Clone, Copy, IntoPrimitive, TryFromPrimitive)]
+        #[repr(u16)]
+        pub enum BlockId {
+            $($name),+
+        }
+
+        const BLOCKS: &[Block] = &[
+            $($def),+
+        ];
+    };
 }
 
-#[rustfmt::skip]
-const BLOCKS: &[Block] = &[
-    Block::Empty, // Air
-    Block::Solid {  // Stone
+define_blocks! {
+    Air => Block::Empty,
+    Stone => Block::Solid {
         texture_ids: [0; 6],
     },
-    Block::Solid {  // Grass
+    Grass => Block::Solid {
         texture_ids: [2, 2, 3, 1, 2, 2],
     },
-    Block::Solid {  // Dirt
+    Dirt => Block::Solid {
         texture_ids: [3; 6],
     },
-    Block::Solid {  // Trunk
+    Trunk => Block::Solid {
         texture_ids: [5, 5, 4, 4, 5, 5],
     },
-    Block::Solid {  // Leaves
+    Leaves => Block::Solid {
         texture_ids: [6; 6],
     },
-    Block::Fluid {  // Water
+    Water => Block::Fluid {
         texture_id: 7,
     },
-    Block::Solid {  // Sand
+    Sand => Block::Solid {
         texture_ids: [8; 6],
     },
-    Block::Solid {  // Planks
+    Planks => Block::Solid {
         texture_ids: [9; 6],
     },
-    Block::Flower { // Red Flower
+    RedFlower => Block::Flower {
         texture_id: 10,
     },
-    Block::Flower { // Yellow Flower
+    YellowFlower => Block::Flower {
         texture_id: 11,
-    }
-];
+    },
+}
