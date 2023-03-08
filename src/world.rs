@@ -19,8 +19,19 @@ use crate::{
         blocks::{Block, BlockId},
         generation::Generator,
         mesh::ChunkMeshes,
+        utils::ChunkNeighborhood,
     },
 };
+
+#[rustfmt::skip]
+const DIRECTIONS: [Vector3<i32>; 6] = [
+    Vector3 { x:  0, y:  0, z: -1 },
+    Vector3 { x:  0, y:  0, z:  1 },
+    Vector3 { x:  0, y: -1, z:  0 },
+    Vector3 { x:  0, y:  1, z:  0 },
+    Vector3 { x: -1, y:  0, z:  0 },
+    Vector3 { x:  1, y:  0, z:  0 },
+];
 
 pub type LightLevel = u8;
 
@@ -53,7 +64,7 @@ impl Chunk {
         Chunk {
             data: [[[Cell {
                 block_id: BlockId::Air,
-                light: 0,
+                light: 15,
             }; Self::SIZE.z as usize]; Self::SIZE.y as usize]; Self::SIZE.x as usize],
             graphics: None,
         }
@@ -65,6 +76,76 @@ impl Chunk {
         } else {
             true
         }
+    }
+
+    fn invalidate_graphics(&self) {
+        if let Some(graphics) = &self.graphics {
+            graphics.graphics_data.borrow_mut().needs_update = true;
+        }
+    }
+
+    fn propogate_light(&mut self, world: &World, coords: ChunkCoords) {
+        let neighbors = ChunkNeighborhood::new(world, self, coords);
+
+        for x in 0..Chunk::SIZE.x {
+            for y in 0..Chunk::SIZE.y {
+                for z in 0..Chunk::SIZE.z {
+                    let coords = BlockCoords { x, y, z };
+                    let cell = &self[coords];
+
+                    if !cell.get_block().is_transparent() || cell.light == 15 {
+                        continue;
+                    }
+
+                    let neighbor_light = DIRECTIONS
+                        .iter()
+                        .filter_map(|direction| {
+                            let neighbor_cell = neighbors.get_cell(coords + direction)?;
+                            if neighbor_cell.get_block().is_transparent() {
+                                Some(neighbor_cell.light)
+                            } else {
+                                None
+                            }
+                        })
+                        .max()
+                        .unwrap_or(0);
+                    let received_light = if neighbor_light > 0 {
+                        neighbor_light - 1
+                    } else {
+                        0
+                    };
+                    let new_light = cell.light.max(received_light);
+
+                    // The chunk is borrowed exclusively by us, no other thread accesses it
+                    let cell_ptr = cell as *const Cell as *mut Cell;
+                    unsafe {
+                        (*cell_ptr).light = new_light;
+                    }
+                }
+            }
+        }
+    }
+
+    fn calculate_sunlight(&mut self, world: &World, coords: ChunkCoords) {
+        crate::timeit!("Light" => {
+            for x in 0..Chunk::SIZE.x {
+                for z in 0..Chunk::SIZE.z {
+                    let mut light = 15;
+                    for y in (0..Chunk::SIZE.y).rev() {
+                        let coords = BlockCoords { x, y, z };
+                        if !self[coords].get_block().is_transparent() {
+                            light = 0;
+                        }
+
+                        self[coords].light = light;
+                    }
+                }
+            }
+
+            for _ in 0..16 {
+                self.propogate_light(world, coords);
+            }
+        });
     }
 }
 
@@ -122,6 +203,7 @@ impl World {
 
         let mut chunk = Chunk::new();
         self.generator.generate_chunk(&mut chunk, coords);
+        chunk.calculate_sunlight(self, coords);
         self.chunks.insert(coords, RefCell::new(chunk));
     }
 
@@ -232,7 +314,9 @@ impl World {
     }
 
     fn invalidate_chunk_graphics(&self, chunk_coords: ChunkCoords) {
-        self.chunks.get(&chunk_coords).map(|chunk| chunk.borrow().invalidate_graphics());
+        self.chunks
+            .get(&chunk_coords)
+            .map(|chunk| chunk.borrow().invalidate_graphics());
     }
 
     pub fn set_block(&mut self, coords: BlockCoords, block_id: BlockId) {
@@ -245,6 +329,7 @@ impl World {
             let mut chunk = chunk.borrow_mut();
 
             chunk[block_coords].block_id = block_id;
+            chunk.calculate_sunlight(self, chunk_coords);
             chunk.invalidate_graphics();
             if block_coords.x == 0 {
                 self.invalidate_chunk_graphics(chunk_coords + ChunkCoords::new(-1, 0));
