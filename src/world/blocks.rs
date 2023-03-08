@@ -5,18 +5,20 @@ pub enum Block {
     Solid { texture_ids: [u32; 6] },
     Fluid { texture_id: u32 },
     Flower { texture_id: u32 },
+    Torch { texture_id: u32 },
 }
 
 impl Block {
     pub fn is_transparent(&self) -> bool {
-        match self {
-            Block::Empty | Block::Fluid { .. } | Block::Flower { .. } => true,
-            Block::Solid { .. } => false,
-        }
+        !matches!(self, Block::Solid { .. })
     }
 
     pub fn light_level(&self) -> u8 {
-        0
+        if let Block::Torch { .. } = self {
+            8
+        } else {
+            0
+        }
     }
 
     #[inline]
@@ -71,4 +73,7 @@ define_blocks! {
     YellowFlower => Block::Flower {
         texture_id: 11,
     },
+    Torch => Block::Torch {
+        texture_id: 12,
+    }
 }

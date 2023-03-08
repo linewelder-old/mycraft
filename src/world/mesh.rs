@@ -360,6 +360,9 @@ impl ChunkMeshes {
                         Block::Flower { texture_id } => {
                             generation_context.emit_flower_block(*texture_id);
                         }
+                        Block::Torch { texture_id } => {
+                            generation_context.emit_flower_block(*texture_id);
+                        }
                     }
                 }
             }
