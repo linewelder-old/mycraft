@@ -231,6 +231,10 @@ impl World {
         })
     }
 
+    fn invalidate_chunk_graphics(&self, chunk_coords: ChunkCoords) {
+        self.chunks.get(&chunk_coords).map(|chunk| chunk.borrow().invalidate_graphics());
+    }
+
     pub fn set_block(&mut self, coords: BlockCoords, block_id: BlockId) {
         if coords.y < 0 || coords.y >= Chunk::SIZE.y {
             return;
@@ -241,8 +245,16 @@ impl World {
             let mut chunk = chunk.borrow_mut();
 
             chunk[block_coords].block_id = block_id;
-            if let Some(graphics) = &chunk.graphics {
-                graphics.graphics_data.borrow_mut().needs_update = true;
+            chunk.invalidate_graphics();
+            if block_coords.x == 0 {
+                self.invalidate_chunk_graphics(chunk_coords + ChunkCoords::new(-1, 0));
+            } else if block_coords.x == Chunk::SIZE.x - 1 {
+                self.invalidate_chunk_graphics(chunk_coords + ChunkCoords::new(1, 0));
+            }
+            if block_coords.z == 0 {
+                self.invalidate_chunk_graphics(chunk_coords + ChunkCoords::new(0, -1));
+            } else if block_coords.z == Chunk::SIZE.z - 1 {
+                self.invalidate_chunk_graphics(chunk_coords + ChunkCoords::new(0, 1));
             }
         });
     }
