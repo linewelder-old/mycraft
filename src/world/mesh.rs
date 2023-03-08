@@ -206,7 +206,8 @@ impl<'a> MeshGenerationContext<'a> {
     }
 
     fn mix_light(diffused: f32, sun: u8) -> f32 {
-        diffused * sun as f32 / 15.
+        let sun_light = sun as f32 / 15.;
+        diffused * sun_light * sun_light
     }
 
     fn emit_face_vertices(
