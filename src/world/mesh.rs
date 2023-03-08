@@ -165,6 +165,7 @@ struct FaceDesc<'a> {
     texture_id: u32,
     diffused_light: f32,
     sun_light: LightLevel,
+    block_light: LightLevel,
 }
 
 impl<'a> MeshGenerationContext<'a> {
@@ -197,17 +198,17 @@ impl<'a> MeshGenerationContext<'a> {
         }
     }
 
-    fn get_light_level(cell: Option<Cell>) -> u8 {
+    fn get_light_levels(cell: Option<Cell>) -> (u8, u8) {
         if let Some(cell) = cell {
-            cell.light
+            (cell.sun_light, cell.block_light)
         } else {
-            15
+            (15, 0)
         }
     }
 
-    fn mix_light(diffused: f32, sun: u8) -> f32 {
-        let sun_light = sun as f32 / 15.;
-        diffused * sun_light * sun_light
+    fn mix_light(diffused: f32, sun: u8, block: u8) -> f32 {
+        let light = diffused * sun.max(block) as f32 / 15.;
+        light * light
     }
 
     fn emit_face_vertices(
@@ -228,7 +229,7 @@ impl<'a> MeshGenerationContext<'a> {
             .map(|(&pos, tex)| Vertex {
                 pos: pos + offset,
                 tex: (base_texture_coords + tex) / 4.,
-                light: Self::mix_light(desc.diffused_light, desc.sun_light),
+                light: Self::mix_light(desc.diffused_light, desc.sun_light, desc.block_light),
             })
             .for_each(|x| vertex_array.push(x));
     }
@@ -263,7 +264,7 @@ impl<'a> MeshGenerationContext<'a> {
             let neighbor_coords = self.current_block_coords + neighbor_offset;
             let neighbor_cell = self.chunks.get_cell(neighbor_coords);
             let draw_face = Self::is_transparent(neighbor_cell);
-            let sun_light = Self::get_light_level(neighbor_cell);
+            let (sun_light, block_light) = Self::get_light_levels(neighbor_cell);
 
             if draw_face {
                 self.emit_solid_face(FaceDesc {
@@ -271,6 +272,7 @@ impl<'a> MeshGenerationContext<'a> {
                     texture_id: texture_ids[i],
                     diffused_light: FACE_LIGHTING[i],
                     sun_light,
+                    block_light,
                 });
             }
         }
@@ -293,7 +295,7 @@ impl<'a> MeshGenerationContext<'a> {
         for (i, neighbor_offset) in NEIGHBOR_OFFSETS.iter().enumerate() {
             let neighbor_coords = self.current_block_coords + neighbor_offset;
             let neighbor_cell = self.chunks.get_cell(neighbor_coords);
-            let sun_light = Self::get_light_level(neighbor_cell);
+            let (sun_light, block_light) = Self::get_light_levels(neighbor_cell);
 
             if let Some(neighbor_cell) = neighbor_cell {
                 let neighbor_block = neighbor_cell.get_block();
@@ -315,18 +317,23 @@ impl<'a> MeshGenerationContext<'a> {
                 texture_id,
                 diffused_light: FACE_LIGHTING[i],
                 sun_light,
+                block_light,
             });
         }
     }
 
     fn emit_flower_block(&mut self, texture_id: u32) {
-        let sun_light = Self::get_light_level(self.chunks.get_cell(self.current_block_coords));
+        let cell = self.chunks.get_cell(self.current_block_coords).unwrap();
+        let sun_light = cell.sun_light;
+        let block_light = cell.block_light;
+
         for points in &FLOWER_BLOCK_FACES {
             self.emit_solid_face(FaceDesc {
                 points,
                 texture_id,
                 diffused_light: 1.,
                 sun_light,
+                block_light,
             });
         }
     }

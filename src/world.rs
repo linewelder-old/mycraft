@@ -38,7 +38,8 @@ pub type LightLevel = u8;
 #[derive(Clone, Copy)]
 pub struct Cell {
     pub block_id: BlockId,
-    pub light: LightLevel,
+    pub sun_light: LightLevel,
+    pub block_light: LightLevel,
 }
 
 impl Cell {
@@ -64,7 +65,8 @@ impl Chunk {
         Chunk {
             data: [[[Cell {
                 block_id: BlockId::Air,
-                light: 15,
+                sun_light: 15,
+                block_light: 0,
             }; Self::SIZE.z as usize]; Self::SIZE.y as usize]; Self::SIZE.x as usize],
             graphics: None,
         }
@@ -85,6 +87,14 @@ impl Chunk {
     }
 
     fn propogate_light(&mut self, world: &World, coords: ChunkCoords) {
+        fn decrease_light(input: LightLevel) -> LightLevel {
+            if input > 0 {
+                input - 1
+            } else {
+                0
+            }
+        }
+
         let neighbors = ChunkNeighborhood::new(world, self, coords);
 
         for x in 0..Chunk::SIZE.x {
@@ -93,33 +103,32 @@ impl Chunk {
                     let coords = BlockCoords { x, y, z };
                     let cell = &self[coords];
 
-                    if !cell.get_block().is_transparent() || cell.light == 15 {
+                    if !cell.get_block().is_transparent() || cell.sun_light == 15 {
                         continue;
                     }
 
-                    let neighbor_light = DIRECTIONS
+                    let (neighbor_sun_light, neighbor_block_light) = DIRECTIONS
                         .iter()
                         .filter_map(|direction| {
                             let neighbor_cell = neighbors.get_cell(coords + direction)?;
                             if neighbor_cell.get_block().is_transparent() {
-                                Some(neighbor_cell.light)
+                                Some((neighbor_cell.sun_light, neighbor_cell.block_light))
                             } else {
                                 None
                             }
                         })
                         .max()
-                        .unwrap_or(0);
-                    let received_light = if neighbor_light > 0 {
-                        neighbor_light - 1
-                    } else {
-                        0
-                    };
-                    let new_light = cell.light.max(received_light);
+                        .unwrap_or((0, 0));
+                    let received_sun_light = decrease_light(neighbor_sun_light);
+                    let received_block_light = decrease_light(neighbor_block_light);
+                    let new_sun_light = cell.sun_light.max(received_sun_light);
+                    let new_block_light = cell.block_light.max(received_block_light);
 
                     // The chunk is borrowed exclusively by us, no other thread accesses it
                     let cell_ptr = cell as *const Cell as *mut Cell;
                     unsafe {
-                        (*cell_ptr).light = new_light;
+                        (*cell_ptr).sun_light = new_sun_light;
+                        (*cell_ptr).block_light = new_block_light;
                     }
                 }
             }
@@ -130,14 +139,18 @@ impl Chunk {
         crate::timeit!("Light" => {
             for x in 0..Chunk::SIZE.x {
                 for z in 0..Chunk::SIZE.z {
-                    let mut light = 15;
+                    let mut sun_light = 15;
                     for y in (0..Chunk::SIZE.y).rev() {
                         let coords = BlockCoords { x, y, z };
-                        if !self[coords].get_block().is_transparent() {
-                            light = 0;
+                        let cell = &mut self[coords];
+                        let block = cell.get_block();
+
+                        if !block.is_transparent() {
+                            sun_light = 0;
                         }
 
-                        self[coords].light = light;
+                        cell.sun_light = sun_light;
+                        cell.block_light = block.light_level();
                     }
                 }
             }

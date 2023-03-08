@@ -15,6 +15,10 @@ impl Block {
         }
     }
 
+    pub fn light_level(&self) -> u8 {
+        0
+    }
+
     #[inline]
     pub fn by_id(id: BlockId) -> &'static Self {
         &BLOCKS[Into::<u16>::into(id) as usize]
