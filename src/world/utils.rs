@@ -2,7 +2,7 @@ use std::cell::Ref;
 
 use cgmath::Vector3;
 
-use crate::world::{BlockCoords, Cell, Chunk, ChunkCoords, World};
+use crate::world::{Cell, Chunk, ChunkCoords, World};
 
 /// Borrows a 3x3 chunk region
 pub struct ChunkNeighborhood<'a> {
@@ -12,8 +12,7 @@ pub struct ChunkNeighborhood<'a> {
 
 impl<'a> ChunkNeighborhood<'a> {
     pub fn new(world: &'a World, chunk: &'a Chunk, chunk_coords: ChunkCoords) -> Self {
-        let mut neighbors: [[Option<Ref<Chunk>>; 3]; 3] =
-            [[None, None, None], [None, None, None], [None, None, None]];
+        let mut neighbors = [[None, None, None], [None, None, None], [None, None, None]];
         for x in 0..3 {
             for y in 0..3 {
                 if x != 1 || y != 1 {
@@ -39,26 +38,9 @@ impl<'a> ChunkNeighborhood<'a> {
             return Some(self.chunk[coords]);
         }
 
-        // Coords relative to chunks array start
-        let relative_x = coords.x + Chunk::SIZE.x;
-        let relative_z = coords.z + Chunk::SIZE.z;
-
-        let chunk_x = relative_x / Chunk::SIZE.x;
-        let chunk_z = relative_z / Chunk::SIZE.z;
-
-        if let Some(chunk) = &self.neighbors[chunk_x as usize][chunk_z as usize] {
-            let block_x = relative_x % Chunk::SIZE.x;
-            let block_z = relative_z % Chunk::SIZE.z;
-
-            Some(
-                chunk[BlockCoords {
-                    x: block_x,
-                    y: coords.y,
-                    z: block_z,
-                }],
-            )
-        } else {
-            None
-        }
+        let (chunk_coords, block_coords) = World::to_chunk_block_coords(coords);
+        self.neighbors[(chunk_coords.x + 1) as usize][(chunk_coords.y + 1) as usize]
+            .as_ref()
+            .map(|chunk| chunk[block_coords])
     }
 }

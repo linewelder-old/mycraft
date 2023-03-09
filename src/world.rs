@@ -4,7 +4,7 @@ pub mod mesh;
 mod utils;
 
 use std::{
-    cell::{Ref, RefCell},
+    cell::{Ref, RefCell, RefMut},
     collections::HashMap,
     ops::{Index, IndexMut},
     rc::Rc,
@@ -310,8 +310,14 @@ impl World {
         (chunk_coords, block_coords)
     }
 
+    #[inline]
     pub fn borrow_chunk(&self, coords: ChunkCoords) -> Option<Ref<Chunk>> {
         self.chunks.get(&coords).map(RefCell::borrow)
+    }
+
+    #[inline]
+    pub fn borrow_mut_chunk(&self, coords: ChunkCoords) -> Option<RefMut<Chunk>> {
+        self.chunks.get(&coords).map(RefCell::borrow_mut)
     }
 
     pub fn get_block(&self, coords: BlockCoords) -> Option<&'static Block> {
@@ -320,16 +326,13 @@ impl World {
         }
 
         let (chunk_coords, block_coords) = Self::to_chunk_block_coords(coords);
-        self.chunks.get(&chunk_coords).map(|chunk| {
-            let chunk = chunk.borrow();
-            chunk[block_coords].get_block()
-        })
+        self.borrow_chunk(chunk_coords)
+            .map(|chunk| chunk[block_coords].get_block())
     }
 
     fn invalidate_chunk_graphics(&self, chunk_coords: ChunkCoords) {
-        self.chunks
-            .get(&chunk_coords)
-            .map(|chunk| chunk.borrow().invalidate_graphics());
+        self.borrow_chunk(chunk_coords)
+            .map(|chunk| chunk.invalidate_graphics());
     }
 
     pub fn set_block(&mut self, coords: BlockCoords, block_id: BlockId) {
@@ -338,9 +341,7 @@ impl World {
         }
 
         let (chunk_coords, block_coords) = Self::to_chunk_block_coords(coords);
-        self.chunks.get(&chunk_coords).map(|chunk| {
-            let mut chunk = chunk.borrow_mut();
-
+        self.borrow_mut_chunk(chunk_coords).map(|mut chunk| {
             chunk[block_coords].block_id = block_id;
             chunk.calculate_sunlight(self, chunk_coords);
             chunk.invalidate_graphics();
