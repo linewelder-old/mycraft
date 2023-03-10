@@ -19,21 +19,10 @@ use crate::{
     world::{
         blocks::{Block, BlockId},
         generation::Generator,
-        light::LightUpdater,
+        light::{recalculate_light, LightUpdater},
         mesh::ChunkMeshes,
-        utils::ChunkNeighborhood,
     },
 };
-
-#[rustfmt::skip]
-const DIRECTIONS: [Vector3<i32>; 6] = [
-    Vector3 { x:  0, y:  0, z: -1 },
-    Vector3 { x:  0, y:  0, z:  1 },
-    Vector3 { x:  0, y: -1, z:  0 },
-    Vector3 { x:  0, y:  1, z:  0 },
-    Vector3 { x: -1, y:  0, z:  0 },
-    Vector3 { x:  1, y:  0, z:  0 },
-];
 
 pub type LightLevel = u8;
 
@@ -86,81 +75,6 @@ impl Chunk {
         if let Some(graphics) = &self.graphics {
             graphics.graphics_data.borrow_mut().needs_update = true;
         }
-    }
-
-    fn propogate_light(&mut self, world: &World, coords: ChunkCoords) {
-        fn decrease_light(input: LightLevel) -> LightLevel {
-            if input > 0 {
-                input - 1
-            } else {
-                0
-            }
-        }
-
-        let neighbors = ChunkNeighborhood::new(world, self, coords);
-
-        for x in 0..Chunk::SIZE.x {
-            for y in 0..Chunk::SIZE.y {
-                for z in 0..Chunk::SIZE.z {
-                    let coords = BlockCoords { x, y, z };
-                    let cell = &self[coords];
-
-                    if !cell.get_block().is_transparent() || cell.sun_light == 15 {
-                        continue;
-                    }
-
-                    let (neighbor_sun_light, neighbor_block_light) = DIRECTIONS
-                        .iter()
-                        .filter_map(|direction| {
-                            let neighbor_cell = neighbors.get_cell(coords + direction)?;
-                            if neighbor_cell.get_block().is_transparent() {
-                                Some((neighbor_cell.sun_light, neighbor_cell.block_light))
-                            } else {
-                                None
-                            }
-                        })
-                        .max()
-                        .unwrap_or((0, 0));
-                    let received_sun_light = decrease_light(neighbor_sun_light);
-                    let received_block_light = decrease_light(neighbor_block_light);
-                    let new_sun_light = cell.sun_light.max(received_sun_light);
-                    let new_block_light = cell.block_light.max(received_block_light);
-
-                    // The chunk is borrowed exclusively by us, no other thread accesses it
-                    let cell_ptr = cell as *const Cell as *mut Cell;
-                    unsafe {
-                        (*cell_ptr).sun_light = new_sun_light;
-                        (*cell_ptr).block_light = new_block_light;
-                    }
-                }
-            }
-        }
-    }
-
-    fn calculate_sunlight(&mut self, world: &World, coords: ChunkCoords) {
-        crate::timeit!("Light" => {
-            for x in 0..Chunk::SIZE.x {
-                for z in 0..Chunk::SIZE.z {
-                    let mut sun_light = 15;
-                    for y in (0..Chunk::SIZE.y).rev() {
-                        let coords = BlockCoords { x, y, z };
-                        let cell = &mut self[coords];
-                        let block = cell.get_block();
-
-                        if !block.is_transparent() {
-                            sun_light = 0;
-                        }
-
-                        cell.sun_light = sun_light;
-                        cell.block_light = block.light_level();
-                    }
-                }
-            }
-
-            for _ in 0..16 {
-                self.propogate_light(world, coords);
-            }
-        });
     }
 }
 
@@ -218,7 +132,7 @@ impl World {
 
         let mut chunk = Chunk::new();
         self.generator.generate_chunk(&mut chunk, coords);
-        chunk.calculate_sunlight(self, coords);
+        crate::timeit!("Light Generation" => recalculate_light(self, &mut chunk, coords));
         self.chunks.insert(coords, RefCell::new(chunk));
     }
 
@@ -345,7 +259,7 @@ impl World {
         let (chunk_coords, block_coords) = Self::to_chunk_block_coords(coords);
         self.borrow_mut_chunk(chunk_coords).map(|mut chunk| {
             chunk[block_coords].block_id = block_id;
-            crate::timeit!("Lighting" => {
+            crate::timeit!("Light Update" => {
                 let mut updater = LightUpdater::new(self, &mut chunk, chunk_coords);
                 updater.on_block_placed(block_coords, Block::by_id(block_id));
             });
