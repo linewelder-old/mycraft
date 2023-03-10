@@ -1,5 +1,6 @@
 pub mod blocks;
 pub mod generation;
+mod light;
 pub mod mesh;
 mod utils;
 
@@ -18,6 +19,7 @@ use crate::{
     world::{
         blocks::{Block, BlockId},
         generation::Generator,
+        light::LightUpdater,
         mesh::ChunkMeshes,
         utils::ChunkNeighborhood,
     },
@@ -343,7 +345,10 @@ impl World {
         let (chunk_coords, block_coords) = Self::to_chunk_block_coords(coords);
         self.borrow_mut_chunk(chunk_coords).map(|mut chunk| {
             chunk[block_coords].block_id = block_id;
-            chunk.calculate_sunlight(self, chunk_coords);
+            crate::timeit!("Lighting" => {
+                let mut updater = LightUpdater::new(self, &mut chunk, chunk_coords);
+                updater.on_block_placed(block_coords, Block::by_id(block_id));
+            });
             chunk.invalidate_graphics();
             if block_coords.x == 0 {
                 self.invalidate_chunk_graphics(chunk_coords + ChunkCoords::new(-1, 0));
