@@ -350,15 +350,13 @@ impl World {
                 updater.on_block_placed(block_coords, Block::by_id(block_id));
             });
             chunk.invalidate_graphics();
-            if block_coords.x == 0 {
-                self.invalidate_chunk_graphics(chunk_coords + ChunkCoords::new(-1, 0));
-            } else if block_coords.x == Chunk::SIZE.x - 1 {
-                self.invalidate_chunk_graphics(chunk_coords + ChunkCoords::new(1, 0));
-            }
-            if block_coords.z == 0 {
-                self.invalidate_chunk_graphics(chunk_coords + ChunkCoords::new(0, -1));
-            } else if block_coords.z == Chunk::SIZE.z - 1 {
-                self.invalidate_chunk_graphics(chunk_coords + ChunkCoords::new(0, 1));
+
+            for x in -1..=1 {
+                for y in -1..=1 {
+                    if x != 0 || y != 0 {
+                        self.invalidate_chunk_graphics(chunk_coords + ChunkCoords { x, y });
+                    }
+                }
             }
         });
     }
