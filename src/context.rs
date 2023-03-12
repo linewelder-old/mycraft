@@ -1,3 +1,5 @@
+use std::cell::RefCell;
+
 use winit::{dpi::PhysicalSize, window::Window};
 
 pub struct Context {
@@ -5,11 +7,11 @@ pub struct Context {
     pub device: wgpu::Device,
     pub queue: wgpu::Queue,
     pub surface: wgpu::Surface,
-    pub surface_config: wgpu::SurfaceConfiguration,
+    pub surface_config: RefCell<wgpu::SurfaceConfiguration>,
 }
 
 impl Context {
-    pub(crate) async fn new(window: Window) -> Self {
+    pub async fn new(window: Window) -> Self {
         let size = window.inner_size();
 
         let instance = wgpu::Instance::new(Default::default());
@@ -45,13 +47,19 @@ impl Context {
             device,
             queue,
             surface,
-            surface_config,
+            surface_config: RefCell::new(surface_config),
         }
     }
 
-    pub(crate) fn resize(&mut self, new_size: PhysicalSize<u32>) {
-        self.surface_config.width = new_size.width;
-        self.surface_config.height = new_size.height;
-        self.surface.configure(&self.device, &self.surface_config);
+    pub fn resize(&self, new_size: PhysicalSize<u32>) {
+        let mut surface_config = self.surface_config.borrow_mut();
+        surface_config.width = new_size.width;
+        surface_config.height = new_size.height;
+        self.surface.configure(&self.device, &surface_config);
+    }
+
+    pub fn recofigure_curface(&self) {
+        let surface_config = self.surface_config.borrow();
+        self.surface.configure(&self.device, &surface_config);
     }
 }

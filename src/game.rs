@@ -36,7 +36,7 @@ pub struct Mycraft {
 }
 
 impl Mycraft {
-    pub fn new(context: &mut Context) -> Self {
+    pub fn new(context: &Context) -> Self {
         let mut world = World::new();
         for x in -5..5 {
             for y in -5..5 {
@@ -47,11 +47,12 @@ impl Mycraft {
         let image = image::load_from_memory(include_bytes!("blocks.png")).unwrap();
         let test_texture = Texture::new(context, "Cube Texture", image);
 
+        let surface_config = context.surface_config.borrow();
         let depth_buffer = create_depth_buffer(
             context,
             "Block Depth Buffer",
-            context.surface_config.width,
-            context.surface_config.height,
+            surface_config.width,
+            surface_config.height,
         );
         let solid_block_renderer = SolidBlockRenderer::new(context);
         let water_renderer = WaterRenderer::new(context);
@@ -81,7 +82,7 @@ impl Mycraft {
         }
     }
 
-    pub fn event(&mut self, context: &mut Context, event: &Event<()>) {
+    pub fn event(&mut self, context: &Context, event: &Event<()>) {
         match event {
             Event::WindowEvent { window_id, event } if *window_id == context.window.id() => {
                 match event {
@@ -142,12 +143,12 @@ impl Mycraft {
         }
     }
 
-    pub fn resize(&mut self, context: &mut Context, size: Vector2<u32>) {
+    pub fn resize(&mut self, context: &Context, size: Vector2<u32>) {
         self.camera.resize_projection(size.x as f32 / size.y as f32);
         self.depth_buffer = create_depth_buffer(context, "Block Depth Buffer", size.x, size.y);
     }
 
-    pub fn update(&mut self, context: &mut Context, delta: std::time::Duration) {
+    pub fn update(&mut self, context: &Context, delta: std::time::Duration) {
         let delta_secs = delta.as_secs_f32();
 
         let movement = Vector3 {

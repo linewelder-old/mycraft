@@ -74,7 +74,7 @@ pub struct ChunkGraphics {
 impl ChunkGraphics {
     pub fn sort_water_faces_if_needed(
         &self,
-        context: &mut Context,
+        context: &Context,
         relative_cam_pos: Vector3<f32>,
     ) -> bool {
         let mut data = self.graphics_data.borrow_mut();

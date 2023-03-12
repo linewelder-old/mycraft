@@ -153,7 +153,7 @@ impl World {
 
     pub fn ensure_water_geometry_is_sorted(
         &mut self,
-        context: &mut Context,
+        context: &Context,
         camera_position: Vector3<f32>,
     ) {
         self.check_what_is_to_sort(camera_position);

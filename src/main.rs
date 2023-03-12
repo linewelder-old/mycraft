@@ -20,7 +20,7 @@ use winit::{
 use crate::{consts::*, context::Context, game::Mycraft};
 
 fn main() {
-    fn resize(context: &mut Context, game: &mut Mycraft, size: PhysicalSize<u32>) {
+    fn resize(context: &Context, game: &mut Mycraft, size: PhysicalSize<u32>) {
         if size.width == 0 || size.height == 0 {
             return;
         }
@@ -40,8 +40,8 @@ fn main() {
         .expect("Failed to create the window");
     env_logger::init();
 
-    let mut context = pollster::block_on(Context::new(window));
-    let mut game = Mycraft::new(&mut context);
+    let context = pollster::block_on(Context::new(window));
+    let mut game = Mycraft::new(&context);
 
     let frame_duration = Duration::new(1, 0) / FPS;
     let mut last_frame_time = Instant::now();
@@ -53,7 +53,7 @@ fn main() {
             let delta = current_frame_time - last_frame_time;
             last_frame_time = current_frame_time;
 
-            game.update(&mut context, delta);
+            game.update(&context, delta);
             context.window.request_redraw();
             control_flow.set_wait_until(current_frame_time + frame_duration);
         }
@@ -69,14 +69,14 @@ fn main() {
             event: WindowEvent::Resized(size),
             window_id,
         } if window_id == context.window.id() => {
-            resize(&mut context, &mut game, size);
+            resize(&context, &mut game, size);
         }
 
         Event::WindowEvent {
             event: WindowEvent::ScaleFactorChanged { new_inner_size, .. },
             window_id,
         } if window_id == context.window.id() => {
-            resize(&mut context, &mut game, *new_inner_size);
+            resize(&context, &mut game, *new_inner_size);
         }
 
         Event::RedrawRequested(window_id) if window_id == context.window.id() => {
@@ -90,10 +90,7 @@ fn main() {
                 }
                 err @ Err(wgpu::SurfaceError::Lost) => {
                     drop(err);
-                    context.resize(PhysicalSize {
-                        width: context.surface_config.width,
-                        height: context.surface_config.height,
-                    });
+                    context.recofigure_curface();
                 }
                 Err(wgpu::SurfaceError::OutOfMemory) => {
                     log::error!("Error on frame render: Out of memory");
@@ -104,7 +101,7 @@ fn main() {
         }
 
         event => {
-            game.event(&mut context, &event);
+            game.event(&context, &event);
         }
     });
 }
