@@ -10,12 +10,14 @@ use crate::{
     camera::Camera,
     consts::*,
     context::Context,
-    input1d::Input1d,
     rendering::{
         texture::{create_depth_buffer, Texture},
-        world_renderer::{WorldRendererTarget, WorldRenderer},
+        world_renderer::{WorldRenderer, WorldRendererTarget},
     },
-    utils::raycasting,
+    utils::{
+        input::{Input3d, Input3dDesc},
+        raycasting,
+    },
     world::{blocks::BlockId, ChunkCoords, World},
 };
 
@@ -27,10 +29,7 @@ pub struct Mycraft {
 
     camera: Camera,
     looking_at: Option<raycasting::Hit>,
-
-    movement_x_input: Input1d,
-    movement_y_input: Input1d,
-    movement_z_input: Input1d,
+    movement_input: Input3d,
 
     world: World,
     test_texture: Texture,
@@ -63,9 +62,14 @@ impl Mycraft {
         camera.position = Vector3::new(0., 40., 0.);
 
         use winit::event::VirtualKeyCode::*;
-        let movement_x_input = Input1d::new(D, A);
-        let movement_y_input = Input1d::new(E, Q);
-        let movement_z_input = Input1d::new(W, S);
+        let movement_input = Input3d::new(Input3dDesc {
+            pos_x: D,
+            neg_x: A,
+            pos_y: E,
+            neg_y: Q,
+            pos_z: S,
+            neg_z: W,
+        });
 
         Mycraft {
             context,
@@ -75,10 +79,7 @@ impl Mycraft {
 
             camera,
             looking_at: None,
-
-            movement_x_input,
-            movement_y_input,
-            movement_z_input,
+            movement_input,
 
             world,
             test_texture,
@@ -103,9 +104,7 @@ impl Mycraft {
                     }
 
                     WindowEvent::KeyboardInput { input, .. } => {
-                        self.movement_x_input.update(input);
-                        self.movement_y_input.update(input);
-                        self.movement_z_input.update(input);
+                        self.movement_input.update(input);
                     }
 
                     WindowEvent::MouseInput {
@@ -160,13 +159,7 @@ impl Mycraft {
     pub fn update(&mut self, delta: std::time::Duration) {
         let delta_secs = delta.as_secs_f32();
 
-        let movement = Vector3 {
-            x: self.movement_x_input.get_value(),
-            y: self.movement_y_input.get_value(),
-            z: -self.movement_z_input.get_value(),
-        } * CAMERA_MOVEMENT_SPEED
-            * delta_secs;
-
+        let movement = self.movement_input.get_value() * CAMERA_MOVEMENT_SPEED * delta_secs;
         self.camera.move_relative_to_view(movement);
         self.camera.update_matrix();
 

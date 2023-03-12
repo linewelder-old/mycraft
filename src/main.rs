@@ -2,7 +2,6 @@ mod camera;
 mod consts;
 mod context;
 mod game;
-mod input1d;
 mod rendering;
 mod utils;
 mod world;

@@ -1,3 +1,4 @@
+pub mod input;
 pub mod raycasting;
 
 #[inline]
