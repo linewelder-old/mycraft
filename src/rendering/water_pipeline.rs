@@ -6,15 +6,16 @@ use crate::{
     rendering::{
         texture::{Texture, DEPTH_FORMAT},
         uniform::Uniform,
-        ChunkGraphics, ChunkRendererTarget, Vertex,
+        world_renderer::WorldRendererTarget,
+        ChunkGraphics, Vertex,
     },
 };
 
-pub struct WaterRenderer {
+pub struct WaterPipeline {
     render_pipeline: wgpu::RenderPipeline,
 }
 
-impl WaterRenderer {
+impl WaterPipeline {
     pub fn new(context: &Context) -> Self {
         let bind_group_layouts = &[
             &Uniform::<Matrix4<f32>>::create_bind_group_layout(context),
@@ -73,13 +74,13 @@ impl WaterRenderer {
                     multiview: None,
                 });
 
-        WaterRenderer { render_pipeline }
+        WaterPipeline { render_pipeline }
     }
 
     pub fn draw<'a>(
         &self,
         encoder: &mut wgpu::CommandEncoder,
-        target: ChunkRendererTarget,
+        target: WorldRendererTarget,
         camera: &Camera,
         chunks: impl Iterator<Item = &'a ChunkGraphics>,
         texture: &Texture,

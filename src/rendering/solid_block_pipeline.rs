@@ -7,15 +7,16 @@ use crate::{
     rendering::{
         texture::{Texture, DEPTH_FORMAT},
         uniform::Uniform,
-        ChunkGraphics, ChunkRendererTarget, Vertex,
+        world_renderer::WorldRendererTarget,
+        ChunkGraphics, Vertex,
     },
 };
 
-pub struct SolidBlockRenderer {
+pub struct SolidBlockPipeline {
     render_pipeline: wgpu::RenderPipeline,
 }
 
-impl SolidBlockRenderer {
+impl SolidBlockPipeline {
     pub fn new(context: &Context) -> Self {
         let bind_group_layouts = &[
             &Uniform::<Matrix4<f32>>::create_bind_group_layout(context),
@@ -74,13 +75,13 @@ impl SolidBlockRenderer {
                     multiview: None,
                 });
 
-        SolidBlockRenderer { render_pipeline }
+        SolidBlockPipeline { render_pipeline }
     }
 
     pub fn draw<'a>(
         &self,
         encoder: &mut wgpu::CommandEncoder,
-        target: ChunkRendererTarget,
+        target: WorldRendererTarget,
         camera: &Camera,
         chunks: impl Iterator<Item = &'a ChunkGraphics>,
         texture: &Texture,

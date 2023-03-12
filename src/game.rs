@@ -12,10 +12,8 @@ use crate::{
     context::Context,
     input1d::Input1d,
     rendering::{
-        solid_block_renderer::SolidBlockRenderer,
         texture::{create_depth_buffer, Texture},
-        water_renderer::WaterRenderer,
-        ChunkRendererTarget,
+        world_renderer::{WorldRendererTarget, WorldRenderer},
     },
     utils::raycasting,
     world::{blocks::BlockId, ChunkCoords, World},
@@ -25,8 +23,7 @@ pub struct Mycraft {
     context: Rc<Context>,
 
     depth_buffer: wgpu::TextureView,
-    solid_block_renderer: SolidBlockRenderer,
-    water_renderer: WaterRenderer,
+    world_renderer: WorldRenderer,
 
     camera: Camera,
     looking_at: Option<raycasting::Hit>,
@@ -60,8 +57,7 @@ impl Mycraft {
                 surface_config.height,
             )
         };
-        let solid_block_renderer = SolidBlockRenderer::new(&context);
-        let water_renderer = WaterRenderer::new(&context);
+        let world_renderer = WorldRenderer::new(&context);
 
         let mut camera = Camera::new(context.clone(), "Camera");
         camera.position = Vector3::new(0., 40., 0.);
@@ -75,8 +71,7 @@ impl Mycraft {
             context,
 
             depth_buffer,
-            solid_block_renderer,
-            water_renderer,
+            world_renderer,
 
             camera,
             looking_at: None,
@@ -195,19 +190,9 @@ impl Mycraft {
                     label: Some("Render Encoder"),
                 });
 
-        self.solid_block_renderer.draw(
+        self.world_renderer.draw(
             &mut encoder,
-            ChunkRendererTarget {
-                output: target,
-                depth_buffer: &self.depth_buffer,
-            },
-            &self.camera,
-            self.world.render_queue_iter(),
-            &self.test_texture,
-        );
-        self.water_renderer.draw(
-            &mut encoder,
-            ChunkRendererTarget {
+            WorldRendererTarget {
                 output: target,
                 depth_buffer: &self.depth_buffer,
             },

@@ -276,7 +276,7 @@ impl World {
         });
     }
 
-    pub fn render_queue_iter(&self) -> impl Iterator<Item = &ChunkGraphics> {
+    pub fn render_queue_iter(&self) -> impl Iterator<Item = &ChunkGraphics> + Clone {
         self.render_queue.iter_for_render()
     }
 }

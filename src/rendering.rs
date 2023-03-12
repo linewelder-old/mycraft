@@ -1,8 +1,9 @@
 pub mod chunk_mesh;
-pub mod solid_block_renderer;
+mod solid_block_pipeline;
 pub mod texture;
 pub mod uniform;
-pub mod water_renderer;
+mod water_pipeline;
+pub mod world_renderer;
 
 use std::{cell::RefCell, cmp::Reverse, rc::Rc};
 
@@ -51,11 +52,6 @@ impl Face {
             .flat_map(|face| Self::VERTEX_INDICES.iter().map(|x| x + face.base_index))
             .collect()
     }
-}
-
-pub struct ChunkRendererTarget<'a> {
-    pub output: &'a wgpu::TextureView,
-    pub depth_buffer: &'a wgpu::TextureView,
 }
 
 pub struct ChunkGraphicsData {
@@ -128,7 +124,7 @@ impl RenderQueue {
         self.needs_sort = false;
     }
 
-    pub fn iter_for_render(&self) -> impl Iterator<Item = &ChunkGraphics> {
+    pub fn iter_for_render(&self) -> impl Iterator<Item = &ChunkGraphics> + Clone {
         self.queue.iter().map(|x| x.1.as_ref())
     }
 
