@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use cgmath::{Matrix4, SquareMatrix, Vector2, Vector3, Vector4, Zero};
 
 use crate::{context::Context, rendering::uniform::Uniform};
@@ -18,7 +20,7 @@ impl Camera {
     const MAX_Y_ROTATION: f32 = 90.;
     const MIN_Y_ROTATION: f32 = -90.;
 
-    pub fn new(context: &Context, label: &str) -> Self {
+    pub fn new(context: Rc<Context>, label: &str) -> Self {
         Camera {
             projection: Matrix4::identity(),
             matrix: Uniform::new(context, &format!("{} Matrix", label), Matrix4::identity()),
@@ -32,12 +34,12 @@ impl Camera {
         }
     }
 
-    pub fn update_matrix(&self, context: &Context) {
+    pub fn update_matrix(&self) {
         let updated_matrix = self.projection
             * Matrix4::from_angle_x(cgmath::Deg(-self.rotation.y))
             * Matrix4::from_angle_y(cgmath::Deg(self.rotation.x))
             * Matrix4::from_translation(-self.position);
-        self.matrix.write(context, updated_matrix);
+        self.matrix.write(updated_matrix);
     }
 
     pub fn resize_projection(&mut self, aspect_ratio: f32) {

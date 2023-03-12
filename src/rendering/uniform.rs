@@ -1,10 +1,11 @@
-use std::marker::PhantomData;
+use std::{marker::PhantomData, rc::Rc};
 
 use wgpu::util::DeviceExt;
 
 use crate::{context::Context, utils::as_bytes};
 
 pub struct Uniform<T> {
+    context: Rc<Context>,
     buffer: wgpu::Buffer,
     bind_group: wgpu::BindGroup,
     phantom: PhantomData<T>,
@@ -12,10 +13,11 @@ pub struct Uniform<T> {
 
 impl<T> Uniform<T> {
     #[inline]
-    pub fn new(context: &Context, label: &str, value: T) -> Self {
-        let (buffer, bind_group) = create_buffer_and_bind_group(context, label, as_bytes(&value));
+    pub fn new(context: Rc<Context>, label: &str, value: T) -> Self {
+        let (buffer, bind_group) = create_buffer_and_bind_group(&context, label, as_bytes(&value));
 
         Uniform {
+            context,
             buffer,
             bind_group,
             phantom: PhantomData::default(),
@@ -23,8 +25,8 @@ impl<T> Uniform<T> {
     }
 
     #[inline]
-    pub fn write(&self, context: &Context, value: T) {
-        context
+    pub fn write(&self, value: T) {
+        self.context
             .queue
             .write_buffer(&self.buffer, 0 as wgpu::BufferAddress, as_bytes(&value));
     }

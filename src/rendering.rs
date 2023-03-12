@@ -8,7 +8,7 @@ use std::{cell::RefCell, cmp::Reverse, rc::Rc};
 
 use cgmath::{MetricSpace, Vector2, Vector3};
 
-use crate::{context::Context, rendering::chunk_mesh::ChunkMesh, world::ChunkCoords};
+use crate::{rendering::chunk_mesh::ChunkMesh, world::ChunkCoords};
 
 #[derive(Clone, Copy)]
 #[repr(C)]
@@ -72,11 +72,7 @@ pub struct ChunkGraphics {
 }
 
 impl ChunkGraphics {
-    pub fn sort_water_faces_if_needed(
-        &self,
-        context: &Context,
-        relative_cam_pos: Vector3<f32>,
-    ) -> bool {
+    pub fn sort_water_faces_if_needed(&self, relative_cam_pos: Vector3<f32>) -> bool {
         let mut data = self.graphics_data.borrow_mut();
         if !data.water_faces_unsorted {
             return false;
@@ -90,7 +86,7 @@ impl ChunkGraphics {
         data.water_faces
             .sort_by(|x, y| y.distance.total_cmp(&x.distance));
         self.water_mesh
-            .write_indices(context, &Face::generate_indices(&data.water_faces));
+            .write_indices(&Face::generate_indices(&data.water_faces));
 
         true
     }

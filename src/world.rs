@@ -58,7 +58,8 @@ impl Chunk {
                 block_id: BlockId::Air,
                 sun_light: 15,
                 block_light: 0,
-            }; Self::SIZE.z as usize]; Self::SIZE.y as usize]; Self::SIZE.x as usize],
+            }; Self::SIZE.z as usize]; Self::SIZE.y as usize];
+                Self::SIZE.x as usize],
             graphics: None,
         }
     }
@@ -98,6 +99,8 @@ pub type ChunkCoords = Vector2<i32>;
 pub type BlockCoords = Vector3<i32>;
 
 pub struct World {
+    context: Rc<Context>,
+
     chunks: HashMap<ChunkCoords, RefCell<Chunk>>,
     generator: Generator,
 
@@ -114,8 +117,10 @@ fn get_chunk_block_coords(position: Vector3<f32>) -> (ChunkCoords, BlockCoords) 
 }
 
 impl World {
-    pub fn new() -> Self {
+    pub fn new(context: Rc<Context>) -> Self {
         World {
+            context,
+
             chunks: HashMap::new(),
             generator: Generator::new(0),
 
@@ -151,11 +156,7 @@ impl World {
         }
     }
 
-    pub fn ensure_water_geometry_is_sorted(
-        &mut self,
-        context: &Context,
-        camera_position: Vector3<f32>,
-    ) {
+    pub fn ensure_water_geometry_is_sorted(&mut self, camera_position: Vector3<f32>) {
         self.check_what_is_to_sort(camera_position);
 
         self.render_queue.sort_if_needed(self.prev_cam_chunk_coords);
@@ -167,26 +168,26 @@ impl World {
             };
             let relative_cam_pos = camera_position - chunk_offset;
 
-            if graphics.sort_water_faces_if_needed(context, relative_cam_pos) {
+            if graphics.sort_water_faces_if_needed(relative_cam_pos) {
                 break;
             }
         }
     }
 
-    pub fn update_chunk_graphics(&mut self, context: &Context) {
+    pub fn update_chunk_graphics(&mut self) {
         for (coords, chunk) in &self.chunks {
             let mut chunk = chunk.borrow_mut();
 
             if chunk.needs_graphics_update() {
                 let meshes = ChunkMeshes::generate(self, &chunk, *coords);
                 let solid_mesh = ChunkMesh::new(
-                    context,
+                    self.context.clone(),
                     "Solid Chunk Mesh",
                     &meshes.solid_vertices,
                     &Face::generate_default_indices(meshes.solid_vertices.len() * 4),
                 );
                 let water_mesh = ChunkMesh::new(
-                    context,
+                    self.context.clone(),
                     "Water Chunk Mesh",
                     &meshes.water_vertices,
                     &Face::generate_indices(&meshes.water_faces),

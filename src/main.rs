@@ -7,7 +7,10 @@ mod rendering;
 mod utils;
 mod world;
 
-use std::time::{Duration, Instant};
+use std::{
+    rc::Rc,
+    time::{Duration, Instant},
+};
 
 use cgmath::Vector2;
 use winit::{
@@ -26,7 +29,7 @@ fn main() {
         }
 
         context.resize(size);
-        game.resize(context, Vector2::new(size.width, size.height));
+        game.resize(Vector2::new(size.width, size.height));
     }
 
     let event_loop = EventLoop::new();
@@ -40,8 +43,8 @@ fn main() {
         .expect("Failed to create the window");
     env_logger::init();
 
-    let context = pollster::block_on(Context::new(window));
-    let mut game = Mycraft::new(&context);
+    let context = Rc::new(pollster::block_on(Context::new(window)));
+    let mut game = Mycraft::new(context.clone());
 
     let frame_duration = Duration::new(1, 0) / FPS;
     let mut last_frame_time = Instant::now();
@@ -53,7 +56,7 @@ fn main() {
             let delta = current_frame_time - last_frame_time;
             last_frame_time = current_frame_time;
 
-            game.update(&context, delta);
+            game.update(delta);
             context.window.request_redraw();
             control_flow.set_wait_until(current_frame_time + frame_duration);
         }
@@ -85,7 +88,7 @@ fn main() {
                     let target = output
                         .texture
                         .create_view(&wgpu::TextureViewDescriptor::default());
-                    game.render(&context, &target);
+                    game.render(&target);
                     output.present();
                 }
                 err @ Err(wgpu::SurfaceError::Lost) => {
@@ -101,7 +104,7 @@ fn main() {
         }
 
         event => {
-            game.event(&context, &event);
+            game.event(&event);
         }
     });
 }
