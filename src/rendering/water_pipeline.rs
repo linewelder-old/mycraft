@@ -4,7 +4,7 @@ use crate::{
     camera::Camera,
     context::Context,
     rendering::{
-        texture::{Texture, DEPTH_FORMAT},
+        texture::{DepthBuffer, Texture},
         uniform::Uniform,
         world_renderer::WorldRendererTarget,
         ChunkGraphics, Vertex,
@@ -64,7 +64,7 @@ impl WaterPipeline {
                         conservative: false,
                     },
                     depth_stencil: Some(wgpu::DepthStencilState {
-                        format: DEPTH_FORMAT,
+                        format: DepthBuffer::FORMAT,
                         depth_write_enabled: false,
                         depth_compare: wgpu::CompareFunction::Less,
                         stencil: wgpu::StencilState::default(),
@@ -96,7 +96,7 @@ impl WaterPipeline {
                 },
             })],
             depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
-                view: target.depth_buffer,
+                view: target.depth_buffer.get_texture_view(),
                 depth_ops: Some(wgpu::Operations {
                     load: wgpu::LoadOp::Load,
                     store: false,

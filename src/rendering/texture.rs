@@ -1,3 +1,7 @@
+use std::rc::Rc;
+
+use cgmath::Vector2;
+
 use crate::context::Context;
 
 pub struct Texture {
@@ -106,30 +110,54 @@ impl Texture {
     }
 }
 
-pub const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
+pub struct DepthBuffer {
+    context: Rc<Context>,
+    label: String,
+    texture_view: wgpu::TextureView,
+}
 
-pub fn create_depth_buffer(
-    context: &Context,
-    label: &str,
-    width: u32,
-    height: u32,
-) -> wgpu::TextureView {
-    let size = wgpu::Extent3d {
-        width,
-        height,
-        depth_or_array_layers: 1,
-    };
+impl DepthBuffer {
+    pub const FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
 
-    let texture = context.device.create_texture(&wgpu::TextureDescriptor {
-        label: Some(label),
-        size,
-        mip_level_count: 1,
-        sample_count: 1,
-        dimension: wgpu::TextureDimension::D2,
-        format: DEPTH_FORMAT,
-        usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-        view_formats: &[DEPTH_FORMAT],
-    });
+    pub fn new(context: Rc<Context>, label: &str, size: Vector2<u32>) -> Self {
+        let texture_view = Self::create_texture_view(&context, label, size);
+        DepthBuffer {
+            context,
+            label: label.to_string(),
+            texture_view,
+        }
+    }
 
-    texture.create_view(&wgpu::TextureViewDescriptor::default())
+    pub fn resize(&mut self, size: Vector2<u32>) {
+        self.texture_view = Self::create_texture_view(&self.context, &self.label, size);
+    }
+
+    pub fn get_texture_view(&self) -> &wgpu::TextureView {
+        &self.texture_view
+    }
+
+    fn create_texture_view(
+        context: &Context,
+        label: &str,
+        size: Vector2<u32>,
+    ) -> wgpu::TextureView {
+        let size = wgpu::Extent3d {
+            width: size.x,
+            height: size.y,
+            depth_or_array_layers: 1,
+        };
+
+        let texture = context.device.create_texture(&wgpu::TextureDescriptor {
+            label: Some(label),
+            size,
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: Self::FORMAT,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+            view_formats: &[Self::FORMAT],
+        });
+
+        texture.create_view(&wgpu::TextureViewDescriptor::default())
+    }
 }

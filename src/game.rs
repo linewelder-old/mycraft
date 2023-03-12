@@ -11,7 +11,7 @@ use crate::{
     consts::*,
     context::Context,
     rendering::{
-        texture::{create_depth_buffer, Texture},
+        texture::{DepthBuffer, Texture},
         world_renderer::{WorldRenderer, WorldRendererTarget},
     },
     utils::{
@@ -24,7 +24,7 @@ use crate::{
 pub struct Mycraft {
     context: Rc<Context>,
 
-    depth_buffer: wgpu::TextureView,
+    depth_buffer: DepthBuffer,
     world_renderer: WorldRenderer,
 
     camera: Camera,
@@ -49,11 +49,13 @@ impl Mycraft {
 
         let depth_buffer = {
             let surface_config = context.surface_config.borrow();
-            create_depth_buffer(
-                &context,
+            DepthBuffer::new(
+                context.clone(),
                 "Block Depth Buffer",
-                surface_config.width,
-                surface_config.height,
+                Vector2 {
+                    x: surface_config.width,
+                    y: surface_config.height,
+                },
             )
         };
         let world_renderer = WorldRenderer::new(&context);
@@ -152,8 +154,7 @@ impl Mycraft {
 
     pub fn resize(&mut self, size: Vector2<u32>) {
         self.camera.resize_projection(size.x as f32 / size.y as f32);
-        self.depth_buffer =
-            create_depth_buffer(&self.context, "Block Depth Buffer", size.x, size.y);
+        self.depth_buffer.resize(size);
     }
 
     pub fn update(&mut self, delta: std::time::Duration) {

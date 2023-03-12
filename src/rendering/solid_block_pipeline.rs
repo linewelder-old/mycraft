@@ -5,7 +5,7 @@ use crate::{
     consts::SKY_COLOR,
     context::Context,
     rendering::{
-        texture::{Texture, DEPTH_FORMAT},
+        texture::{DepthBuffer, Texture},
         uniform::Uniform,
         world_renderer::WorldRendererTarget,
         ChunkGraphics, Vertex,
@@ -65,7 +65,7 @@ impl SolidBlockPipeline {
                         conservative: false,
                     },
                     depth_stencil: Some(wgpu::DepthStencilState {
-                        format: DEPTH_FORMAT,
+                        format: DepthBuffer::FORMAT,
                         depth_write_enabled: true,
                         depth_compare: wgpu::CompareFunction::Less,
                         stencil: wgpu::StencilState::default(),
@@ -97,7 +97,7 @@ impl SolidBlockPipeline {
                 },
             })],
             depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
-                view: target.depth_buffer,
+                view: target.depth_buffer.get_texture_view(),
                 depth_ops: Some(wgpu::Operations {
                     load: wgpu::LoadOp::Clear(1.0),
                     store: true,

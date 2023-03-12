@@ -2,7 +2,9 @@ use crate::{
     camera::Camera,
     context::Context,
     rendering::{
-        solid_block_pipeline::SolidBlockPipeline, texture::Texture, water_pipeline::WaterPipeline,
+        solid_block_pipeline::SolidBlockPipeline,
+        texture::{DepthBuffer, Texture},
+        water_pipeline::WaterPipeline,
         ChunkGraphics,
     },
 };
@@ -10,7 +12,7 @@ use crate::{
 #[derive(Clone, Copy)]
 pub struct WorldRendererTarget<'a> {
     pub output: &'a wgpu::TextureView,
-    pub depth_buffer: &'a wgpu::TextureView,
+    pub depth_buffer: &'a DepthBuffer,
 }
 
 pub struct WorldRenderer {
