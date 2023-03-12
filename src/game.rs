@@ -168,7 +168,7 @@ impl Mycraft {
             &self.world,
             self.camera.position,
             self.camera.get_direction(),
-            6.,
+            MAX_RAYCASTING_DISTANCE,
         );
 
         self.world.update_chunk_graphics();
