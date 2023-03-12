@@ -13,6 +13,7 @@ pub struct ChunkNeighborhood<'a> {
 impl<'a> ChunkNeighborhood<'a> {
     pub fn new(world: &'a World, chunk: &'a Chunk, chunk_coords: ChunkCoords) -> Self {
         let mut neighbors = [[None, None, None], [None, None, None], [None, None, None]];
+        #[allow(clippy::needless_range_loop)]
         for x in 0..3 {
             for y in 0..3 {
                 if x != 1 || y != 1 {
@@ -53,8 +54,8 @@ pub struct ChunkNeighborhoodMut<'a> {
 
 impl<'a> ChunkNeighborhoodMut<'a> {
     pub fn new(world: &'a World, chunk: &'a mut Chunk, chunk_coords: ChunkCoords) -> Self {
-        let mut neighbors: [[Option<RefMut<Chunk>>; 3]; 3] =
-            [[None, None, None], [None, None, None], [None, None, None]];
+        let mut neighbors = [[None, None, None], [None, None, None], [None, None, None]];
+        #[allow(clippy::needless_range_loop)]
         for x in 0..3 {
             for y in 0..3 {
                 if x != 1 || y != 1 {

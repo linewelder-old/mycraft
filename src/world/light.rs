@@ -1,3 +1,5 @@
+use std::cmp::Ordering;
+
 use cgmath::Vector3;
 
 use crate::world::{
@@ -191,10 +193,10 @@ impl<'a> LightUpdater<'a> {
 
     fn update_light<Funcs: LightFuncs>(&mut self, coords: BlockCoords, new_light: LightLevel) {
         let light = Funcs::get_light(self.chunks.get_cell(coords).unwrap());
-        if new_light > light {
-            self.inc_light::<Funcs>(coords, new_light);
-        } else if new_light < light {
-            self.dec_light::<Funcs>(coords, new_light);
+        match new_light.cmp(&light) {
+            Ordering::Greater => self.inc_light::<Funcs>(coords, new_light),
+            Ordering::Less => self.dec_light::<Funcs>(coords, new_light),
+            _ => {}
         }
     }
 

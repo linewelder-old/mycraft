@@ -22,8 +22,8 @@ pub struct WorldRenderer {
 
 impl WorldRenderer {
     pub fn new(context: &Context) -> Self {
-        let solid_block_pipeline = SolidBlockPipeline::new(&context);
-        let water_pipeline = WaterPipeline::new(&context);
+        let solid_block_pipeline = SolidBlockPipeline::new(context);
+        let water_pipeline = WaterPipeline::new(context);
         WorldRenderer {
             solid_block_pipeline,
             water_pipeline,

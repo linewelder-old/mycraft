@@ -248,8 +248,9 @@ impl World {
     }
 
     fn invalidate_chunk_graphics(&self, chunk_coords: ChunkCoords) {
-        self.borrow_chunk(chunk_coords)
-            .map(|chunk| chunk.invalidate_graphics());
+        if let Some(chunk) = self.borrow_chunk(chunk_coords) {
+            chunk.invalidate_graphics();
+        }
     }
 
     pub fn set_block(&mut self, coords: BlockCoords, block_id: BlockId) {
@@ -258,7 +259,7 @@ impl World {
         }
 
         let (chunk_coords, block_coords) = Self::to_chunk_block_coords(coords);
-        self.borrow_mut_chunk(chunk_coords).map(|mut chunk| {
+        if let Some(mut chunk) = self.borrow_mut_chunk(chunk_coords) {
             chunk[block_coords].block_id = block_id;
             crate::timeit!("Light Update" => {
                 let mut updater = LightUpdater::new(self, &mut chunk, chunk_coords);
@@ -273,7 +274,7 @@ impl World {
                     }
                 }
             }
-        });
+        }
     }
 
     pub fn render_queue_iter(&self) -> impl Iterator<Item = &ChunkGraphics> + Clone {

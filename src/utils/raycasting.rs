@@ -151,7 +151,7 @@ pub fn cast_ray(
             hit_coords = BlockCoords {
                 x: xy_current_point.x.floor() as i32,
                 y: xy_current_point.y.floor() as i32,
-                z: xy_current_point.z as i32 - if xy_step.z < 0. { 1 } else { 0 },
+                z: xy_current_point.z as i32 - i32::from(xy_step.z < 0.),
             };
             hit_side = if xy_step.z < 0. {
                 BlockSide::PosZ
@@ -168,7 +168,7 @@ pub fn cast_ray(
             current_point = xz_current_point;
             hit_coords = BlockCoords {
                 x: xz_current_point.x.floor() as i32,
-                y: xz_current_point.y as i32 - if xz_step.y < 0. { 1 } else { 0 },
+                y: xz_current_point.y as i32 - i32::from(xz_step.y < 0.),
                 z: xz_current_point.z.floor() as i32,
             };
             hit_side = if xz_step.y < 0. {
@@ -185,7 +185,7 @@ pub fn cast_ray(
 
             current_point = yz_current_point;
             hit_coords = BlockCoords {
-                x: yz_current_point.x as i32 - if yz_step.x < 0. { 1 } else { 0 },
+                x: yz_current_point.x as i32 - i32::from(yz_step.x < 0.),
                 y: yz_current_point.y.floor() as i32,
                 z: yz_current_point.z.floor() as i32,
             };

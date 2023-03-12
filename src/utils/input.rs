@@ -1,4 +1,4 @@
-use cgmath::{InnerSpace, Vector3};
+use cgmath::Vector3;
 use winit::event::{ElementState, KeyboardInput, VirtualKeyCode};
 
 pub struct Input1d {
