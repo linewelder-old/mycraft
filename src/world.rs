@@ -9,11 +9,13 @@ use std::{
     collections::HashMap,
     ops::{Index, IndexMut},
     rc::Rc,
+    time::Instant,
 };
 
 use cgmath::{Vector2, Vector3, Zero};
 
 use crate::{
+    consts::MAX_UPDATE_TIME,
     context::Context,
     rendering::{chunk_mesh::ChunkMesh, ChunkGraphics, ChunkGraphicsData, Face, RenderQueue},
     world::{
@@ -137,8 +139,45 @@ impl World {
 
         let mut chunk = Chunk::new();
         self.generator.generate_chunk(&mut chunk, coords);
-        crate::timeit!("Light Generation" => recalculate_light(self, &mut chunk, coords));
+        recalculate_light(self, &mut chunk, coords);
         self.chunks.insert(coords, RefCell::new(chunk));
+    }
+
+    pub fn update(&mut self, camera_position: Vector3<f32>) {
+        let update_start = Instant::now();
+
+        self.check_what_is_to_sort(camera_position);
+
+        if self.render_queue.needs_to_be_sorted() {
+            self.render_queue.sort(self.prev_cam_chunk_coords);
+        }
+
+        for (coords, chunk) in self.chunks.iter() {
+            let mut chunk = chunk.borrow_mut();
+
+            if chunk.needs_graphics_update() {
+                let graphics = self.create_chunk_graphics(*coords, &chunk);
+                chunk.graphics = Some(graphics.clone());
+                self.render_queue.insert(*coords, graphics);
+            }
+
+            let graphics = chunk.graphics.as_ref().unwrap();
+            if graphics.needs_water_faces_sorting() {
+                let chunk_offset = Vector3 {
+                    x: (coords.x * Chunk::SIZE.x) as f32,
+                    y: 0.,
+                    z: (coords.y * Chunk::SIZE.z) as f32,
+                };
+                let relative_cam_pos = camera_position - chunk_offset;
+
+                graphics.sort_water_faces(relative_cam_pos);
+            }
+
+            let update_time = Instant::now() - update_start;
+            if update_time > MAX_UPDATE_TIME {
+                break;
+            }
+        }
     }
 
     fn check_what_is_to_sort(&mut self, camera_position: Vector3<f32>) {
@@ -156,57 +195,31 @@ impl World {
         }
     }
 
-    pub fn ensure_water_geometry_is_sorted(&mut self, camera_position: Vector3<f32>) {
-        self.check_what_is_to_sort(camera_position);
+    fn create_chunk_graphics(&self, coords: ChunkCoords, chunk: &Chunk) -> Rc<ChunkGraphics> {
+        let meshes = ChunkMeshes::generate(self, chunk, coords);
+        let solid_mesh = ChunkMesh::new(
+            self.context.clone(),
+            "Solid Chunk Mesh",
+            &meshes.solid_vertices,
+            &Face::generate_default_indices(meshes.solid_vertices.len() * 4),
+        );
+        let water_mesh = ChunkMesh::new(
+            self.context.clone(),
+            "Water Chunk Mesh",
+            &meshes.water_vertices,
+            &Face::generate_indices(&meshes.water_faces),
+        );
 
-        self.render_queue.sort_if_needed(self.prev_cam_chunk_coords);
-        for (coords, graphics) in self.render_queue.iter_for_update() {
-            let chunk_offset = Vector3 {
-                x: (coords.x * Chunk::SIZE.x) as f32,
-                y: 0.,
-                z: (coords.y * Chunk::SIZE.z) as f32,
-            };
-            let relative_cam_pos = camera_position - chunk_offset;
+        Rc::new(ChunkGraphics {
+            solid_mesh,
+            water_mesh,
 
-            if graphics.sort_water_faces_if_needed(relative_cam_pos) {
-                break;
-            }
-        }
-    }
-
-    pub fn update_chunk_graphics(&mut self) {
-        for (coords, chunk) in &self.chunks {
-            let mut chunk = chunk.borrow_mut();
-
-            if chunk.needs_graphics_update() {
-                let meshes = ChunkMeshes::generate(self, &chunk, *coords);
-                let solid_mesh = ChunkMesh::new(
-                    self.context.clone(),
-                    "Solid Chunk Mesh",
-                    &meshes.solid_vertices,
-                    &Face::generate_default_indices(meshes.solid_vertices.len() * 4),
-                );
-                let water_mesh = ChunkMesh::new(
-                    self.context.clone(),
-                    "Water Chunk Mesh",
-                    &meshes.water_vertices,
-                    &Face::generate_indices(&meshes.water_faces),
-                );
-
-                let graphics = Rc::new(ChunkGraphics {
-                    solid_mesh,
-                    water_mesh,
-
-                    graphics_data: RefCell::new(ChunkGraphicsData {
-                        water_faces: meshes.water_faces,
-                        needs_update: false,
-                        water_faces_unsorted: true,
-                    }),
-                });
-                chunk.graphics = Some(graphics.clone());
-                self.render_queue.insert(*coords, graphics);
-            }
-        }
+            graphics_data: RefCell::new(ChunkGraphicsData {
+                water_faces: meshes.water_faces,
+                needs_update: false,
+                water_faces_unsorted: true,
+            }),
+        })
     }
 
     pub fn get_chunk_coords(block_coords: BlockCoords) -> ChunkCoords {
@@ -261,10 +274,10 @@ impl World {
         let (chunk_coords, block_coords) = Self::to_chunk_block_coords(coords);
         if let Some(mut chunk) = self.borrow_mut_chunk(chunk_coords) {
             chunk[block_coords].block_id = block_id;
-            crate::timeit!("Light Update" => {
+            {
                 let mut updater = LightUpdater::new(self, &mut chunk, chunk_coords);
                 updater.on_block_placed(block_coords, Block::by_id(block_id));
-            });
+            }
             chunk.invalidate_graphics();
 
             for x in -1..=1 {

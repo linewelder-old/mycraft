@@ -171,9 +171,7 @@ impl Mycraft {
             MAX_RAYCASTING_DISTANCE,
         );
 
-        self.world.update_chunk_graphics();
-        self.world
-            .ensure_water_geometry_is_sorted(self.camera.position);
+        self.world.update(self.camera.position);
     }
 
     pub fn render(&mut self, target: &wgpu::TextureView) {

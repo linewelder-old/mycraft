@@ -68,11 +68,13 @@ pub struct ChunkGraphics {
 }
 
 impl ChunkGraphics {
-    pub fn sort_water_faces_if_needed(&self, relative_cam_pos: Vector3<f32>) -> bool {
+    pub fn needs_water_faces_sorting(&self) -> bool {
+        let data = self.graphics_data.borrow();
+        data.water_faces_unsorted
+    }
+
+    pub fn sort_water_faces(&self, relative_cam_pos: Vector3<f32>) {
         let mut data = self.graphics_data.borrow_mut();
-        if !data.water_faces_unsorted {
-            return false;
-        }
         data.water_faces_unsorted = false;
 
         for face in data.water_faces.iter_mut() {
@@ -83,8 +85,6 @@ impl ChunkGraphics {
             .sort_by(|x, y| y.distance.total_cmp(&x.distance));
         self.water_mesh
             .write_indices(&Face::generate_indices(&data.water_faces));
-
-        true
     }
 }
 
@@ -114,11 +114,11 @@ impl RenderQueue {
         self.needs_sort = true;
     }
 
-    pub fn sort_if_needed(&mut self, cam_chunk_coords: ChunkCoords) {
-        if !self.needs_sort {
-            return;
-        }
+    pub fn needs_to_be_sorted(&self) -> bool {
+        self.needs_sort
+    }
 
+    pub fn sort(&mut self, cam_chunk_coords: ChunkCoords) {
         self.queue
             .sort_unstable_by_key(|x| Reverse(cam_chunk_coords.distance2(x.0)));
         self.needs_sort = false;
