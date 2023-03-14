@@ -10,8 +10,8 @@ use std::{cell::RefCell, cmp::Reverse, rc::Rc};
 
 use cgmath::{MetricSpace, Vector2, Vector3};
 
-use self::chunk_mesh::ChunkMesh;
-use crate::world::ChunkCoords;
+use self::{chunk_mesh::ChunkMesh, frustrum::Frustrum};
+use crate::{world::{ChunkCoords, Chunk}, utils::aabb::AABB};
 
 #[derive(Clone, Copy)]
 #[repr(C)]
@@ -90,9 +90,26 @@ impl ChunkGraphics {
     }
 }
 
+struct RenderQueueItem {
+    coords: ChunkCoords,
+    graphics: Rc<ChunkGraphics>,
+    in_frustrum: bool,
+}
+
 pub struct RenderQueue {
-    queue: Vec<(ChunkCoords, Rc<ChunkGraphics>)>,
+    queue: Vec<RenderQueueItem>,
     needs_sort: bool,
+}
+
+fn chunk_aabb(coords: ChunkCoords) -> AABB {
+    AABB {
+        start: Vector3 {
+            x: (coords.x * Chunk::SIZE.x) as f32,
+            y: 0.,
+            z: (coords.y * Chunk::SIZE.z) as f32,
+        },
+        size: Chunk::SIZE.map(|x| x as f32),
+    }
 }
 
 impl RenderQueue {
@@ -104,10 +121,14 @@ impl RenderQueue {
     }
 
     pub fn insert(&mut self, coords: ChunkCoords, graphics: Rc<ChunkGraphics>) {
-        if let Some(exist) = self.queue.iter_mut().find(|x| x.0 == coords) {
-            exist.1 = graphics;
+        if let Some(exist) = self.queue.iter_mut().find(|x| x.coords == coords) {
+            exist.graphics = graphics;
         } else {
-            self.queue.push((coords, graphics));
+            self.queue.push(RenderQueueItem {
+                coords,
+                graphics,
+                in_frustrum: false,
+            });
             self.needs_sort = true;
         }
     }
@@ -120,17 +141,23 @@ impl RenderQueue {
         self.needs_sort
     }
 
+    pub fn clip_to_frustrum(&mut self, frustrum: &Frustrum) {
+        for item in &mut self.queue {
+            item.in_frustrum = frustrum.intersects_with_aabb(&chunk_aabb(item.coords));
+        }
+    }
+
     pub fn sort(&mut self, cam_chunk_coords: ChunkCoords) {
         self.queue
-            .sort_unstable_by_key(|x| Reverse(cam_chunk_coords.distance2(x.0)));
+            .sort_unstable_by_key(|x| Reverse(cam_chunk_coords.distance2(x.coords)));
         self.needs_sort = false;
     }
 
     pub fn iter_for_render(&self) -> impl Iterator<Item = &ChunkGraphics> + Clone {
-        self.queue.iter().map(|x| x.1.as_ref())
+        self.queue.iter().filter_map(|x| if x.in_frustrum { Some(x.graphics.as_ref()) } else { None })
     }
 
     pub fn iter_for_update(&self) -> impl Iterator<Item = (ChunkCoords, &ChunkGraphics)> {
-        self.queue.iter().rev().map(|x| (x.0, x.1.as_ref()))
+        self.queue.iter().rev().map(|x| (x.coords, x.graphics.as_ref()))
     }
 }

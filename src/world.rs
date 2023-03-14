@@ -24,7 +24,7 @@ use self::{
 use crate::{
     consts::MAX_UPDATE_TIME,
     context::Context,
-    rendering::{chunk_mesh::ChunkMesh, ChunkGraphics, ChunkGraphicsData, Face, RenderQueue},
+    rendering::{chunk_mesh::ChunkMesh, ChunkGraphics, ChunkGraphicsData, Face, RenderQueue}, camera::Camera,
 };
 
 pub type LightLevel = u8;
@@ -137,10 +137,10 @@ impl World {
         self.chunks.insert(coords, RefCell::new(chunk));
     }
 
-    pub fn update(&mut self, camera_position: Vector3<f32>) {
+    pub fn update(&mut self, camera: &Camera) {
         let update_start = Instant::now();
 
-        self.check_what_is_to_sort(camera_position);
+        self.check_what_is_to_sort(camera.position);
 
         if self.render_queue.needs_to_be_sorted() {
             self.render_queue.sort(self.prev_cam_chunk_coords);
@@ -162,7 +162,7 @@ impl World {
                     y: 0.,
                     z: (coords.y * Chunk::SIZE.z) as f32,
                 };
-                let relative_cam_pos = camera_position - chunk_offset;
+                let relative_cam_pos = camera.position - chunk_offset;
 
                 graphics.sort_water_faces(relative_cam_pos);
             }
@@ -172,6 +172,8 @@ impl World {
                 break;
             }
         }
+
+        self.render_queue.clip_to_frustrum(&camera.get_frustrum());
     }
 
     fn check_what_is_to_sort(&mut self, camera_position: Vector3<f32>) {

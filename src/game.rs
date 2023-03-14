@@ -171,7 +171,7 @@ impl Mycraft {
             MAX_RAYCASTING_DISTANCE,
         );
 
-        self.world.update(self.camera.position);
+        self.world.update(&self.camera);
     }
 
     pub fn render(&mut self, target: &wgpu::TextureView) {
