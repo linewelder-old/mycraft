@@ -1,4 +1,5 @@
 pub mod chunk_mesh;
+pub mod frustrum;
 mod solid_block_pipeline;
 pub mod texture;
 pub mod uniform;
