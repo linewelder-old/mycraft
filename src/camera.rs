@@ -2,11 +2,12 @@ use std::rc::Rc;
 
 use cgmath::{Matrix4, SquareMatrix, Vector2, Vector3, Vector4, Zero};
 
-use crate::{context::Context, rendering::uniform::Uniform};
+use crate::{context::Context, rendering::{uniform::Uniform, frustrum::Frustrum}};
 
 pub struct Camera {
     projection: Matrix4<f32>,
-    matrix: Uniform<Matrix4<f32>>,
+    matrix: Matrix4<f32>,
+    matrix_uniform: Uniform<Matrix4<f32>>,
 
     fov: f32,
     near: f32,
@@ -23,7 +24,8 @@ impl Camera {
     pub fn new(context: Rc<Context>, label: &str) -> Self {
         Camera {
             projection: Matrix4::identity(),
-            matrix: Uniform::new(context, &format!("{} Matrix", label), Matrix4::identity()),
+            matrix: Matrix4::identity(),
+            matrix_uniform: Uniform::new(context, &format!("{} Matrix", label), Matrix4::identity()),
 
             fov: 60.,
             near: 0.01,
@@ -34,12 +36,12 @@ impl Camera {
         }
     }
 
-    pub fn update_matrix(&self) {
-        let updated_matrix = self.projection
+    pub fn update_matrix(&mut self) {
+        self.matrix = self.projection
             * Matrix4::from_angle_x(cgmath::Deg(-self.rotation.y))
             * Matrix4::from_angle_y(cgmath::Deg(self.rotation.x))
             * Matrix4::from_translation(-self.position);
-        self.matrix.write(updated_matrix);
+        self.matrix_uniform.write(self.matrix);
     }
 
     pub fn resize_projection(&mut self, aspect_ratio: f32) {
@@ -69,6 +71,11 @@ impl Camera {
         };
     }
 
+    #[inline]
+    pub fn get_frustrum(&self) -> Frustrum {
+        Frustrum::new(self.matrix)
+    }
+
     pub fn get_direction(&self) -> Vector3<f32> {
         let vec4 = Matrix4::from_angle_y(cgmath::Deg(-self.rotation.x))
             * Matrix4::from_angle_x(cgmath::Deg(self.rotation.y))
@@ -79,6 +86,6 @@ impl Camera {
 
     #[inline]
     pub fn get_bind_group(&self) -> &wgpu::BindGroup {
-        self.matrix.get_bind_group()
+        self.matrix_uniform.get_bind_group()
     }
 }
