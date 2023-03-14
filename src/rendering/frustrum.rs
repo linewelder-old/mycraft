@@ -1,4 +1,4 @@
-use cgmath::{Matrix4, Vector3, InnerSpace};
+use cgmath::{InnerSpace, Matrix4, Vector3};
 
 use crate::utils::aabb::AABB;
 
@@ -81,8 +81,8 @@ impl Frustrum {
     }
 
     pub fn intersects_with_aabb(&self, aabb: &AABB) -> bool {
-        self.planes
-            .iter()
-            .all(|plane| plane.distance_to_point(aabb.farthest_point_in_direction(plane.normal)) > 0.)
+        self.planes.iter().all(|plane| {
+            plane.distance_to_point(aabb.farthest_point_in_direction(plane.normal)) > 0.
+        })
     }
 }

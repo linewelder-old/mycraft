@@ -1,4 +1,4 @@
-use crate::{camera::Camera, context::Context, consts::SKY_COLOR};
+use crate::{camera::Camera, consts::SKY_COLOR, context::Context};
 
 use super::{
     solid_block_pipeline::SolidBlockPipeline,
@@ -55,7 +55,7 @@ impl WorldRenderer {
                 stencil_ops: None,
             }),
         });
-        
+
         self.solid_block_pipeline
             .draw(&mut render_pass, camera, chunks.clone(), texture);
         self.water_pipeline

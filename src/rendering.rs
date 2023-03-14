@@ -11,7 +11,10 @@ use std::{cell::RefCell, cmp::Reverse, rc::Rc};
 use cgmath::{MetricSpace, Vector2, Vector3};
 
 use self::{chunk_mesh::ChunkMesh, frustrum::Frustrum};
-use crate::{world::{ChunkCoords, Chunk}, utils::aabb::AABB};
+use crate::{
+    utils::aabb::AABB,
+    world::{Chunk, ChunkCoords},
+};
 
 #[derive(Clone, Copy)]
 #[repr(C)]
@@ -154,10 +157,19 @@ impl RenderQueue {
     }
 
     pub fn iter_for_render(&self) -> impl Iterator<Item = &ChunkGraphics> + Clone {
-        self.queue.iter().filter_map(|x| if x.in_frustrum { Some(x.graphics.as_ref()) } else { None })
+        self.queue.iter().filter_map(|x| {
+            if x.in_frustrum {
+                Some(x.graphics.as_ref())
+            } else {
+                None
+            }
+        })
     }
 
     pub fn iter_for_update(&self) -> impl Iterator<Item = (ChunkCoords, &ChunkGraphics)> {
-        self.queue.iter().rev().map(|x| (x.coords, x.graphics.as_ref()))
+        self.queue
+            .iter()
+            .rev()
+            .map(|x| (x.coords, x.graphics.as_ref()))
     }
 }

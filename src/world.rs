@@ -22,9 +22,10 @@ use self::{
     utils::{get_chunk_and_block_coords, to_local_chunk_coords},
 };
 use crate::{
+    camera::Camera,
     consts::MAX_UPDATE_TIME,
     context::Context,
-    rendering::{chunk_mesh::ChunkMesh, ChunkGraphics, ChunkGraphicsData, Face, RenderQueue}, camera::Camera,
+    rendering::{chunk_mesh::ChunkMesh, ChunkGraphics, ChunkGraphicsData, Face, RenderQueue},
 };
 
 pub type LightLevel = u8;

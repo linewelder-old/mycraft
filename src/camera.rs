@@ -2,7 +2,10 @@ use std::rc::Rc;
 
 use cgmath::{Matrix4, SquareMatrix, Vector2, Vector3, Vector4, Zero};
 
-use crate::{context::Context, rendering::{uniform::Uniform, frustrum::Frustrum}};
+use crate::{
+    context::Context,
+    rendering::{frustrum::Frustrum, uniform::Uniform},
+};
 
 pub struct Camera {
     projection: Matrix4<f32>,
@@ -25,7 +28,11 @@ impl Camera {
         Camera {
             projection: Matrix4::identity(),
             matrix: Matrix4::identity(),
-            matrix_uniform: Uniform::new(context, &format!("{} Matrix", label), Matrix4::identity()),
+            matrix_uniform: Uniform::new(
+                context,
+                &format!("{} Matrix", label),
+                Matrix4::identity(),
+            ),
 
             fov: 60.,
             near: 0.01,
