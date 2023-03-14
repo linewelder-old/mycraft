@@ -10,13 +10,18 @@ struct VertexOutput {
     @location(1) light: f32,
 }
 
+struct Camera {
+    matrix: mat4x4<f32>,
+    position: vec3<f32>,
+}
+
 @group(0) @binding(0)
-var<uniform> camera_matrix: mat4x4<f32>;
+var<uniform> camera: Camera;
 
 @vertex
 fn vs_main(in: VertexInput) -> VertexOutput {
     var out: VertexOutput;
-    out.position = camera_matrix * vec4<f32>(in.position, 1.0);
+    out.position = camera.matrix * vec4<f32>(in.position, 1.0);
     out.tex_coords = in.tex_coords;
     out.light = in.light;
     return out;

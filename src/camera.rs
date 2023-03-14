@@ -7,10 +7,17 @@ use crate::{
     rendering::{frustrum::Frustrum, uniform::Uniform},
 };
 
+#[repr(C)]
+struct CameraUniform {
+    matrix: Matrix4<f32>,
+    position: Vector3<f32>,
+    _padding: f32,
+}
+
 pub struct Camera {
     projection: Matrix4<f32>,
     matrix: Matrix4<f32>,
-    matrix_uniform: Uniform<Matrix4<f32>>,
+    matrix_uniform: Uniform<CameraUniform>,
 
     fov: f32,
     near: f32,
@@ -31,7 +38,11 @@ impl Camera {
             matrix_uniform: Uniform::new(
                 context,
                 &format!("{} Matrix", label),
-                Matrix4::identity(),
+                CameraUniform {
+                    matrix: Matrix4::identity(),
+                    position: Vector3::zero(),
+                    _padding: 0.,
+                },
             ),
 
             fov: 60.,
@@ -48,7 +59,11 @@ impl Camera {
             * Matrix4::from_angle_x(cgmath::Deg(-self.rotation.y))
             * Matrix4::from_angle_y(cgmath::Deg(self.rotation.x))
             * Matrix4::from_translation(-self.position);
-        self.matrix_uniform.write(self.matrix);
+        self.matrix_uniform.write(CameraUniform {
+            matrix: self.matrix,
+            position: self.position,
+            _padding: 0.,
+        });
     }
 
     pub fn resize_projection(&mut self, aspect_ratio: f32) {
