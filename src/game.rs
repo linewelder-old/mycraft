@@ -32,7 +32,7 @@ pub struct Mycraft {
     movement_input: Input3d,
 
     world: World,
-    test_texture: Texture,
+    blocks_texture: Texture,
 }
 
 impl Mycraft {
@@ -44,8 +44,8 @@ impl Mycraft {
             }
         }
 
-        let image = image::load_from_memory(include_bytes!("blocks.png")).unwrap();
-        let test_texture = Texture::new(&context, "Cube Texture", image);
+        let blocks_image = image::load_from_memory(include_bytes!("blocks.png")).unwrap();
+        let blocks_texture = Texture::new(&context, "Blocks Texture", blocks_image);
 
         let depth_buffer = {
             let surface_config = context.surface_config.borrow();
@@ -84,7 +84,7 @@ impl Mycraft {
             movement_input,
 
             world,
-            test_texture,
+            blocks_texture,
         }
     }
 
@@ -190,7 +190,7 @@ impl Mycraft {
             },
             &self.camera,
             self.world.render_queue_iter(),
-            &self.test_texture,
+            &self.blocks_texture,
         );
 
         self.context.queue.submit(std::iter::once(encoder.finish()));
