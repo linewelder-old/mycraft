@@ -38,9 +38,11 @@ pub struct Mycraft {
 impl Mycraft {
     pub fn new(context: Rc<Context>) -> Self {
         let mut world = World::new(context.clone());
-        for x in -5..5 {
-            for y in -5..5 {
-                world.load_chunk(ChunkCoords { x, y });
+        for x in -RENDER_DISTANCE..RENDER_DISTANCE {
+            for y in -RENDER_DISTANCE..RENDER_DISTANCE {
+                if x * x + y * y < RENDER_DISTANCE * RENDER_DISTANCE {
+                    world.load_chunk(ChunkCoords { x, y });
+                }
             }
         }
 
