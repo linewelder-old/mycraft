@@ -73,11 +73,5 @@ impl Generator {
                 }
             }
         }
-
-        if chunk_coords == (ChunkCoords { x: 0, y: 0 }) {
-            for i in 0..256 {
-                chunk.data[0][i][0].block_id = BlockId::Water;
-            }
-        }
     }
 }
