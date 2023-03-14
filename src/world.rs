@@ -23,6 +23,7 @@ use crate::{
         generation::Generator,
         light::{recalculate_light, LightUpdater},
         mesh::ChunkMeshes,
+        utils::{get_chunk_and_block_coords, to_local_chunk_coords},
     },
 };
 
@@ -111,13 +112,6 @@ pub struct World {
     prev_cam_block_coords: BlockCoords,
 }
 
-fn get_chunk_block_coords(position: Vector3<f32>) -> (ChunkCoords, BlockCoords) {
-    let block_coords = position.map(|x| x.floor() as i32);
-    let chunk_coords = World::get_chunk_coords(block_coords);
-
-    (chunk_coords, block_coords)
-}
-
 impl World {
     pub fn new(context: Rc<Context>) -> Self {
         World {
@@ -181,7 +175,7 @@ impl World {
     }
 
     fn check_what_is_to_sort(&mut self, camera_position: Vector3<f32>) {
-        let (cam_chunk_coords, cam_block_coords) = get_chunk_block_coords(camera_position);
+        let (cam_chunk_coords, cam_block_coords) = get_chunk_and_block_coords(camera_position);
         if cam_chunk_coords != self.prev_cam_chunk_coords {
             self.render_queue.mark_unsorted();
             self.prev_cam_chunk_coords = cam_chunk_coords;
@@ -222,24 +216,6 @@ impl World {
         })
     }
 
-    pub fn get_chunk_coords(block_coords: BlockCoords) -> ChunkCoords {
-        ChunkCoords {
-            x: block_coords.x.div_euclid(Chunk::SIZE.x),
-            y: block_coords.z.div_euclid(Chunk::SIZE.z),
-        }
-    }
-
-    pub fn to_chunk_block_coords(block_coords: BlockCoords) -> (ChunkCoords, BlockCoords) {
-        let chunk_coords = Self::get_chunk_coords(block_coords);
-        let block_coords = BlockCoords {
-            x: block_coords.x.rem_euclid(Chunk::SIZE.x),
-            y: block_coords.y,
-            z: block_coords.z.rem_euclid(Chunk::SIZE.z),
-        };
-
-        (chunk_coords, block_coords)
-    }
-
     #[inline]
     pub fn borrow_chunk(&self, coords: ChunkCoords) -> Option<Ref<Chunk>> {
         self.chunks.get(&coords).map(RefCell::borrow)
@@ -255,7 +231,7 @@ impl World {
             return None;
         }
 
-        let (chunk_coords, block_coords) = Self::to_chunk_block_coords(coords);
+        let (chunk_coords, block_coords) = to_local_chunk_coords(coords);
         self.borrow_chunk(chunk_coords)
             .map(|chunk| chunk[block_coords].get_block())
     }
@@ -271,7 +247,7 @@ impl World {
             return;
         }
 
-        let (chunk_coords, block_coords) = Self::to_chunk_block_coords(coords);
+        let (chunk_coords, block_coords) = to_local_chunk_coords(coords);
         if let Some(mut chunk) = self.borrow_mut_chunk(chunk_coords) {
             chunk[block_coords].block_id = block_id;
             {

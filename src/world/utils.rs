@@ -2,7 +2,33 @@ use std::cell::{Ref, RefMut};
 
 use cgmath::Vector3;
 
-use crate::world::{Cell, Chunk, ChunkCoords, World};
+use crate::world::{BlockCoords, Cell, Chunk, ChunkCoords, World};
+
+fn get_chunk_coords(block_coords: BlockCoords) -> ChunkCoords {
+    ChunkCoords {
+        x: block_coords.x.div_euclid(Chunk::SIZE.x),
+        y: block_coords.z.div_euclid(Chunk::SIZE.z),
+    }
+}
+
+pub fn get_chunk_and_block_coords(position: Vector3<f32>) -> (ChunkCoords, BlockCoords) {
+    let block_coords = position.map(|x| x.floor() as i32);
+    let chunk_coords = get_chunk_coords(block_coords);
+
+    (chunk_coords, block_coords)
+}
+
+/// Returns the chunk coords of the given block, and the coords within the chunk
+pub fn to_local_chunk_coords(block_coords: BlockCoords) -> (ChunkCoords, BlockCoords) {
+    let chunk_coords = get_chunk_coords(block_coords);
+    let block_coords = BlockCoords {
+        x: block_coords.x.rem_euclid(Chunk::SIZE.x),
+        y: block_coords.y,
+        z: block_coords.z.rem_euclid(Chunk::SIZE.z),
+    };
+
+    (chunk_coords, block_coords)
+}
 
 /// Borrows a 3x3 chunk region
 pub struct ChunkNeighborhood<'a> {
@@ -39,7 +65,7 @@ impl<'a> ChunkNeighborhood<'a> {
             return Some(self.chunk[coords]);
         }
 
-        let (chunk_coords, block_coords) = World::to_chunk_block_coords(coords);
+        let (chunk_coords, block_coords) = to_local_chunk_coords(coords);
         self.neighbors[(chunk_coords.x + 1) as usize][(chunk_coords.y + 1) as usize]
             .as_ref()
             .map(|chunk| chunk[block_coords])
@@ -80,7 +106,7 @@ impl<'a> ChunkNeighborhoodMut<'a> {
             return Some(self.chunk[coords]);
         }
 
-        let (chunk_coords, block_coords) = World::to_chunk_block_coords(coords);
+        let (chunk_coords, block_coords) = to_local_chunk_coords(coords);
         self.neighbors[(chunk_coords.x + 1) as usize][(chunk_coords.y + 1) as usize]
             .as_ref()
             .map(|chunk| chunk[block_coords])
@@ -95,7 +121,7 @@ impl<'a> ChunkNeighborhoodMut<'a> {
             return Some(&mut self.chunk[coords]);
         }
 
-        let (chunk_coords, block_coords) = World::to_chunk_block_coords(coords);
+        let (chunk_coords, block_coords) = to_local_chunk_coords(coords);
         self.neighbors[(chunk_coords.x + 1) as usize][(chunk_coords.y + 1) as usize]
             .as_mut()
             .map(|chunk| &mut chunk[block_coords])
