@@ -1,8 +1,8 @@
-use std::rc::Rc;
+use std::{rc::Rc, collections::HashMap};
 
 use cgmath::{Vector2, Vector3};
 use winit::{
-    event::{DeviceEvent, ElementState, Event, MouseButton, WindowEvent},
+    event::{DeviceEvent, ElementState, Event, MouseButton, WindowEvent, KeyboardInput, VirtualKeyCode},
     window::CursorGrabMode,
 };
 
@@ -30,6 +30,9 @@ pub struct Mycraft {
     camera: Camera,
     looking_at: Option<raycasting::Hit>,
     movement_input: Input3d,
+
+    current_block: BlockId,
+    hotbar: HashMap<VirtualKeyCode, BlockId>,
 
     world: World,
     blocks_texture: Texture,
@@ -75,6 +78,20 @@ impl Mycraft {
             neg_z: W,
         });
 
+        let hotbar: HashMap<VirtualKeyCode, BlockId> = HashMap::from([
+            (Key1, BlockId::Stone),
+            (Key2, BlockId::Grass),
+            (Key3, BlockId::Dirt),
+            (Key4, BlockId::Trunk),
+            (Key5, BlockId::Leaves),
+            (Key6, BlockId::Water),
+            (Key7, BlockId::Sand),
+            (Key8, BlockId::Planks),
+            (Key9, BlockId::Trunk),
+            (Key0, BlockId::RedFlower),
+            (Minus, BlockId::Torch),
+        ]);
+
         Mycraft {
             context,
 
@@ -84,6 +101,9 @@ impl Mycraft {
             camera,
             looking_at: None,
             movement_input,
+
+            current_block: BlockId::Dirt,
+            hotbar,
 
             world,
             blocks_texture,
@@ -109,6 +129,16 @@ impl Mycraft {
 
                     WindowEvent::KeyboardInput { input, .. } => {
                         self.movement_input.update(input);
+
+                        if let KeyboardInput {
+                            state: ElementState::Pressed,
+                            virtual_keycode: Some(code),
+                            ..
+                        } = input {
+                            if let Some(block_id) = self.hotbar.get(code) {
+                                self.current_block = *block_id;
+                            }
+                        }
                     }
 
                     WindowEvent::MouseInput {
@@ -125,7 +155,7 @@ impl Mycraft {
                                 MouseButton::Right => {
                                     self.world.set_block(
                                         hit.coords + hit.side.to_direction(),
-                                        BlockId::Dirt,
+                                        self.current_block,
                                     );
                                 }
 
