@@ -68,7 +68,7 @@ impl Chunk {
 
     fn needs_graphics_update(&self) -> bool {
         if let Some(graphics) = &self.graphics {
-            graphics.graphics_data.borrow().needs_update
+            graphics.graphics_data.borrow().outdated
         } else {
             true
         }
@@ -76,7 +76,7 @@ impl Chunk {
 
     fn invalidate_graphics(&self) {
         if let Some(graphics) = &self.graphics {
-            graphics.graphics_data.borrow_mut().needs_update = true;
+            graphics.graphics_data.borrow_mut().outdated = true;
         }
     }
 }
@@ -216,7 +216,7 @@ impl World {
 
             graphics_data: RefCell::new(ChunkGraphicsData {
                 water_faces: meshes.water_faces,
-                needs_update: false,
+                outdated: false,
                 water_faces_unsorted: true,
             }),
         })
