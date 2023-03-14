@@ -1,4 +1,4 @@
-use crate::{camera::Camera, context::Context};
+use crate::{camera::Camera, context::Context, consts::SKY_COLOR};
 
 use super::{
     solid_block_pipeline::SolidBlockPipeline,
@@ -29,16 +29,36 @@ impl WorldRenderer {
     }
 
     pub fn draw<'a>(
-        &self,
-        encoder: &mut wgpu::CommandEncoder,
-        target: WorldRendererTarget,
-        camera: &Camera,
+        &'a self,
+        encoder: &'a mut wgpu::CommandEncoder,
+        target: WorldRendererTarget<'a>,
+        camera: &'a Camera,
         chunks: impl Iterator<Item = &'a ChunkGraphics> + Clone,
-        texture: &Texture,
+        texture: &'a Texture,
     ) {
+        let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+            label: Some("World Render Pass"),
+            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                view: target.output,
+                resolve_target: None,
+                ops: wgpu::Operations {
+                    load: wgpu::LoadOp::Clear(SKY_COLOR),
+                    store: true,
+                },
+            })],
+            depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
+                view: target.depth_buffer.get_texture_view(),
+                depth_ops: Some(wgpu::Operations {
+                    load: wgpu::LoadOp::Clear(1.0),
+                    store: true,
+                }),
+                stencil_ops: None,
+            }),
+        });
+        
         self.solid_block_pipeline
-            .draw(encoder, target, camera, chunks.clone(), texture);
+            .draw(&mut render_pass, camera, chunks.clone(), texture);
         self.water_pipeline
-            .draw(encoder, target, camera, chunks, texture);
+            .draw(&mut render_pass, camera, chunks, texture);
     }
 }

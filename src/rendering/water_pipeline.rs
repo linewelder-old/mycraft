@@ -3,7 +3,6 @@ use cgmath::Matrix4;
 use super::{
     texture::{DepthBuffer, Texture},
     uniform::Uniform,
-    world_renderer::WorldRendererTarget,
     ChunkGraphics, Vertex,
 };
 use crate::{camera::Camera, context::Context};
@@ -75,33 +74,12 @@ impl WaterPipeline {
     }
 
     pub fn draw<'a>(
-        &self,
-        encoder: &mut wgpu::CommandEncoder,
-        target: WorldRendererTarget,
-        camera: &Camera,
+        &'a self,
+        render_pass: &mut wgpu::RenderPass<'a>,
+        camera: &'a Camera,
         chunks: impl Iterator<Item = &'a ChunkGraphics>,
-        texture: &Texture,
+        texture: &'a Texture,
     ) {
-        let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            label: Some("Water Render Pass"),
-            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                view: target.output,
-                resolve_target: None,
-                ops: wgpu::Operations {
-                    load: wgpu::LoadOp::Load,
-                    store: true,
-                },
-            })],
-            depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
-                view: target.depth_buffer.get_texture_view(),
-                depth_ops: Some(wgpu::Operations {
-                    load: wgpu::LoadOp::Load,
-                    store: false,
-                }),
-                stencil_ops: None,
-            }),
-        });
-
         render_pass.set_pipeline(&self.render_pipeline);
         render_pass.set_bind_group(0, camera.get_bind_group(), &[]);
         render_pass.set_bind_group(1, texture.get_bind_group(), &[]);
