@@ -1,12 +1,10 @@
 use cgmath::{Vector2, Vector3, Zero};
 
-use crate::{
-    rendering::{Face, Vertex},
-    world::{
-        blocks::Block, utils::ChunkNeighborhood, BlockCoords, Cell, Chunk, ChunkCoords, LightLevel,
-        World,
-    },
+use super::{
+    blocks::Block, utils::ChunkNeighborhood, BlockCoords, Cell, Chunk, ChunkCoords, LightLevel,
+    World,
 };
+use crate::rendering::{Face, Vertex};
 
 #[rustfmt::skip]
 const SOLID_BLOCK_FACES: [[Vector3<f32>; 4]; 6] = [

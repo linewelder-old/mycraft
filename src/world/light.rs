@@ -2,7 +2,7 @@ use std::cmp::Ordering;
 
 use cgmath::Vector3;
 
-use crate::world::{
+use super::{
     blocks::Block,
     utils::{ChunkNeighborhood, ChunkNeighborhoodMut},
     BlockCoords, Cell, Chunk, ChunkCoords, LightLevel, World,

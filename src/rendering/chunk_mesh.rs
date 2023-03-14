@@ -2,7 +2,8 @@ use std::rc::Rc;
 
 use wgpu::util::DeviceExt;
 
-use crate::{context::Context, rendering::Vertex, utils::as_bytes_slice};
+use super::Vertex;
+use crate::{context::Context, utils::as_bytes_slice};
 
 pub struct ChunkMesh {
     context: Rc<Context>,

@@ -2,7 +2,7 @@ use std::cell::{Ref, RefMut};
 
 use cgmath::Vector3;
 
-use crate::world::{BlockCoords, Cell, Chunk, ChunkCoords, World};
+use super::{BlockCoords, Cell, Chunk, ChunkCoords, World};
 
 fn get_chunk_coords(block_coords: BlockCoords) -> ChunkCoords {
     ChunkCoords {

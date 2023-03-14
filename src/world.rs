@@ -14,17 +14,17 @@ use std::{
 
 use cgmath::{Vector2, Vector3, Zero};
 
+use self::{
+    blocks::{Block, BlockId},
+    generation::Generator,
+    light::{recalculate_light, LightUpdater},
+    mesh::ChunkMeshes,
+    utils::{get_chunk_and_block_coords, to_local_chunk_coords},
+};
 use crate::{
     consts::MAX_UPDATE_TIME,
     context::Context,
     rendering::{chunk_mesh::ChunkMesh, ChunkGraphics, ChunkGraphicsData, Face, RenderQueue},
-    world::{
-        blocks::{Block, BlockId},
-        generation::Generator,
-        light::{recalculate_light, LightUpdater},
-        mesh::ChunkMeshes,
-        utils::{get_chunk_and_block_coords, to_local_chunk_coords},
-    },
 };
 
 pub type LightLevel = u8;

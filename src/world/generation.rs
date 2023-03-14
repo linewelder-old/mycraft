@@ -1,7 +1,7 @@
 use cgmath::Vector2;
 use noise::{NoiseFn, Perlin};
 
-use crate::world::{blocks::BlockId, BlockCoords, Chunk, ChunkCoords};
+use super::{blocks::BlockId, BlockCoords, Chunk, ChunkCoords};
 
 pub struct Generator {
     noise: Perlin,

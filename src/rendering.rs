@@ -9,7 +9,8 @@ use std::{cell::RefCell, cmp::Reverse, rc::Rc};
 
 use cgmath::{MetricSpace, Vector2, Vector3};
 
-use crate::{rendering::chunk_mesh::ChunkMesh, world::ChunkCoords};
+use self::chunk_mesh::ChunkMesh;
+use crate::world::ChunkCoords;
 
 #[derive(Clone, Copy)]
 #[repr(C)]

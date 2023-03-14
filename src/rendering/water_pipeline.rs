@@ -1,15 +1,12 @@
 use cgmath::Matrix4;
 
-use crate::{
-    camera::Camera,
-    context::Context,
-    rendering::{
-        texture::{DepthBuffer, Texture},
-        uniform::Uniform,
-        world_renderer::WorldRendererTarget,
-        ChunkGraphics, Vertex,
-    },
+use super::{
+    texture::{DepthBuffer, Texture},
+    uniform::Uniform,
+    world_renderer::WorldRendererTarget,
+    ChunkGraphics, Vertex,
 };
+use crate::{camera::Camera, context::Context};
 
 pub struct WaterPipeline {
     render_pipeline: wgpu::RenderPipeline,
