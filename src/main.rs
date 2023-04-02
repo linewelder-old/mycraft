@@ -3,6 +3,7 @@ mod consts;
 mod context;
 mod game;
 mod rendering;
+mod resources;
 mod utils;
 mod world;
 
@@ -11,6 +12,7 @@ use std::{
     time::{Duration, Instant},
 };
 
+use anyhow::Result;
 use cgmath::Vector2;
 use winit::{
     dpi::PhysicalSize,
@@ -21,7 +23,7 @@ use winit::{
 
 use crate::{consts::*, context::Context, game::Mycraft};
 
-fn main() {
+fn main() -> Result<()> {
     fn resize(context: &Context, game: &mut Mycraft, size: PhysicalSize<u32>) {
         if size.width == 0 || size.height == 0 {
             return;
@@ -43,7 +45,7 @@ fn main() {
     env_logger::init();
 
     let context = Rc::new(pollster::block_on(Context::new(window)));
-    let mut game = Mycraft::new(context.clone());
+    let mut game = Mycraft::try_new(context.clone())?;
 
     let frame_duration = Duration::new(1, 0) / FPS;
     let mut last_frame_time = Instant::now();

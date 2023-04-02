@@ -1,8 +1,11 @@
-use std::{rc::Rc, collections::HashMap};
+use std::{collections::HashMap, rc::Rc};
 
+use anyhow::Result;
 use cgmath::{Vector2, Vector3};
 use winit::{
-    event::{DeviceEvent, ElementState, Event, MouseButton, WindowEvent, KeyboardInput, VirtualKeyCode},
+    event::{
+        DeviceEvent, ElementState, Event, KeyboardInput, MouseButton, VirtualKeyCode, WindowEvent,
+    },
     window::CursorGrabMode,
 };
 
@@ -14,6 +17,7 @@ use crate::{
         texture::{DepthBuffer, Texture},
         world_renderer::{WorldRenderer, WorldRendererTarget},
     },
+    resources::Resources,
     utils::{
         input::{Input3d, Input3dDesc},
         raycasting,
@@ -39,7 +43,7 @@ pub struct Mycraft {
 }
 
 impl Mycraft {
-    pub fn new(context: Rc<Context>) -> Self {
+    pub fn try_new(context: Rc<Context>) -> Result<Self> {
         let mut world = World::new(context.clone());
         for x in -RENDER_DISTANCE..RENDER_DISTANCE {
             for y in -RENDER_DISTANCE..RENDER_DISTANCE {
@@ -49,8 +53,8 @@ impl Mycraft {
             }
         }
 
-        let blocks_image = image::load_from_memory(include_bytes!("blocks.png")).unwrap();
-        let blocks_texture = Texture::new(&context, "Blocks Texture", blocks_image);
+        let resources = Resources::try_load("./res")?;
+        let blocks_texture = Texture::new(&context, "Blocks Texture", resources.blocks_image);
 
         let depth_buffer = {
             let surface_config = context.surface_config.borrow();
@@ -92,7 +96,7 @@ impl Mycraft {
             (Minus, BlockId::Torch),
         ]);
 
-        Mycraft {
+        Ok(Mycraft {
             context,
 
             depth_buffer,
@@ -107,7 +111,7 @@ impl Mycraft {
 
             world,
             blocks_texture,
-        }
+        })
     }
 
     pub fn event(&mut self, event: &Event<()>) {
