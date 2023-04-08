@@ -127,6 +127,52 @@ const FLOWER_BLOCK_FACES: [[Vector3<f32>; 4]; 4] = [
 ];
 
 #[rustfmt::skip]
+const TORCH_BLOCK_FACES: [[Vector3<f32>; 4]; 5] = [
+    // Pos Y
+    [
+        Vector3 { x: 9./16., y: 9./16., z: 7./16. },
+        Vector3 { x: 7./16., y: 9./16., z: 7./16. },
+        Vector3 { x: 9./16., y: 9./16., z: 9./16. },
+        Vector3 { x: 7./16., y: 9./16., z: 9./16. },
+    ],
+    // Neg Z
+    [
+        Vector3 { x: 1., y: 0., z: 7./16. },
+        Vector3 { x: 0., y: 0., z: 7./16. },
+        Vector3 { x: 1., y: 1., z: 7./16. },
+        Vector3 { x: 0., y: 1., z: 7./16. },
+    ],
+    // Pos Z
+    [
+        Vector3 { x: 0., y: 0., z: 9./16. },
+        Vector3 { x: 1., y: 0., z: 9./16. },
+        Vector3 { x: 0., y: 1., z: 9./16. },
+        Vector3 { x: 1., y: 1., z: 9./16. },
+    ],
+    // Neg X
+    [
+        Vector3 { x: 7./16., y: 0., z: 0. },
+        Vector3 { x: 7./16., y: 0., z: 1. },
+        Vector3 { x: 7./16., y: 1., z: 0. },
+        Vector3 { x: 7./16., y: 1., z: 1. },
+    ],
+    // Pos X
+    [
+        Vector3 { x: 9./16., y: 0., z: 1. },
+        Vector3 { x: 9./16., y: 0., z: 0. },
+        Vector3 { x: 9./16., y: 1., z: 1. },
+        Vector3 { x: 9./16., y: 1., z: 0. },
+    ],
+];
+
+const TORCH_TOP_TEX_COORDS: [Vector2<f32>; 4] = [
+    Vector2 { x: 7./16., y: 9./16. },
+    Vector2 { x: 9./16., y: 9./16. },
+    Vector2 { x: 7./16., y: 7./16. },
+    Vector2 { x: 9./16., y: 7./16. },
+];
+
+#[rustfmt::skip]
 const NEIGHBOR_OFFSETS: [Vector3<i32>; 6] = [
     Vector3 { x:  0, y:  0, z: -1 },
     Vector3 { x:  0, y:  0, z:  1 },
@@ -161,6 +207,7 @@ struct MeshGenerationContext<'a> {
 struct FaceDesc<'a> {
     points: &'a [Vector3<f32>; 4],
     texture_id: u32,
+    texture_coords: &'a [Vector2<f32>; 4],
     diffused_light: f32,
     sun_light: LightLevel,
     block_light: LightLevel,
@@ -223,7 +270,7 @@ impl<'a> MeshGenerationContext<'a> {
 
         desc.points
             .iter()
-            .zip(TEX_COORDS)
+            .zip(desc.texture_coords)
             .map(|(&pos, tex)| Vertex {
                 pos: pos + offset,
                 tex: (base_texture_coords + tex) / 4.,
@@ -268,6 +315,7 @@ impl<'a> MeshGenerationContext<'a> {
                 self.emit_solid_face(FaceDesc {
                     points: &SOLID_BLOCK_FACES[i],
                     texture_id: texture_ids[i],
+                    texture_coords: &TEX_COORDS,
                     diffused_light: FACE_LIGHTING[i],
                     sun_light,
                     block_light,
@@ -313,6 +361,7 @@ impl<'a> MeshGenerationContext<'a> {
             self.emit_water_face(FaceDesc {
                 points: &model[i],
                 texture_id,
+                texture_coords: &TEX_COORDS,
                 diffused_light: FACE_LIGHTING[i],
                 sun_light,
                 block_light,
@@ -329,6 +378,29 @@ impl<'a> MeshGenerationContext<'a> {
             self.emit_solid_face(FaceDesc {
                 points,
                 texture_id,
+                texture_coords: &TEX_COORDS,
+                diffused_light: 1.,
+                sun_light,
+                block_light,
+            });
+        }
+    }
+
+    fn emit_torch_block(&mut self, texture_id: u32) {
+        let cell = self.chunks.get_cell(self.current_block_coords).unwrap();
+        let sun_light = cell.sun_light;
+        let block_light = cell.block_light;
+
+        for (i, points) in TORCH_BLOCK_FACES.iter().enumerate() {
+            let texture_coords = if i == 0 {
+                &TORCH_TOP_TEX_COORDS
+            } else {
+                &TEX_COORDS
+            };
+            self.emit_solid_face(FaceDesc {
+                points,
+                texture_id,
+                texture_coords: texture_coords,
                 diffused_light: 1.,
                 sun_light,
                 block_light,
@@ -359,7 +431,7 @@ impl ChunkMeshes {
                             generation_context.emit_flower_block(*texture_id);
                         }
                         Block::Torch { texture_id } => {
-                            generation_context.emit_flower_block(*texture_id);
+                            generation_context.emit_torch_block(*texture_id);
                         }
                     }
                 }
