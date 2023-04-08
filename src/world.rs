@@ -46,6 +46,7 @@ impl Cell {
 
 pub struct Chunk {
     data: [[[Cell; Self::SIZE.z as usize]; Self::SIZE.y as usize]; Self::SIZE.x as usize],
+    is_generated: bool,
     graphics: Option<Rc<ChunkGraphics>>,
 }
 
@@ -64,11 +65,16 @@ impl Chunk {
                 block_light: 0,
             }; Self::SIZE.z as usize]; Self::SIZE.y as usize];
                 Self::SIZE.x as usize],
+            is_generated: false,
             graphics: None,
         }
     }
 
     fn needs_graphics_update(&self) -> bool {
+        if !self.is_generated {
+            return false;
+        }
+
         if let Some(graphics) = &self.graphics {
             graphics.graphics_data.borrow().outdated
         } else {
@@ -132,10 +138,7 @@ impl World {
             return;
         }
 
-        let mut chunk = Chunk::new();
-        self.generator.generate_chunk(&mut chunk, coords);
-        recalculate_light(self, &mut chunk, coords);
-        self.chunks.insert(coords, RefCell::new(chunk));
+        self.chunks.insert(coords, RefCell::new(Chunk::new()));
     }
 
     pub fn update(&mut self, camera: &Camera) {
@@ -149,6 +152,13 @@ impl World {
 
         for (coords, chunk) in self.chunks.iter() {
             let mut chunk = chunk.borrow_mut();
+
+            if !chunk.is_generated {
+                self.generator.generate_chunk(&mut chunk, *coords);
+                recalculate_light(self, &mut chunk, *coords);
+                chunk.is_generated = true;
+                self.invalidate_neighbors_graphics(*coords);
+            }
 
             if chunk.needs_graphics_update() {
                 let graphics = self.create_chunk_graphics(*coords, &chunk);
@@ -239,9 +249,15 @@ impl World {
             .map(|chunk| chunk[block_coords].get_block())
     }
 
-    fn invalidate_chunk_graphics(&self, chunk_coords: ChunkCoords) {
-        if let Some(chunk) = self.borrow_chunk(chunk_coords) {
-            chunk.invalidate_graphics();
+    fn invalidate_neighbors_graphics(&self, chunk_coords: ChunkCoords) {
+        for x in -1..=1 {
+            for y in -1..=1 {
+                if x != 0 || y != 0 {
+                    if let Some(chunk) = self.borrow_chunk(chunk_coords + ChunkCoords { x, y }) {
+                        chunk.invalidate_graphics();
+                    }
+                }
+            }
         }
     }
 
@@ -258,14 +274,7 @@ impl World {
                 updater.on_block_placed(block_coords, Block::by_id(block_id));
             }
             chunk.invalidate_graphics();
-
-            for x in -1..=1 {
-                for y in -1..=1 {
-                    if x != 0 || y != 0 {
-                        self.invalidate_chunk_graphics(chunk_coords + ChunkCoords { x, y });
-                    }
-                }
-            }
+            self.invalidate_neighbors_graphics(chunk_coords);
         }
     }
 
