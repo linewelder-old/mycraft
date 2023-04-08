@@ -111,7 +111,7 @@ pub type BlockCoords = Vector3<i32>;
 pub struct World {
     context: Rc<Context>,
 
-    chunks: HashMap<ChunkCoords, RefCell<Chunk>>,
+    chunks: HashMap<ChunkCoords, Box<RefCell<Chunk>>>,
     generator: Generator,
 
     render_queue: RenderQueue,
@@ -138,7 +138,7 @@ impl World {
             return;
         }
 
-        self.chunks.insert(coords, RefCell::new(Chunk::new()));
+        self.chunks.insert(coords, Box::new(RefCell::new(Chunk::new())));
     }
 
     pub fn update(&mut self, camera: &Camera) {
@@ -231,12 +231,12 @@ impl World {
 
     #[inline]
     pub fn borrow_chunk(&self, coords: ChunkCoords) -> Option<Ref<Chunk>> {
-        self.chunks.get(&coords).map(RefCell::borrow)
+        self.chunks.get(&coords).map(|chunk| chunk.borrow())
     }
 
     #[inline]
     pub fn borrow_mut_chunk(&self, coords: ChunkCoords) -> Option<RefMut<Chunk>> {
-        self.chunks.get(&coords).map(RefCell::borrow_mut)
+        self.chunks.get(&coords).map(|chunk| chunk.borrow_mut())
     }
 
     pub fn get_block(&self, coords: BlockCoords) -> Option<&'static Block> {
