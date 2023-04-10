@@ -126,7 +126,7 @@ impl Mycraft {
                         self.context.window.set_cursor_visible(false);
                     }
 
-                    WindowEvent::CursorLeft { .. } => {
+                    WindowEvent::CursorLeft { .. } | WindowEvent::Focused(false) => {
                         let _ = self.context.window.set_cursor_grab(CursorGrabMode::None);
                         self.context.window.set_cursor_visible(true);
                     }
