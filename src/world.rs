@@ -116,6 +116,7 @@ struct ChunkQueueItem {
 pub struct ChunkQueue {
     queue: Vec<ChunkQueueItem>,
     needs_sort: bool,
+    point_of_view: ChunkCoords,
 }
 
 impl ChunkQueue {
@@ -123,6 +124,7 @@ impl ChunkQueue {
         ChunkQueue {
             queue: vec![],
             needs_sort: false,
+            point_of_view: ChunkCoords::zero(),
         }
     }
 
@@ -144,6 +146,7 @@ impl ChunkQueue {
     }
 
     pub fn sort(&mut self, cam_chunk_coords: ChunkCoords) {
+        self.point_of_view = cam_chunk_coords;
         self.queue
             .sort_unstable_by_key(|x| cam_chunk_coords.distance2(x.coords));
         self.needs_sort = false;
@@ -156,6 +159,7 @@ impl ChunkQueue {
     pub fn iter_graphics(&self) -> impl Iterator<Item = (ChunkCoords, Rc<ChunkGraphics>)> + '_ {
         self.queue
             .iter()
+            .rev()
             .filter_map(|x| Some((x.coords, x.chunk.borrow().graphics.as_ref()?.clone())))
     }
 }
