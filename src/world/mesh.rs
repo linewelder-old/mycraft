@@ -4,7 +4,7 @@ use super::{
     blocks::Block, utils::ChunkNeighborhood, BlockCoords, Cell, Chunk, ChunkCoords, LightLevel,
     World,
 };
-use crate::rendering::{Face, Vertex};
+use crate::rendering::{Face, Vertex, VertexDesc};
 
 #[rustfmt::skip]
 const SOLID_BLOCK_FACES: [[Vector3<f32>; 4]; 6] = [
@@ -183,7 +183,7 @@ const NEIGHBOR_OFFSETS: [Vector3<i32>; 6] = [
     Vector3 { x:  1, y:  0, z:  0 },
 ];
 
-const FACE_LIGHTING: [f32; 6] = [0.6, 0.6, 0.4, 1., 0.8, 0.8];
+const FACE_LIGHTING: [u8; 6] = [9, 9, 6, 15, 12, 12];
 
 const TEX_COORDS: [Vector2<f32>; 4] = [
     Vector2 { x: 0., y: 1. },
@@ -209,7 +209,7 @@ struct FaceDesc<'a> {
     points: &'a [Vector3<f32>; 4],
     texture_id: u32,
     texture_coords: &'a [Vector2<f32>; 4],
-    diffused_light: f32,
+    diffused_light: u8,
     sun_light: LightLevel,
     block_light: LightLevel,
 }
@@ -252,11 +252,6 @@ impl<'a> MeshGenerationContext<'a> {
         }
     }
 
-    fn mix_light(diffused: f32, sun: u8, block: u8) -> f32 {
-        let light = diffused * sun.max(block) as f32 / 15.;
-        light * light
-    }
-
     fn emit_face_vertices(
         vertex_array: &mut Vec<Vertex>,
         chunk_offset: Vector3<f32>,
@@ -272,10 +267,14 @@ impl<'a> MeshGenerationContext<'a> {
         desc.points
             .iter()
             .zip(desc.texture_coords)
-            .map(|(&pos, tex)| Vertex {
-                pos: pos + offset,
-                tex: (base_texture_coords + tex) / 4.,
-                light: Self::mix_light(desc.diffused_light, desc.sun_light, desc.block_light),
+            .map(|(&pos, tex)| {
+                Vertex::new(VertexDesc {
+                    pos: pos + offset,
+                    tex: (base_texture_coords + tex) / 4.,
+                    diffused_light: desc.diffused_light,
+                    sun_light: desc.sun_light,
+                    block_light: desc.block_light,
+                })
             })
             .for_each(|x| vertex_array.push(x));
     }
@@ -380,7 +379,7 @@ impl<'a> MeshGenerationContext<'a> {
                 points,
                 texture_id,
                 texture_coords: &TEX_COORDS,
-                diffused_light: 1.,
+                diffused_light: 15,
                 sun_light,
                 block_light,
             });
@@ -402,7 +401,7 @@ impl<'a> MeshGenerationContext<'a> {
                 points,
                 texture_id,
                 texture_coords: texture_coords,
-                diffused_light: 1.,
+                diffused_light: 15,
                 sun_light,
                 block_light,
             });

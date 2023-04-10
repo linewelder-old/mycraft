@@ -19,17 +19,36 @@ use crate::{
 #[derive(Clone, Copy)]
 #[repr(C)]
 pub struct Vertex {
+    pos: Vector3<f32>,
+    tex: Vector2<f32>,
+    light: u32,
+}
+
+pub struct VertexDesc {
     pub pos: Vector3<f32>,
     pub tex: Vector2<f32>,
-    pub light: f32,
+    pub diffused_light: u8,
+    pub sun_light: u8,
+    pub block_light: u8,
 }
 
 impl Vertex {
     const BUFFER_LAYOUT: wgpu::VertexBufferLayout<'static> = wgpu::VertexBufferLayout {
         array_stride: std::mem::size_of::<Vertex>() as wgpu::BufferAddress,
         step_mode: wgpu::VertexStepMode::Vertex,
-        attributes: &wgpu::vertex_attr_array![0 => Float32x3, 1 => Float32x2, 2 => Float32],
+        attributes: &wgpu::vertex_attr_array![0 => Float32x3, 1 => Float32x2, 2 => Uint32],
     };
+
+    #[inline]
+    pub fn new(desc: VertexDesc) -> Self {
+        Vertex {
+            pos: desc.pos,
+            tex: desc.tex,
+            light: ((desc.diffused_light as u32) << 8)
+                | ((desc.sun_light as u32) << 4)
+                | (desc.block_light as u32),
+        }
+    }
 }
 
 pub struct Face {

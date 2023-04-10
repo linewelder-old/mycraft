@@ -1,13 +1,13 @@
 struct VertexInput {
     @location(0) position: vec3<f32>,
     @location(1) tex_coords: vec2<f32>,
-    @location(2) light: f32,
+    @location(2) light: u32,
 }
 
 struct VertexOutput {
     @builtin(position) position: vec4<f32>,
     @location(0) tex_coords: vec2<f32>,
-    @location(1) light: f32,
+    @location(1) light: u32,
 }
 
 struct Camera {
@@ -39,5 +39,11 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
         discard;
     }
 
-    return in.light * texture_color;
+    let block_light = f32(in.light & 0x0Fu) / 15.;
+    let sun_light = f32((in.light >> 4u) & 0x0Fu) / 15.;
+    let diffused_light = f32((in.light >> 8u) & 0x0Fu) / 15.;
+    let world_light_unmapped = diffused_light * max(sun_light, block_light);
+    let world_light = world_light_unmapped * world_light_unmapped;
+
+    return world_light * texture_color;
 }

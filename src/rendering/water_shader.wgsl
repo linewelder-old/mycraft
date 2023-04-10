@@ -1,13 +1,13 @@
 struct VertexInput {
     @location(0) position: vec3<f32>,
     @location(1) tex_coords: vec2<f32>,
-    @location(2) light: f32,
+    @location(2) light: u32,
 }
 
 struct VertexOutput {
     @builtin(position) position: vec4<f32>,
     @location(0) tex_coords: vec2<f32>,
-    @location(1) light: f32,
+    @location(1) light: u32,
     @location(2) world_position: vec3<f32>,
 }
 
@@ -96,7 +96,13 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
 
     let diffused_light = dot(sun_direction, normal);
 
-    let total_light = in.light * (diffused_light + specular_light);
+    let block_light = f32(in.light & 0x0Fu) / 15.;
+    let sun_light = f32((in.light >> 4u) & 0x0Fu) / 15.;
+    let diffuse_light = f32((in.light >> 8u) & 0x0Fu) / 15.;
+    let world_light_unmapped = diffuse_light * max(sun_light, block_light);
+    let world_light = world_light_unmapped * world_light_unmapped;
+
+    let total_light = world_light * (diffused_light + specular_light);
     let texture_color = textureSample(texture_test, sampler_test, in.tex_coords).xyz;
     return vec4<f32>(total_light * texture_color, 0.8);
 }
