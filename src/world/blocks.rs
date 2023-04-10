@@ -15,7 +15,7 @@ impl Block {
 
     pub fn light_level(&self) -> u8 {
         if let Block::Torch { .. } = self {
-            8
+            10
         } else {
             0
         }
