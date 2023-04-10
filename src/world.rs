@@ -152,6 +152,12 @@ impl ChunkQueue {
     pub fn iter(&self) -> impl Iterator<Item = (ChunkCoords, &RefCell<Chunk>)> {
         self.queue.iter().map(|x| (x.coords, x.chunk.as_ref()))
     }
+
+    pub fn iter_graphics(&self) -> impl Iterator<Item = (ChunkCoords, Rc<ChunkGraphics>)> + '_ {
+        self.queue
+            .iter()
+            .filter_map(|x| Some((x.coords, x.chunk.borrow().graphics.as_ref()?.clone())))
+    }
 }
 
 pub struct World {
@@ -198,10 +204,7 @@ impl World {
 
         if self.chunk_queue.needs_to_be_sorted() {
             self.chunk_queue.sort(self.prev_cam_chunk_coords);
-        }
-
-        if self.render_queue.needs_to_be_sorted() {
-            self.render_queue.sort(self.prev_cam_chunk_coords);
+            self.render_queue.mark_outdated();
         }
 
         for (coords, chunk) in self.chunk_queue.iter() {
@@ -216,8 +219,10 @@ impl World {
 
             if chunk.needs_graphics_update() {
                 let graphics = self.create_chunk_graphics(coords, &chunk);
+                if chunk.graphics.is_none() {
+                    self.render_queue.mark_outdated();
+                }
                 chunk.graphics = Some(graphics.clone());
-                self.render_queue.insert(coords, graphics);
             }
 
             let graphics = chunk.graphics.as_ref().unwrap();
@@ -238,6 +243,10 @@ impl World {
             }
         }
 
+        if self.render_queue.is_outdated() {
+            self.render_queue
+                .load_from_iter(self.chunk_queue.iter_graphics());
+        }
         self.render_queue.clip_to_frustrum(&camera.get_frustrum());
     }
 
@@ -245,7 +254,6 @@ impl World {
         let (cam_chunk_coords, cam_block_coords) = get_chunk_and_block_coords(camera_position);
         if cam_chunk_coords != self.prev_cam_chunk_coords {
             self.chunk_queue.mark_unsorted();
-            self.render_queue.mark_unsorted();
             self.prev_cam_chunk_coords = cam_chunk_coords;
         }
 

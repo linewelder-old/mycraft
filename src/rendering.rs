@@ -101,7 +101,7 @@ struct RenderQueueItem {
 
 pub struct RenderQueue {
     queue: Vec<RenderQueueItem>,
-    needs_sort: bool,
+    outdated: bool,
 }
 
 fn chunk_aabb(coords: ChunkCoords) -> AABB {
@@ -119,41 +119,35 @@ impl RenderQueue {
     pub fn new() -> RenderQueue {
         RenderQueue {
             queue: vec![],
-            needs_sort: false,
+            outdated: false,
         }
     }
 
-    pub fn insert(&mut self, coords: ChunkCoords, graphics: Rc<ChunkGraphics>) {
-        if let Some(exist) = self.queue.iter_mut().find(|x| x.coords == coords) {
-            exist.graphics = graphics;
-        } else {
-            self.queue.push(RenderQueueItem {
-                coords,
-                graphics,
-                in_frustrum: false,
-            });
-            self.needs_sort = true;
-        }
+    pub fn load_from_iter<'a>(
+        &mut self,
+        iter: impl Iterator<Item = (ChunkCoords, Rc<ChunkGraphics>)>,
+    ) {
+        self.queue.clear();
+        iter.map(|(coords, graphics)| RenderQueueItem {
+            coords,
+            graphics,
+            in_frustrum: false,
+        })
+        .for_each(|x| self.queue.push(x));
     }
 
-    pub fn mark_unsorted(&mut self) {
-        self.needs_sort = true;
+    pub fn mark_outdated(&mut self) {
+        self.outdated = true;
     }
 
-    pub fn needs_to_be_sorted(&self) -> bool {
-        self.needs_sort
+    pub fn is_outdated(&self) -> bool {
+        self.outdated
     }
 
     pub fn clip_to_frustrum(&mut self, frustrum: &Frustrum) {
         for item in &mut self.queue {
             item.in_frustrum = frustrum.intersects_with_aabb(&chunk_aabb(item.coords));
         }
-    }
-
-    pub fn sort(&mut self, cam_chunk_coords: ChunkCoords) {
-        self.queue
-            .sort_unstable_by_key(|x| cam_chunk_coords.distance2(x.coords));
-        self.needs_sort = false;
     }
 
     pub fn iter_for_render(&self) -> impl Iterator<Item = &ChunkGraphics> + Clone {
@@ -167,8 +161,6 @@ impl RenderQueue {
     }
 
     pub fn iter_for_update(&self) -> impl Iterator<Item = (ChunkCoords, &ChunkGraphics)> {
-        self.queue
-            .iter()
-            .map(|x| (x.coords, x.graphics.as_ref()))
+        self.queue.iter().map(|x| (x.coords, x.graphics.as_ref()))
     }
 }
