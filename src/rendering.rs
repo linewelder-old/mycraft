@@ -6,7 +6,7 @@ pub mod uniform;
 mod water_pipeline;
 pub mod world_renderer;
 
-use std::{cell::RefCell, cmp::Reverse, rc::Rc};
+use std::{cell::RefCell, rc::Rc};
 
 use cgmath::{MetricSpace, Vector2, Vector3};
 
@@ -152,7 +152,7 @@ impl RenderQueue {
 
     pub fn sort(&mut self, cam_chunk_coords: ChunkCoords) {
         self.queue
-            .sort_unstable_by_key(|x| Reverse(cam_chunk_coords.distance2(x.coords)));
+            .sort_unstable_by_key(|x| cam_chunk_coords.distance2(x.coords));
         self.needs_sort = false;
     }
 
@@ -169,7 +169,6 @@ impl RenderQueue {
     pub fn iter_for_update(&self) -> impl Iterator<Item = (ChunkCoords, &ChunkGraphics)> {
         self.queue
             .iter()
-            .rev()
             .map(|x| (x.coords, x.graphics.as_ref()))
     }
 }
