@@ -91,8 +91,8 @@ impl Mycraft {
             (Key6, BlockId::Water),
             (Key7, BlockId::Sand),
             (Key8, BlockId::Planks),
-            (Key9, BlockId::Trunk),
-            (Key0, BlockId::RedFlower),
+            (Key9, BlockId::RedFlower),
+            (Key0, BlockId::YellowFlower),
             (Minus, BlockId::Torch),
         ]);
 
