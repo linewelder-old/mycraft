@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use anyhow::{Result, Context};
+use anyhow::{Context, Result};
 use image::DynamicImage;
 
 pub struct Resources {
@@ -9,8 +9,8 @@ pub struct Resources {
 
 fn load_image(path: &Path, name: &str) -> Result<DynamicImage> {
     let full_name = path.join("textures").join(name);
-    let data = std::fs::read(full_name)
-        .with_context(|| format!("Failed to load image {}", name))?;
+    let data =
+        std::fs::read(full_name).with_context(|| format!("Failed to load image {}", name))?;
     let image = image::load_from_memory(&data)
         .with_context(|| format!("Failed to decode image {}", name))?;
     Ok(image)
@@ -22,6 +22,6 @@ impl Resources {
 
         Ok(Resources {
             blocks_image: load_image(path, "blocks.png")?,
-        })  
+        })
     }
 }

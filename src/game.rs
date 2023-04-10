@@ -138,7 +138,8 @@ impl Mycraft {
                             state: ElementState::Pressed,
                             virtual_keycode: Some(code),
                             ..
-                        } = input {
+                        } = input
+                        {
                             if let Some(block_id) = self.hotbar.get(code) {
                                 self.current_block = *block_id;
                             }

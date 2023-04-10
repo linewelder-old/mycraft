@@ -165,6 +165,7 @@ const TORCH_BLOCK_FACES: [[Vector3<f32>; 4]; 5] = [
     ],
 ];
 
+#[rustfmt::skip]
 const TORCH_TOP_TEX_COORDS: [Vector2<f32>; 4] = [
     Vector2 { x: 7./16., y: 9./16. },
     Vector2 { x: 9./16., y: 9./16. },
