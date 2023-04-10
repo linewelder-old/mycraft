@@ -12,7 +12,7 @@ use std::{
     time::Instant,
 };
 
-use cgmath::{Vector2, Vector3, Zero};
+use cgmath::{MetricSpace, Vector2, Vector3, Zero};
 
 use self::{
     blocks::{Block, BlockId},
@@ -108,10 +108,57 @@ impl IndexMut<BlockCoords> for Chunk {
 pub type ChunkCoords = Vector2<i32>;
 pub type BlockCoords = Vector3<i32>;
 
+struct ChunkQueueItem {
+    coords: ChunkCoords,
+    chunk: Rc<RefCell<Chunk>>,
+}
+
+pub struct ChunkQueue {
+    queue: Vec<ChunkQueueItem>,
+    needs_sort: bool,
+}
+
+impl ChunkQueue {
+    pub fn new() -> Self {
+        ChunkQueue {
+            queue: vec![],
+            needs_sort: false,
+        }
+    }
+
+    pub fn insert(&mut self, coords: ChunkCoords, chunk: Rc<RefCell<Chunk>>) {
+        if let Some(exist) = self.queue.iter_mut().find(|x| x.coords == coords) {
+            exist.chunk = chunk;
+        } else {
+            self.queue.push(ChunkQueueItem { coords, chunk });
+            self.needs_sort = true;
+        }
+    }
+
+    pub fn mark_unsorted(&mut self) {
+        self.needs_sort = true;
+    }
+
+    pub fn needs_to_be_sorted(&self) -> bool {
+        self.needs_sort
+    }
+
+    pub fn sort(&mut self, cam_chunk_coords: ChunkCoords) {
+        self.queue
+            .sort_unstable_by_key(|x| cam_chunk_coords.distance2(x.coords));
+        self.needs_sort = false;
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = (ChunkCoords, &RefCell<Chunk>)> {
+        self.queue.iter().map(|x| (x.coords, x.chunk.as_ref()))
+    }
+}
+
 pub struct World {
     context: Rc<Context>,
 
-    chunks: HashMap<ChunkCoords, Box<RefCell<Chunk>>>,
+    chunks: HashMap<ChunkCoords, Rc<RefCell<Chunk>>>,
+    chunk_queue: ChunkQueue,
     generator: Generator,
 
     render_queue: RenderQueue,
@@ -125,6 +172,7 @@ impl World {
             context,
 
             chunks: HashMap::new(),
+            chunk_queue: ChunkQueue::new(),
             generator: Generator::new(0),
 
             render_queue: RenderQueue::new(),
@@ -138,7 +186,9 @@ impl World {
             return;
         }
 
-        self.chunks.insert(coords, Box::new(RefCell::new(Chunk::new())));
+        let chunk = Rc::new(RefCell::new(Chunk::new()));
+        self.chunks.insert(coords, chunk.clone());
+        self.chunk_queue.insert(coords, chunk);
     }
 
     pub fn update(&mut self, camera: &Camera) {
@@ -146,24 +196,28 @@ impl World {
 
         self.check_what_is_to_sort(camera.position);
 
+        if self.chunk_queue.needs_to_be_sorted() {
+            self.chunk_queue.sort(self.prev_cam_chunk_coords);
+        }
+
         if self.render_queue.needs_to_be_sorted() {
             self.render_queue.sort(self.prev_cam_chunk_coords);
         }
 
-        for (coords, chunk) in self.chunks.iter() {
+        for (coords, chunk) in self.chunk_queue.iter() {
             let mut chunk = chunk.borrow_mut();
 
             if !chunk.is_generated {
-                self.generator.generate_chunk(&mut chunk, *coords);
-                recalculate_light(self, &mut chunk, *coords);
+                self.generator.generate_chunk(&mut chunk, coords);
+                recalculate_light(self, &mut chunk, coords);
                 chunk.is_generated = true;
-                self.invalidate_neighbors_graphics(*coords);
+                self.invalidate_neighbors_graphics(coords);
             }
 
             if chunk.needs_graphics_update() {
-                let graphics = self.create_chunk_graphics(*coords, &chunk);
+                let graphics = self.create_chunk_graphics(coords, &chunk);
                 chunk.graphics = Some(graphics.clone());
-                self.render_queue.insert(*coords, graphics);
+                self.render_queue.insert(coords, graphics);
             }
 
             let graphics = chunk.graphics.as_ref().unwrap();
@@ -190,6 +244,7 @@ impl World {
     fn check_what_is_to_sort(&mut self, camera_position: Vector3<f32>) {
         let (cam_chunk_coords, cam_block_coords) = get_chunk_and_block_coords(camera_position);
         if cam_chunk_coords != self.prev_cam_chunk_coords {
+            self.chunk_queue.mark_unsorted();
             self.render_queue.mark_unsorted();
             self.prev_cam_chunk_coords = cam_chunk_coords;
         }
