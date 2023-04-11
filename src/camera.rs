@@ -10,6 +10,7 @@ use crate::{
 #[repr(C)]
 struct CameraUniform {
     matrix: Matrix4<f32>,
+    inverse_matrix: Matrix4<f32>,
     position: Vector3<f32>,
     _padding: f32,
 }
@@ -40,6 +41,7 @@ impl Camera {
                 &format!("{} Matrix", label),
                 CameraUniform {
                     matrix: Matrix4::identity(),
+                    inverse_matrix: Matrix4::identity(),
                     position: Vector3::zero(),
                     _padding: 0.,
                 },
@@ -55,12 +57,18 @@ impl Camera {
     }
 
     pub fn update_matrix(&mut self) {
-        self.matrix = self.projection
+        let matrix_without_translation = self.projection
             * Matrix4::from_angle_x(cgmath::Deg(-self.rotation.y))
-            * Matrix4::from_angle_y(cgmath::Deg(self.rotation.x))
-            * Matrix4::from_translation(-self.position);
+            * Matrix4::from_angle_y(cgmath::Deg(self.rotation.x));
+        self.matrix = matrix_without_translation * Matrix4::from_translation(-self.position);
+
+        let inverse_matrix = matrix_without_translation
+            .invert()
+            .unwrap_or(Matrix4::identity());
+
         self.matrix_uniform.write(CameraUniform {
             matrix: self.matrix,
+            inverse_matrix,
             position: self.position,
             _padding: 0.,
         });

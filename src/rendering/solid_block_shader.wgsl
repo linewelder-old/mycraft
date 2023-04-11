@@ -12,6 +12,7 @@ struct VertexOutput {
 
 struct Camera {
     matrix: mat4x4<f32>,
+    inverse_matrix: mat4x4<f32>,
     position: vec3<f32>,
 }
 

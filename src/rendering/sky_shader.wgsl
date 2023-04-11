@@ -4,11 +4,12 @@ struct VertexInput {
 
 struct VertexOutput {
     @builtin(position) position: vec4<f32>,
-    @location(0) uv: vec2<f32>,
+    @location(0) direction: vec3<f32>,
 }
 
 struct Camera {
     matrix: mat4x4<f32>,
+    inverse_matrix: mat4x4<f32>,
     position: vec3<f32>,
 }
 
@@ -19,11 +20,12 @@ var<uniform> camera: Camera;
 fn vs_main(in: VertexInput) -> VertexOutput {
     var out: VertexOutput;
     out.position = vec4(in.position, 0., 1.);
-    out.uv = in.position / 2. + 0.5;
+    out.unnormalized_direction = (camera.inverse_matrix * vec4(in.position, 1., 1.)).xyz;
     return out;
 }
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    return vec4(in.uv, 0., 1.);
+    let direction = normalize(in.unnormalized_direction);
+    return vec4(direction, 1.);
 }
