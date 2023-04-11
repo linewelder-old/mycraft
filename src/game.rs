@@ -14,9 +14,9 @@ use crate::{
     consts::*,
     context::Context,
     rendering::{
-        sky_renderer::SkyRenderer,
+        sky_renderer::{SkyRenderer, SkyUniform},
         texture::{DepthBuffer, Texture},
-        world_renderer::{WorldRenderer, WorldRendererTarget},
+        world_renderer::{WorldRenderer, WorldRendererTarget}, uniform::Uniform,
     },
     resources::Resources,
     utils::{
@@ -26,12 +26,43 @@ use crate::{
     world::{blocks::BlockId, ChunkCoords, World},
 };
 
+struct Sky {
+    uniform: Uniform<SkyUniform>,
+    time: f32,
+}
+
+impl Sky {
+    fn new(context: Rc<Context>) -> Self {
+        let uniform = SkyUniform {
+            time: 0.,
+        };
+
+        Sky {
+            uniform: Uniform::new(context, "Sky Uniform", uniform),
+            time: 0.,
+        }
+    }
+
+    fn get_uniform_data(&self) -> SkyUniform {
+        SkyUniform {
+            time: self.time,
+        }
+    }
+
+    fn update(&mut self, delta: std::time::Duration) {
+        self.time += delta.as_secs_f32() / 4.;
+        self.uniform.write(self.get_uniform_data());
+    }
+}
+
 pub struct Mycraft {
     context: Rc<Context>,
 
     depth_buffer: DepthBuffer,
     world_renderer: WorldRenderer,
     sky_renderer: SkyRenderer,
+
+    sky: Sky,
 
     camera: Camera,
     looking_at: Option<raycasting::Hit>,
@@ -74,6 +105,8 @@ impl Mycraft {
         let world_renderer = WorldRenderer::new(&context);
         let sky_renderer = SkyRenderer::new(&context);
 
+        let sky = Sky::new(context.clone());
+
         let mut camera = Camera::new(context.clone(), "Camera");
         camera.position = Vector3::new(0., 40., 0.);
 
@@ -107,6 +140,8 @@ impl Mycraft {
             depth_buffer,
             world_renderer,
             sky_renderer,
+
+            sky,
 
             camera,
             looking_at: None,
@@ -204,6 +239,8 @@ impl Mycraft {
     pub fn update(&mut self, delta: std::time::Duration) {
         let delta_secs = delta.as_secs_f32();
 
+        self.sky.update(delta);
+
         let movement = self.movement_input.get_value() * CAMERA_MOVEMENT_SPEED * delta_secs;
         self.camera.move_relative_to_view(movement);
         self.camera.update_matrix();
@@ -226,8 +263,13 @@ impl Mycraft {
                     label: Some("Render Encoder"),
                 });
 
-        self.sky_renderer
-            .draw(&mut encoder, target, &self.camera, &self.sky_texture);
+        self.sky_renderer.draw(
+            &mut encoder,
+            target,
+            &self.camera,
+            &self.sky.uniform,
+            &self.sky_texture,
+        );
         self.world_renderer.draw(
             &mut encoder,
             WorldRendererTarget {

@@ -24,15 +24,23 @@ fn vs_main(in: VertexInput) -> VertexOutput {
     return out;
 }
 
+struct SkyUniform {
+    time: f32,
+}
+
 @group(1) @binding(0)
+var<uniform> sky_uniform: SkyUniform;
+
+@group(2) @binding(0)
 var sky_texture: texture_2d<f32>;
-@group(1) @binding(1)
+@group(2) @binding(1)
 var sky_sampler: sampler;
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     let direction = normalize(in.unnormalized_direction);
-    let sky_color = textureSample(sky_texture, sky_sampler, vec2(0., direction.y / -2. + 0.5));
+    let uv = vec2(sky_uniform.time, direction.y / -2. + 0.5);
+    let sky_color = textureSample(sky_texture, sky_sampler, uv);
 
     let sun_direction = normalize(vec3<f32>(10., 1., 10.));
     let sun_dot = dot(direction, sun_direction);

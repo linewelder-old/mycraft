@@ -9,6 +9,10 @@ pub struct SkyRenderer {
     screen_quad: wgpu::Buffer,
 }
 
+pub struct SkyUniform {
+    pub time: f32,
+}
+
 impl SkyRenderer {
     const SCREEN_QUAD_VERTICES: [Vector2<f32>; 6] = [
         Vector2 { x: -1., y: 1. },
@@ -28,6 +32,7 @@ impl SkyRenderer {
     pub fn new(context: &Context) -> Self {
         let bind_group_layouts = &[
             &Uniform::<Matrix4<f32>>::create_bind_group_layout(context),
+            &Uniform::<SkyUniform>::create_bind_group_layout(context),
             &Texture::create_bind_group_layout(context),
         ];
 
@@ -96,6 +101,7 @@ impl SkyRenderer {
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
         camera: &Camera,
+        sky_uniform: &Uniform<SkyUniform>,
         texture: &Texture,
     ) {
         let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -113,7 +119,8 @@ impl SkyRenderer {
 
         render_pass.set_pipeline(&self.render_pipeline);
         render_pass.set_bind_group(0, camera.get_bind_group(), &[]);
-        render_pass.set_bind_group(1, texture.get_bind_group(), &[]);
+        render_pass.set_bind_group(1, sky_uniform.get_bind_group(), &[]);
+        render_pass.set_bind_group(2, texture.get_bind_group(), &[]);
         render_pass.set_vertex_buffer(0, self.screen_quad.slice(..));
         render_pass.draw(0..(Self::SCREEN_QUAD_VERTICES.len() as u32), 0..1);
     }
