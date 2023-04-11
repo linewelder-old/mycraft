@@ -32,5 +32,11 @@ var sky_sampler: sampler;
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     let direction = normalize(in.unnormalized_direction);
-    return textureSample(sky_texture, sky_sampler, vec2(0., direction.y / -2. + 0.5));
+    let sky_color = textureSample(sky_texture, sky_sampler, vec2(0., direction.y / -2. + 0.5));
+
+    let sun_direction = normalize(vec3<f32>(10., 1., 10.));
+    let sun_dot = dot(direction, sun_direction);
+    let sunness = min(1., 1. / 256. / (1. - sun_dot));
+    let sun_color = vec4(1.0, 1.0, 0.9, 1.);
+    return mix(sky_color, sun_color, sunness);
 }
