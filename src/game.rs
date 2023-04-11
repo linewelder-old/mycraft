@@ -42,6 +42,7 @@ pub struct Mycraft {
 
     world: World,
     blocks_texture: Texture,
+    sky_texture: Texture,
 }
 
 impl Mycraft {
@@ -57,6 +58,7 @@ impl Mycraft {
 
         let resources = Resources::try_load("./res")?;
         let blocks_texture = Texture::new(&context, "Blocks Texture", resources.blocks_image);
+        let sky_texture = Texture::new(&context, "Sky Texture", resources.sky_image);
 
         let depth_buffer = {
             let surface_config = context.surface_config.borrow();
@@ -115,6 +117,7 @@ impl Mycraft {
 
             world,
             blocks_texture,
+            sky_texture,
         })
     }
 
@@ -223,7 +226,8 @@ impl Mycraft {
                     label: Some("Render Encoder"),
                 });
 
-        self.sky_renderer.draw(&mut encoder, target, &self.camera);
+        self.sky_renderer
+            .draw(&mut encoder, target, &self.camera, &self.sky_texture);
         self.world_renderer.draw(
             &mut encoder,
             WorldRendererTarget {

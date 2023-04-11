@@ -1,7 +1,7 @@
 use cgmath::{Matrix4, Vector2};
 use wgpu::util::DeviceExt;
 
-use super::uniform::Uniform;
+use super::{texture::Texture, uniform::Uniform};
 use crate::{camera::Camera, context::Context, utils::as_bytes_slice};
 
 pub struct SkyRenderer {
@@ -26,7 +26,10 @@ impl SkyRenderer {
     };
 
     pub fn new(context: &Context) -> Self {
-        let bind_group_layouts = &[&Uniform::<Matrix4<f32>>::create_bind_group_layout(context)];
+        let bind_group_layouts = &[
+            &Uniform::<Matrix4<f32>>::create_bind_group_layout(context),
+            &Texture::create_bind_group_layout(context),
+        ];
 
         let layout = context
             .device
@@ -93,6 +96,7 @@ impl SkyRenderer {
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
         camera: &Camera,
+        texture: &Texture,
     ) {
         let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: Some("Sky Render Pass"),
@@ -109,6 +113,7 @@ impl SkyRenderer {
 
         render_pass.set_pipeline(&self.render_pipeline);
         render_pass.set_bind_group(0, camera.get_bind_group(), &[]);
+        render_pass.set_bind_group(1, texture.get_bind_group(), &[]);
         render_pass.set_vertex_buffer(0, self.screen_quad.slice(..));
         render_pass.draw(0..(Self::SCREEN_QUAD_VERTICES.len() as u32), 0..1);
     }

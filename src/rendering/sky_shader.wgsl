@@ -4,7 +4,7 @@ struct VertexInput {
 
 struct VertexOutput {
     @builtin(position) position: vec4<f32>,
-    @location(0) direction: vec3<f32>,
+    @location(0) unnormalized_direction: vec3<f32>,
 }
 
 struct Camera {
@@ -24,8 +24,13 @@ fn vs_main(in: VertexInput) -> VertexOutput {
     return out;
 }
 
+@group(1) @binding(0)
+var sky_texture: texture_2d<f32>;
+@group(1) @binding(1)
+var sky_sampler: sampler;
+
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     let direction = normalize(in.unnormalized_direction);
-    return vec4(direction, 1.);
+    return textureSample(sky_texture, sky_sampler, vec2(0., direction.y / -2. + 0.5));
 }
