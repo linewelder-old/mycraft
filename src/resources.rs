@@ -5,6 +5,7 @@ use image::DynamicImage;
 
 pub struct Resources {
     pub blocks_image: DynamicImage,
+    pub sky_image: DynamicImage,
 }
 
 fn load_image(path: &Path, name: &str) -> Result<DynamicImage> {
@@ -22,6 +23,7 @@ impl Resources {
 
         Ok(Resources {
             blocks_image: load_image(path, "blocks.png")?,
+            sky_image: load_image(path, "sky.png")?,
         })
     }
 }
