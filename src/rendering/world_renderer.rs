@@ -1,4 +1,4 @@
-use crate::{camera::Camera, consts::SKY_COLOR, context::Context};
+use crate::{camera::Camera, context::Context};
 
 use super::{
     solid_block_pipeline::SolidBlockPipeline,
@@ -42,7 +42,7 @@ impl WorldRenderer {
                 view: target.output,
                 resolve_target: None,
                 ops: wgpu::Operations {
-                    load: wgpu::LoadOp::Clear(SKY_COLOR),
+                    load: wgpu::LoadOp::Load,
                     store: true,
                 },
             })],

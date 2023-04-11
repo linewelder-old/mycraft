@@ -14,6 +14,7 @@ use crate::{
     consts::*,
     context::Context,
     rendering::{
+        sky_renderer::SkyRenderer,
         texture::{DepthBuffer, Texture},
         world_renderer::{WorldRenderer, WorldRendererTarget},
     },
@@ -30,6 +31,7 @@ pub struct Mycraft {
 
     depth_buffer: DepthBuffer,
     world_renderer: WorldRenderer,
+    sky_renderer: SkyRenderer,
 
     camera: Camera,
     looking_at: Option<raycasting::Hit>,
@@ -68,6 +70,7 @@ impl Mycraft {
             )
         };
         let world_renderer = WorldRenderer::new(&context);
+        let sky_renderer = SkyRenderer::new(&context);
 
         let mut camera = Camera::new(context.clone(), "Camera");
         camera.position = Vector3::new(0., 40., 0.);
@@ -101,6 +104,7 @@ impl Mycraft {
 
             depth_buffer,
             world_renderer,
+            sky_renderer,
 
             camera,
             looking_at: None,
@@ -219,6 +223,7 @@ impl Mycraft {
                     label: Some("Render Encoder"),
                 });
 
+        self.sky_renderer.draw(&mut encoder, target, &self.camera);
         self.world_renderer.draw(
             &mut encoder,
             WorldRendererTarget {
