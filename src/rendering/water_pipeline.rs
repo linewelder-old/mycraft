@@ -1,6 +1,7 @@
 use cgmath::Matrix4;
 
 use super::{
+    sky_renderer::SkyUniform,
     texture::{DepthBuffer, Texture},
     uniform::Uniform,
     ChunkGraphics, Vertex,
@@ -15,6 +16,7 @@ impl WaterPipeline {
     pub fn new(context: &Context) -> Self {
         let bind_group_layouts = &[
             &Uniform::<Matrix4<f32>>::create_bind_group_layout(context),
+            &Uniform::<SkyUniform>::create_bind_group_layout(context),
             &Texture::create_bind_group_layout(context),
         ];
 
@@ -78,11 +80,13 @@ impl WaterPipeline {
         render_pass: &mut wgpu::RenderPass<'a>,
         camera: &'a Camera,
         chunks: impl Iterator<Item = &'a ChunkGraphics>,
+        sky_uniform: &'a Uniform<SkyUniform>,
         texture: &'a Texture,
     ) {
         render_pass.set_pipeline(&self.render_pipeline);
         render_pass.set_bind_group(0, camera.get_bind_group(), &[]);
-        render_pass.set_bind_group(1, texture.get_bind_group(), &[]);
+        render_pass.set_bind_group(1, sky_uniform.get_bind_group(), &[]);
+        render_pass.set_bind_group(2, texture.get_bind_group(), &[]);
 
         for chunk in chunks {
             render_pass.set_vertex_buffer(0, chunk.water_mesh.vertices.slice(..));

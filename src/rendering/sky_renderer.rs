@@ -1,4 +1,4 @@
-use cgmath::{Matrix4, Vector2};
+use cgmath::{Matrix4, Vector2, Vector3};
 use wgpu::util::DeviceExt;
 
 use super::{texture::Texture, uniform::Uniform};
@@ -10,6 +10,7 @@ pub struct SkyRenderer {
 }
 
 pub struct SkyUniform {
+    pub sun_direction: Vector3<f32>,
     pub time: f32,
 }
 

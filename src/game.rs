@@ -1,7 +1,7 @@
 use std::{collections::HashMap, rc::Rc};
 
 use anyhow::Result;
-use cgmath::{Vector2, Vector3};
+use cgmath::{Vector2, Vector3, Zero};
 use winit::{
     event::{
         DeviceEvent, ElementState, Event, KeyboardInput, MouseButton, VirtualKeyCode, WindowEvent,
@@ -16,7 +16,8 @@ use crate::{
     rendering::{
         sky_renderer::{SkyRenderer, SkyUniform},
         texture::{DepthBuffer, Texture},
-        world_renderer::{WorldRenderer, WorldRendererTarget}, uniform::Uniform,
+        uniform::Uniform,
+        world_renderer::{WorldRenderer, WorldRendererTarget},
     },
     resources::Resources,
     utils::{
@@ -34,6 +35,7 @@ struct Sky {
 impl Sky {
     fn new(context: Rc<Context>) -> Self {
         let uniform = SkyUniform {
+            sun_direction: Vector3::zero(),
             time: 0.,
         };
 
@@ -44,7 +46,11 @@ impl Sky {
     }
 
     fn get_uniform_data(&self) -> SkyUniform {
+        let angle = self.time * std::f32::consts::PI;
+        let sun_direction = Vector3::new(0., angle.cos(), angle.sin());
+
         SkyUniform {
+            sun_direction,
             time: self.time,
         }
     }
@@ -278,6 +284,7 @@ impl Mycraft {
             },
             &self.camera,
             self.world.render_queue_iter(),
+            &self.sky.uniform,
             &self.blocks_texture,
         );
 

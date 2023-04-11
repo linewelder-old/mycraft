@@ -80,22 +80,28 @@ fn normal_at(pos: vec2<f32>) -> vec3<f32> {
     return normalize(vec3<f32>(perlin(seed), 10., perlin(seed)));
 }
 
+struct SkyUniform {
+    sun_direction: vec3<f32>,
+    time: f32,
+}
+
 @group(1) @binding(0)
+var<uniform> sky_uniform: SkyUniform;
+
+@group(2) @binding(0)
 var texture_test: texture_2d<f32>;
-@group(1) @binding(1)
+@group(2) @binding(1)
 var sampler_test: sampler;
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    let sun_direction = normalize(vec3<f32>(1.));
-
     let normal = normal_at(in.world_position.xz);
 
     let look_dir = normalize(in.world_position - camera.position);
     let reflected = reflect(look_dir, normal);
-    let specular_light = pow(max(dot(sun_direction, reflected), 0.), 128.);
+    let specular_light = pow(max(dot(sky_uniform.sun_direction, reflected), 0.), 128.);
 
-    let diffused_light = dot(sun_direction, normal);
+    let diffused_light = dot(sky_uniform.sun_direction, normal);
 
     let block_light = f32(in.light & 0x0Fu) / 15.;
     let sun_light = f32((in.light >> 4u) & 0x0Fu) / 15.;
