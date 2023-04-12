@@ -59,9 +59,19 @@ impl WorldRenderer {
             }),
         });
 
-        self.solid_block_pipeline
-            .draw(&mut render_pass, camera, chunks.clone(), texture);
-        self.water_pipeline
-            .draw(&mut render_pass, camera, chunks, sky_uniform, texture);
+        self.solid_block_pipeline.draw(
+            &mut render_pass,
+            camera,
+            chunks.clone(),
+            sky_uniform,
+            texture,
+        );
+        self.water_pipeline.draw(
+            &mut render_pass,
+            camera,
+            chunks,
+            sky_uniform,
+            texture,
+        );
     }
 }

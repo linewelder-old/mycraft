@@ -9,9 +9,11 @@ pub struct SkyRenderer {
     screen_quad: wgpu::Buffer,
 }
 
+#[repr(C, align(16))]
 pub struct SkyUniform {
     pub sun_direction: Vector3<f32>,
     pub time: f32,
+    pub sun_light: f32,
 }
 
 impl SkyRenderer {

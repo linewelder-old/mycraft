@@ -27,6 +27,7 @@ fn vs_main(in: VertexInput) -> VertexOutput {
 struct SkyUniform {
     sun_direction: vec3<f32>,
     time: f32,
+    sun_light: f32,
 }
 
 @group(1) @binding(0)

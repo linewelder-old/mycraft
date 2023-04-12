@@ -37,6 +37,7 @@ impl Sky {
         let uniform = SkyUniform {
             sun_direction: Vector3::zero(),
             time: 0.,
+            sun_light: 1.,
         };
 
         Sky {
@@ -49,9 +50,12 @@ impl Sky {
         let angle = self.time * std::f32::consts::PI;
         let sun_direction = Vector3::new(0., angle.cos(), angle.sin());
 
+        let sun_light = sun_direction.y / 2. + 0.5;
+
         SkyUniform {
             sun_direction,
             time: self.time,
+            sun_light,
         }
     }
 

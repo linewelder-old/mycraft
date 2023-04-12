@@ -28,9 +28,18 @@ fn vs_main(in: VertexInput) -> VertexOutput {
     return out;
 }
 
+struct SkyUniform {
+    sun_direction: vec3<f32>,
+    time: f32,
+    sun_light: f32,
+}
+
 @group(1) @binding(0)
+var<uniform> sky_uniform: SkyUniform;
+
+@group(2) @binding(0)
 var texture_test: texture_2d<f32>;
-@group(1) @binding(1)
+@group(2) @binding(1)
 var sampler_test: sampler;
 
 @fragment
@@ -43,7 +52,7 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     let block_light = f32(in.light & 0x0Fu) / 15.;
     let sun_light = f32((in.light >> 4u) & 0x0Fu) / 15.;
     let diffused_light = f32((in.light >> 8u) & 0x0Fu) / 15.;
-    let world_light_unmapped = diffused_light * max(sun_light, block_light);
+    let world_light_unmapped = diffused_light * max(sky_uniform.sun_light * sun_light, block_light);
     let world_light = world_light_unmapped * world_light_unmapped;
 
     return world_light * texture_color;

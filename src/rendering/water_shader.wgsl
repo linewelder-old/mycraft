@@ -83,6 +83,7 @@ fn normal_at(pos: vec2<f32>) -> vec3<f32> {
 struct SkyUniform {
     sun_direction: vec3<f32>,
     time: f32,
+    sun_light: f32,
 }
 
 @group(1) @binding(0)
@@ -106,7 +107,7 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     let block_light = f32(in.light & 0x0Fu) / 15.;
     let sun_light = f32((in.light >> 4u) & 0x0Fu) / 15.;
     let diffuse_light = f32((in.light >> 8u) & 0x0Fu) / 15.;
-    let world_light_unmapped = diffuse_light * max(sun_light, block_light);
+    let world_light_unmapped = diffuse_light * max(sky_uniform.sun_light * sun_light, block_light);
     let world_light = world_light_unmapped * world_light_unmapped;
 
     let total_light = world_light * (diffused_light + specular_light);
