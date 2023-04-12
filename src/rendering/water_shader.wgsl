@@ -100,17 +100,14 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
 
     let look_dir = normalize(in.world_position - camera.position);
     let reflected = reflect(look_dir, normal);
-    let specular_light = pow(max(dot(sky_uniform.sun_direction, reflected), 0.), 128.);
-
-    let diffused_light = dot(sky_uniform.sun_direction, normal);
+    let specular_light = 1. + pow(max(dot(sky_uniform.sun_direction, reflected), 0.), 128.);
 
     let block_light = f32(in.light & 0x0Fu) / 15.;
     let sun_light = f32((in.light >> 4u) & 0x0Fu) / 15.;
     let diffuse_light = f32((in.light >> 8u) & 0x0Fu) / 15.;
     let world_light_unmapped = diffuse_light * max(sky_uniform.sun_light * sun_light, block_light);
-    let world_light = world_light_unmapped * world_light_unmapped;
+    let world_light = world_light_unmapped * world_light_unmapped * specular_light;
 
-    let total_light = world_light * (diffused_light + specular_light);
     let texture_color = textureSample(texture_test, sampler_test, in.tex_coords).xyz;
-    return vec4<f32>(total_light * texture_color, 0.8);
+    return vec4<f32>(world_light * texture_color, 0.8);
 }
