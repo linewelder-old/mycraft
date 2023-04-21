@@ -50,7 +50,7 @@ impl Sky {
         let angle = self.time * std::f32::consts::PI;
         let sun_direction = Vector3::new(0., angle.cos(), angle.sin());
 
-        let sun_light = sun_direction.y / 2. + 0.5;
+        let sun_light = (sun_direction.y + 1.) * (1. - MIDNIGHT_SUNLIGHT) / 2. + MIDNIGHT_SUNLIGHT;
 
         SkyUniform {
             sun_direction,
@@ -60,7 +60,7 @@ impl Sky {
     }
 
     fn update(&mut self, delta: std::time::Duration) {
-        self.time += delta.as_secs_f32() / 4.;
+        self.time += delta.as_secs_f32() / DAY_LENGTH_SECS;
         self.uniform.write(self.get_uniform_data());
     }
 }
