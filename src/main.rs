@@ -4,6 +4,7 @@ mod context;
 mod game;
 mod rendering;
 mod resources;
+mod sky;
 mod utils;
 mod world;
 

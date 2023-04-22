@@ -1,7 +1,7 @@
 use std::{collections::HashMap, rc::Rc};
 
 use anyhow::Result;
-use cgmath::{Vector2, Vector3, Zero};
+use cgmath::{Vector2, Vector3};
 use winit::{
     event::{
         DeviceEvent, ElementState, Event, KeyboardInput, MouseButton, VirtualKeyCode, WindowEvent,
@@ -14,56 +14,18 @@ use crate::{
     consts::*,
     context::Context,
     rendering::{
-        sky_renderer::{SkyRenderer, SkyUniform},
+        sky_renderer::SkyRenderer,
         texture::{DepthBuffer, Texture},
-        uniform::Uniform,
         world_renderer::{WorldRenderer, WorldRendererTarget},
     },
     resources::Resources,
+    sky::Sky,
     utils::{
         input::{Input3d, Input3dDesc},
         raycasting,
     },
     world::{blocks::BlockId, ChunkCoords, World},
 };
-
-struct Sky {
-    uniform: Uniform<SkyUniform>,
-    time: f32,
-}
-
-impl Sky {
-    fn new(context: Rc<Context>) -> Self {
-        let uniform = SkyUniform {
-            sun_direction: Vector3::zero(),
-            time: 0.,
-            sun_light: 1.,
-        };
-
-        Sky {
-            uniform: Uniform::new(context, "Sky Uniform", uniform),
-            time: 0.,
-        }
-    }
-
-    fn get_uniform_data(&self) -> SkyUniform {
-        let angle = self.time * std::f32::consts::PI;
-        let sun_direction = Vector3::new(0., angle.cos(), angle.sin());
-
-        let sun_light = (sun_direction.y + 1.) * (1. - MIDNIGHT_SUNLIGHT) / 2. + MIDNIGHT_SUNLIGHT;
-
-        SkyUniform {
-            sun_direction,
-            time: self.time,
-            sun_light,
-        }
-    }
-
-    fn update(&mut self, delta: std::time::Duration) {
-        self.time += delta.as_secs_f32() / DAY_LENGTH_SECS;
-        self.uniform.write(self.get_uniform_data());
-    }
-}
 
 pub struct Mycraft {
     context: Rc<Context>,
@@ -277,7 +239,7 @@ impl Mycraft {
             &mut encoder,
             target,
             &self.camera,
-            &self.sky.uniform,
+            &self.sky.get_uniform(),
             &self.sky_texture,
         );
         self.world_renderer.draw(
@@ -288,7 +250,7 @@ impl Mycraft {
             },
             &self.camera,
             self.world.render_queue_iter(),
-            &self.sky.uniform,
+            &self.sky.get_uniform(),
             &self.blocks_texture,
         );
 
