@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{rc::Rc, f32::consts::PI};
 
 use cgmath::{Vector3, Zero};
 
@@ -31,7 +31,8 @@ impl Sky {
         let angle = self.time * 2. * PI;
         let sun_direction = Vector3::new(0., angle.cos(), angle.sin());
 
-        let sun_light = (sun_direction.y + 1.) * (1. - MIDNIGHT_SUNLIGHT) / 2. + MIDNIGHT_SUNLIGHT;
+        let dayness = ((0.5 * PI * sun_direction.y).sin() + 1.) / 2.;
+        let sun_light = dayness * dayness * (1. - MIDNIGHT_SUNLIGHT) + MIDNIGHT_SUNLIGHT;
 
         SkyUniform {
             sun_direction,
