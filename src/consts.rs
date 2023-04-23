@@ -13,4 +13,4 @@ pub const RENDER_DISTANCE: i32 = 10;
 pub const MAX_RAYCASTING_DISTANCE: f32 = 6.;
 
 pub const MIDNIGHT_SUNLIGHT: f32 = 0.2;
-pub const DAY_LENGTH_SECS: f32 = 60.0;
+pub const DAY_LENGTH_SECS: f32 = 10. * 60.;
