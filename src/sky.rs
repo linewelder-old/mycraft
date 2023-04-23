@@ -28,7 +28,7 @@ impl Sky {
     }
 
     fn get_uniform_data(&self) -> SkyUniform {
-        let angle = self.time * std::f32::consts::PI;
+        let angle = self.time * 2. * PI;
         let sun_direction = Vector3::new(0., angle.cos(), angle.sin());
 
         let sun_light = (sun_direction.y + 1.) * (1. - MIDNIGHT_SUNLIGHT) / 2. + MIDNIGHT_SUNLIGHT;

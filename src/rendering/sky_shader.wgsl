@@ -41,7 +41,7 @@ var sky_sampler: sampler;
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     let direction = normalize(in.unnormalized_direction);
-    let uv = vec2(sky_uniform.time, direction.y / -2. + 0.5);
+    let uv = vec2(sky_uniform.time * 2., direction.y / -2. + 0.5);
     let sky_color = textureSample(sky_texture, sky_sampler, uv);
 
     let sun_dot = dot(direction, sky_uniform.sun_direction);
