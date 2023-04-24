@@ -1,10 +1,57 @@
-use cgmath::Vector2;
+use cgmath::{Vector2, InnerSpace};
 use noise::{NoiseFn, Perlin};
 
 use super::{blocks::BlockId, BlockCoords, Chunk, ChunkCoords};
 
 pub struct Generator {
     noise: Perlin,
+}
+
+fn hash(seed: Vector2<f64>) -> f64 {
+    let m1 = Vector2::new(3.1251, 17.8737);
+    let m2 = 43758.545312;
+    return (seed.dot(m1).sin() * m2).fract();
+}
+
+fn set_block(chunk: &mut Chunk, coords: BlockCoords, id: BlockId) {
+    if coords.x >= 0 && coords.x < Chunk::SIZE.x &&
+        coords.y >= 0 && coords.y < Chunk::SIZE.y &&
+        coords.z >= 0 && coords.z < Chunk::SIZE.z
+    {
+        chunk[coords].block_id = id;
+    }
+}
+
+fn fill(chunk: &mut Chunk, start: BlockCoords, end: BlockCoords, id: BlockId) {
+    for x in start.x..=end.x {
+        for y in start.y..=end.y {
+            for z in start.z..=end.z {
+                set_block(chunk, BlockCoords { x, y, z }, id);
+            }
+        }
+    }
+}
+
+fn plant_tree(chunk: &mut Chunk, ground: BlockCoords) {
+    set_block(chunk, ground, BlockId::Dirt);
+    fill(
+        chunk,
+        ground + BlockCoords::new(-2, 3, -2),
+        ground + BlockCoords::new(2, 4, 2),
+        BlockId::Leaves
+    );
+    fill(
+        chunk,
+        ground + BlockCoords::new(-1, 5, -1),
+        ground + BlockCoords::new(1, 6, 1),
+        BlockId::Leaves
+    );
+    fill(
+        chunk,
+        ground + BlockCoords::new(0, 1, 0),
+        ground + BlockCoords::new(0, 3, 0),
+        BlockId::Trunk
+    );
 }
 
 impl Generator {
@@ -40,36 +87,52 @@ impl Generator {
     }
 
     pub fn generate_chunk(&self, chunk: &mut Chunk, chunk_coords: ChunkCoords) {
-        for x in 0..Chunk::SIZE.x {
-            for z in 0..Chunk::SIZE.z {
-                let height = self.get_height(
-                    x + chunk_coords.x * Chunk::SIZE.x,
-                    z + chunk_coords.y * Chunk::SIZE.z,
-                );
-
-                let offset = Vector2 {
-                    x: x as f64,
-                    y: z as f64,
+        for x in -2..(Chunk::SIZE.x + 2) {
+            for z in -2..(Chunk::SIZE.z + 2) {
+                let world_coords = Vector2 {
+                    x: x + chunk_coords.x * Chunk::SIZE.x,
+                    y: z + chunk_coords.y * Chunk::SIZE.z,
                 };
-                let sand_height = Self::WATER_HEIGHT + self.get_noise(offset, 30., 3.) as i32;
+                let offset = world_coords.map(|x| x as f64);
 
-                for y in 0..=Chunk::SIZE.y {
-                    let coords = BlockCoords { x, y, z };
-                    chunk[coords].block_id = if y < height - 3 {
-                        BlockId::Stone
-                    } else if y < height {
-                        BlockId::Dirt
-                    } else if y == height {
-                        if height <= sand_height {
-                            BlockId::Sand
+                let height = self.get_height(world_coords.x, world_coords.y);
+                let sand_height = Self::WATER_HEIGHT + self.get_noise(offset, 30., 3.) as i32;
+                let plant_random = hash(offset);
+
+                let is_grass = height > sand_height;
+
+                if x >= 0 && x < Chunk::SIZE.x && z >= 0 && z < Chunk::SIZE.z {
+                    for y in 0..=Chunk::SIZE.y {
+                        let coords = BlockCoords { x, y, z };
+                        chunk[coords].block_id = if y < height - 3 {
+                            BlockId::Stone
+                        } else if y < height {
+                            BlockId::Dirt
+                        } else if y == height {
+                            if !is_grass {
+                                BlockId::Sand
+                            } else {
+                                BlockId::Grass
+                            }
+                        } else if y <= Self::WATER_HEIGHT {
+                            BlockId::Water
                         } else {
-                            BlockId::Grass
+                            break;
+                        };
+                    }
+
+                    if is_grass {
+                        let coords = BlockCoords { x, y: height + 1, z };
+                        if plant_random > 0.95 {
+                            chunk[coords].block_id = BlockId::RedFlower;
+                        } else if plant_random > 0.9 {
+                            chunk[coords].block_id = BlockId::YellowFlower;
                         }
-                    } else if y <= Self::WATER_HEIGHT {
-                        BlockId::Water
-                    } else {
-                        break;
-                    };
+                    }
+                }
+
+                if is_grass && plant_random > 0.99 {
+                    plant_tree(chunk, BlockCoords { x, y: height, z });
                 }
             }
         }
