@@ -38,9 +38,9 @@ def generate_sky_slice(texture, x, time):
     sky_color = mix_colors(NIGHT_SKY_COLOR, DAY_SKY_COLOR, dayness)
     fog_color = mix_colors(NIGHT_FOG_COLOR, DAY_FOG_COLOR, dayness)
 
-    sunset = max(0., 1. - (8. * (time - .5)) ** 2)
-    
-    fog_color = mix_colors(fog_color, SUNSET_COLOR, sunset)
+    y = 10 * (time - 0.4)
+    sunset_intensity = max(0., y * y * (3. - 2. * y)) if 0.4 < time < 0.6 else 0.
+    fog_color = mix_colors(fog_color, SUNSET_COLOR, sunset_intensity)
 
     for y in range(TEXTURE_SIZE):
         distance_from_horizon = abs(y - TEXTURE_SIZE / 2.) / TEXTURE_SIZE * 2.
