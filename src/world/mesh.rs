@@ -339,14 +339,20 @@ impl<'a> MeshGenerationContext<'a> {
         };
 
         for (i, neighbor_offset) in NEIGHBOR_OFFSETS.iter().enumerate() {
+            let is_top_face = i == TOP_NEIGHBOR_OFFSET_INDEX;
+
             let neighbor_coords = self.current_block_coords + neighbor_offset;
             let neighbor_cell = self.chunks.get_cell(neighbor_coords);
-            let (sun_light, block_light) = Self::get_light_levels(neighbor_cell);
+            let (sun_light, block_light) = if is_top_face {
+                Self::get_light_levels(self.chunks.get_cell(self.current_block_coords))
+            } else {
+                Self::get_light_levels(neighbor_cell)
+            };
 
             if let Some(neighbor_cell) = neighbor_cell {
                 let neighbor_block = neighbor_cell.get_block();
-                let checking_top_neighbor = i == TOP_NEIGHBOR_OFFSET_INDEX;
-                let should_not_emit_face = if checking_top_neighbor {
+
+                let should_not_emit_face = if is_top_face {
                     top_neighbor_is_fluid
                 } else {
                     matches!(neighbor_block, Block::Fluid { .. })
