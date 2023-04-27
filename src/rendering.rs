@@ -7,15 +7,11 @@ pub mod uniform;
 mod water_pipeline;
 pub mod world_renderer;
 
-use std::{cell::RefCell, rc::Rc};
+use std::cell::RefCell;
 
 use cgmath::{MetricSpace, Vector2, Vector3};
 
-use self::{chunk_mesh::ChunkMesh, frustrum::Frustrum};
-use crate::{
-    utils::aabb::AABB,
-    world::{Chunk, ChunkCoords},
-};
+use self::chunk_mesh::ChunkMesh;
 
 #[derive(Clone, Copy)]
 #[repr(C)]
@@ -110,77 +106,5 @@ impl ChunkGraphics {
             .sort_by(|x, y| y.distance.total_cmp(&x.distance));
         self.water_mesh
             .write_indices(&Face::generate_indices(&data.water_faces));
-    }
-}
-
-struct RenderQueueItem {
-    coords: ChunkCoords,
-    graphics: Rc<ChunkGraphics>,
-    in_frustrum: bool,
-}
-
-pub struct RenderQueue {
-    queue: Vec<RenderQueueItem>,
-    outdated: bool,
-}
-
-fn chunk_aabb(coords: ChunkCoords) -> AABB {
-    AABB {
-        start: Vector3 {
-            x: (coords.x * Chunk::SIZE.x) as f32,
-            y: 0.,
-            z: (coords.y * Chunk::SIZE.z) as f32,
-        },
-        size: Chunk::SIZE.map(|x| x as f32),
-    }
-}
-
-impl RenderQueue {
-    pub fn new() -> RenderQueue {
-        RenderQueue {
-            queue: vec![],
-            outdated: false,
-        }
-    }
-
-    pub fn load_from_iter<'a>(
-        &mut self,
-        iter: impl Iterator<Item = (ChunkCoords, Rc<ChunkGraphics>)>,
-    ) {
-        self.queue.clear();
-        iter.map(|(coords, graphics)| RenderQueueItem {
-            coords,
-            graphics,
-            in_frustrum: false,
-        })
-        .for_each(|x| self.queue.push(x));
-    }
-
-    pub fn mark_outdated(&mut self) {
-        self.outdated = true;
-    }
-
-    pub fn is_outdated(&self) -> bool {
-        self.outdated
-    }
-
-    pub fn clip_to_frustrum(&mut self, frustrum: &Frustrum) {
-        for item in &mut self.queue {
-            item.in_frustrum = frustrum.intersects_with_aabb(&chunk_aabb(item.coords));
-        }
-    }
-
-    pub fn iter_for_render(&self) -> impl Iterator<Item = &ChunkGraphics> + Clone {
-        self.queue.iter().filter_map(|x| {
-            if x.in_frustrum {
-                Some(x.graphics.as_ref())
-            } else {
-                None
-            }
-        })
-    }
-
-    pub fn iter_for_update(&self) -> impl Iterator<Item = (ChunkCoords, &ChunkGraphics)> {
-        self.queue.iter().map(|x| (x.coords, x.graphics.as_ref()))
     }
 }
