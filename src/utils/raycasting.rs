@@ -39,14 +39,14 @@ pub fn cast_ray(
     direction: Vector3<f32>,
     max_distance: f32,
 ) -> Option<Hit> {
+    if direction.is_zero() {
+        return None;
+    }
+
     // If the ray is parallel to a plane, it will never go through the faces parallel to it
     let check_xy = direction.z != 0.;
     let check_xz = direction.y != 0.;
     let check_yz = direction.x != 0.;
-
-    if !(check_xy || check_xz || check_yz) {
-        return None;
-    }
 
     // Move the intersection checkers to the first face on their way
     let xy_step;
