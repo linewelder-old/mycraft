@@ -1,4 +1,4 @@
-use cgmath::{Vector2, InnerSpace};
+use cgmath::{InnerSpace, Vector2};
 use noise::{NoiseFn, Perlin};
 
 use super::{blocks::BlockId, BlockCoords, Chunk, ChunkCoords};
@@ -14,9 +14,12 @@ fn hash(seed: Vector2<f64>) -> f64 {
 }
 
 fn set_block(chunk: &mut Chunk, coords: BlockCoords, id: BlockId) {
-    if coords.x >= 0 && coords.x < Chunk::SIZE.x &&
-        coords.y >= 0 && coords.y < Chunk::SIZE.y &&
-        coords.z >= 0 && coords.z < Chunk::SIZE.z
+    if coords.x >= 0
+        && coords.x < Chunk::SIZE.x
+        && coords.y >= 0
+        && coords.y < Chunk::SIZE.y
+        && coords.z >= 0
+        && coords.z < Chunk::SIZE.z
     {
         chunk[coords].block_id = id;
     }
@@ -38,19 +41,19 @@ fn plant_tree(chunk: &mut Chunk, ground: BlockCoords) {
         chunk,
         ground + BlockCoords::new(-2, 3, -2),
         ground + BlockCoords::new(2, 4, 2),
-        BlockId::Leaves
+        BlockId::Leaves,
     );
     fill(
         chunk,
         ground + BlockCoords::new(-1, 5, -1),
         ground + BlockCoords::new(1, 6, 1),
-        BlockId::Leaves
+        BlockId::Leaves,
     );
     fill(
         chunk,
         ground + BlockCoords::new(0, 1, 0),
         ground + BlockCoords::new(0, 3, 0),
-        BlockId::Trunk
+        BlockId::Trunk,
     );
 }
 
@@ -122,7 +125,7 @@ impl Generator {
                     }
 
                     if is_grass {
-                        let coords = BlockCoords { x, y: height + 1, z };
+                        let coords = BlockCoords::new(x, height + 1, z);
                         if plant_random > 0.95 {
                             chunk[coords].block_id = BlockId::RedFlower;
                         } else if plant_random > 0.9 {

@@ -1,4 +1,4 @@
-use std::{rc::Rc, f32::consts::PI};
+use std::{f32::consts::PI, rc::Rc};
 
 use cgmath::{Vector3, Zero};
 

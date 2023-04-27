@@ -66,12 +66,7 @@ impl WorldRenderer {
             sky_uniform,
             texture,
         );
-        self.water_pipeline.draw(
-            &mut render_pass,
-            camera,
-            chunks,
-            sky_uniform,
-            texture,
-        );
+        self.water_pipeline
+            .draw(&mut render_pass, camera, chunks, sky_uniform, texture);
     }
 }

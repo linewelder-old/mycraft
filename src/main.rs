@@ -62,7 +62,8 @@ fn main() -> Result<()> {
             context.window.request_redraw();
             control_flow.set_wait_until(current_frame_time + frame_duration);
 
-            context.window.set_title(&format!("Mycraft | {:.1} FPS", 1. / delta.as_secs_f64()));
+            let fps = 1. / delta.as_secs_f64();
+            context.window.set_title(&format!("Mycraft | {:.1} FPS", fps));
         }
 
         Event::WindowEvent {
