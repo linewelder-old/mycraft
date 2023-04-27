@@ -10,7 +10,7 @@ pub struct Generator {
 fn hash(seed: Vector2<f64>) -> f64 {
     let m1 = Vector2::new(3.1251, 17.8737);
     let m2 = 43758.545312;
-    return (seed.dot(m1).sin() * m2).fract();
+    (seed.dot(m1).sin() * m2).fract()
 }
 
 fn set_block(chunk: &mut Chunk, coords: BlockCoords, id: BlockId) {

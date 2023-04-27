@@ -110,7 +110,7 @@ impl SkyRenderer {
         let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: Some("Sky Render Pass"),
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                view: &target,
+                view: target,
                 resolve_target: None,
                 ops: wgpu::Operations {
                     load: wgpu::LoadOp::Load,

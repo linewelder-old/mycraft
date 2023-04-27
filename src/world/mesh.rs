@@ -406,7 +406,7 @@ impl<'a> MeshGenerationContext<'a> {
             self.emit_solid_face(FaceDesc {
                 points,
                 texture_id,
-                texture_coords: texture_coords,
+                texture_coords,
                 diffused_light: 15,
                 sun_light,
                 block_light,
