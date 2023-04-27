@@ -4,7 +4,7 @@ use cgmath::{MetricSpace, Vector3, Zero};
 
 use crate::{
     rendering::{frustrum::Frustrum, ChunkGraphics},
-    utils::aabb::AABB,
+    utils::aabb::Aabb,
 };
 
 use super::{Chunk, ChunkCoords};
@@ -21,8 +21,8 @@ pub struct ChunkQueue {
     point_of_view: ChunkCoords,
 }
 
-fn chunk_aabb(coords: ChunkCoords) -> AABB {
-    AABB {
+fn chunk_aabb(coords: ChunkCoords) -> Aabb {
+    Aabb {
         start: Vector3 {
             x: (coords.x * Chunk::SIZE.x) as f32,
             y: 0.,

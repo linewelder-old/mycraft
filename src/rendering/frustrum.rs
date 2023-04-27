@@ -1,6 +1,6 @@
 use cgmath::{InnerSpace, Matrix4, Vector3};
 
-use crate::utils::aabb::AABB;
+use crate::utils::aabb::Aabb;
 
 struct Plane {
     distance_from_origin: f32,
@@ -80,7 +80,7 @@ impl Frustrum {
         Frustrum { planes }
     }
 
-    pub fn intersects_with_aabb(&self, aabb: &AABB) -> bool {
+    pub fn intersects_with_aabb(&self, aabb: &Aabb) -> bool {
         self.planes.iter().all(|plane| {
             plane.distance_to_point(aabb.farthest_point_in_direction(plane.normal)) > 0.
         })

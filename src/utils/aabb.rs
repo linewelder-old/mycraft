@@ -1,11 +1,11 @@
 use cgmath::Vector3;
 
-pub struct AABB {
+pub struct Aabb {
     pub start: Vector3<f32>,
     pub size: Vector3<f32>,
 }
 
-impl AABB {
+impl Aabb {
     pub fn farthest_point_in_direction(&self, direction: Vector3<f32>) -> Vector3<f32> {
         self.start
             + Vector3 {
