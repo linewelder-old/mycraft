@@ -173,9 +173,7 @@ impl World {
 
             if chunk.needs_graphics_update() {
                 let graphics = self.create_chunk_graphics(coords, &chunk);
-                if chunk.graphics.is_none() {
-                    self.render_queue_outdated = true;
-                }
+                self.render_queue_outdated = true;
                 chunk.graphics = Some(graphics.clone());
             }
 
@@ -198,6 +196,7 @@ impl World {
         }
 
         if self.render_queue_outdated {
+            self.render_queue_outdated = false;
             self.render_queue.clear();
             self.chunk_queue
                 .iter_graphics()
