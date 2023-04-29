@@ -63,7 +63,7 @@ impl Chunk {
         Chunk {
             data: [[[Cell {
                 block_id: BlockId::Air,
-                sun_light: 15,
+                sun_light: 0,
                 block_light: 0,
             }; Self::SIZE.z as usize]; Self::SIZE.y as usize];
                 Self::SIZE.x as usize],
