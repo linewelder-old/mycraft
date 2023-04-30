@@ -54,9 +54,9 @@ pub struct Chunk {
 
 impl Chunk {
     pub const SIZE: Vector3<i32> = Vector3 {
-        x: 16,
-        y: 256,
-        z: 16,
+        x: 32,
+        y: 32,
+        z: 32,
     };
 
     fn new() -> Self {
