@@ -1,14 +1,11 @@
 use std::cell::{Ref, RefMut};
 
-use cgmath::Vector3;
+use cgmath::{ElementWise, Vector3};
 
 use super::{BlockCoords, Cell, Chunk, ChunkCoords, World};
 
 fn get_chunk_coords(block_coords: BlockCoords) -> ChunkCoords {
-    ChunkCoords {
-        x: block_coords.x.div_euclid(Chunk::SIZE.x),
-        y: block_coords.z.div_euclid(Chunk::SIZE.z),
-    }
+    block_coords.zip(Chunk::SIZE, i32::div_euclid)
 }
 
 pub fn get_chunk_and_block_coords(position: Vector3<f32>) -> (ChunkCoords, BlockCoords) {
@@ -21,13 +18,13 @@ pub fn get_chunk_and_block_coords(position: Vector3<f32>) -> (ChunkCoords, Block
 /// Returns the chunk coords of the given block, and the coords within the chunk
 pub fn to_local_chunk_coords(block_coords: BlockCoords) -> (ChunkCoords, BlockCoords) {
     let chunk_coords = get_chunk_coords(block_coords);
-    let block_coords = BlockCoords {
-        x: block_coords.x.rem_euclid(Chunk::SIZE.x),
-        y: block_coords.y,
-        z: block_coords.z.rem_euclid(Chunk::SIZE.z),
-    };
+    let block_coords = block_coords.zip(Chunk::SIZE, i32::rem_euclid);
 
     (chunk_coords, block_coords)
+}
+
+pub fn to_chunk_offset(chunk_coords: ChunkCoords) -> Vector3<f32> {
+    chunk_coords.mul_element_wise(Chunk::SIZE).map(|x| x as f32)
 }
 
 /// Borrows a 3x3 chunk region
@@ -45,7 +42,8 @@ impl<'a> ChunkNeighborhood<'a> {
                 if x != 1 || y != 1 {
                     let offset = ChunkCoords {
                         x: x as i32 - 1,
-                        y: y as i32 - 1,
+                        y: 0,
+                        z: y as i32 - 1,
                     };
                     neighbors[x][y] = world.borrow_chunk(chunk_coords + offset);
                 }
@@ -87,7 +85,8 @@ impl<'a> ChunkNeighborhoodMut<'a> {
                 if x != 1 || y != 1 {
                     let offset = ChunkCoords {
                         x: x as i32 - 1,
-                        y: y as i32 - 1,
+                        y: 0,
+                        z: y as i32 - 1,
                     };
                     neighbors[x][y] = world.borrow_mut_chunk(chunk_coords + offset);
                 }

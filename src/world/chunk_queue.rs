@@ -1,6 +1,6 @@
 use std::{cell::RefCell, rc::Rc};
 
-use cgmath::{MetricSpace, Vector3, Zero};
+use cgmath::{MetricSpace, Zero};
 
 use crate::{
     rendering::{frustrum::Frustrum, ChunkGraphics},
@@ -23,11 +23,7 @@ pub struct ChunkQueue {
 
 fn chunk_aabb(coords: ChunkCoords) -> Aabb {
     Aabb {
-        start: Vector3 {
-            x: (coords.x * Chunk::SIZE.x) as f32,
-            y: 0.,
-            z: (coords.y * Chunk::SIZE.z) as f32,
-        },
+        start: coords.zip(Chunk::SIZE, |x, y| (x * y) as f32),
         size: Chunk::SIZE.map(|x| x as f32),
     }
 }

@@ -55,9 +55,11 @@ impl Mycraft {
     pub fn try_new(context: Rc<Context>) -> Result<Self> {
         let mut world = World::new(context.clone());
         for x in -RENDER_DISTANCE..RENDER_DISTANCE {
-            for y in -RENDER_DISTANCE..RENDER_DISTANCE {
-                if x * x + y * y < RENDER_DISTANCE * RENDER_DISTANCE {
-                    world.load_chunk(ChunkCoords { x, y });
+            for z in -RENDER_DISTANCE..RENDER_DISTANCE {
+                for y in -1..2 {
+                    if x * x + z * z < RENDER_DISTANCE * RENDER_DISTANCE {
+                        world.load_chunk(ChunkCoords { x, y, z });
+                    }
                 }
             }
         }

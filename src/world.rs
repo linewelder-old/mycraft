@@ -13,7 +13,7 @@ use std::{
     time::Instant,
 };
 
-use cgmath::{Vector2, Vector3, Zero};
+use cgmath::{Vector3, Zero};
 
 use self::{
     blocks::{Block, BlockId},
@@ -21,7 +21,7 @@ use self::{
     generation::Generator,
     light::{recalculate_light, LightUpdater},
     mesh::ChunkMeshes,
-    utils::{get_chunk_and_block_coords, to_local_chunk_coords},
+    utils::{get_chunk_and_block_coords, to_chunk_offset, to_local_chunk_coords},
 };
 use crate::{
     camera::Camera,
@@ -107,7 +107,7 @@ impl IndexMut<BlockCoords> for Chunk {
     }
 }
 
-pub type ChunkCoords = Vector2<i32>;
+pub type ChunkCoords = Vector3<i32>;
 pub type BlockCoords = Vector3<i32>;
 
 pub struct World {
@@ -137,7 +137,7 @@ impl World {
             render_queue_outdated: true,
 
             prev_cam_block_coords: Vector3::zero(),
-            prev_cam_chunk_coords: Vector2::zero(),
+            prev_cam_chunk_coords: Vector3::zero(),
         }
     }
 
@@ -183,11 +183,7 @@ impl World {
 
             let graphics = chunk.graphics.as_ref().unwrap();
             if graphics.needs_water_faces_sorting() {
-                let chunk_offset = Vector3 {
-                    x: (coords.x * Chunk::SIZE.x) as f32,
-                    y: 0.,
-                    z: (coords.y * Chunk::SIZE.z) as f32,
-                };
+                let chunk_offset = to_chunk_offset(coords);
                 let relative_cam_pos = camera.position - chunk_offset;
 
                 graphics.sort_water_faces(relative_cam_pos);
@@ -266,10 +262,6 @@ impl World {
     }
 
     pub fn get_block(&self, coords: BlockCoords) -> Option<&'static Block> {
-        if coords.y < 0 || coords.y >= Chunk::SIZE.y {
-            return None;
-        }
-
         let (chunk_coords, block_coords) = to_local_chunk_coords(coords);
         self.borrow_chunk(chunk_coords)
             .map(|chunk| chunk[block_coords].get_block())
@@ -278,9 +270,12 @@ impl World {
     fn invalidate_neighbors_graphics(&self, chunk_coords: ChunkCoords) {
         for x in -1..=1 {
             for y in -1..=1 {
-                if x != 0 || y != 0 {
-                    if let Some(chunk) = self.borrow_chunk(chunk_coords + ChunkCoords { x, y }) {
-                        chunk.invalidate_graphics();
+                for z in -1..=1 {
+                    if x != 0 || y != 0 || z != 0 {
+                        let coords = chunk_coords + ChunkCoords { x, y, z };
+                        if let Some(chunk) = self.borrow_chunk(coords) {
+                            chunk.invalidate_graphics();
+                        }
                     }
                 }
             }
@@ -288,10 +283,6 @@ impl World {
     }
 
     pub fn set_block(&mut self, coords: BlockCoords, block_id: BlockId) {
-        if coords.y < 0 || coords.y >= Chunk::SIZE.y {
-            return;
-        }
-
         let (chunk_coords, block_coords) = to_local_chunk_coords(coords);
         if let Some(mut chunk) = self.borrow_mut_chunk(chunk_coords) {
             chunk[block_coords].block_id = block_id;

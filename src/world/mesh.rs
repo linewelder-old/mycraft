@@ -1,8 +1,9 @@
 use cgmath::{Vector2, Vector3, Zero};
 
 use super::{
-    blocks::Block, utils::ChunkNeighborhood, BlockCoords, Cell, Chunk, ChunkCoords, LightLevel,
-    World,
+    blocks::Block,
+    utils::{to_chunk_offset, ChunkNeighborhood},
+    BlockCoords, Cell, Chunk, ChunkCoords, LightLevel, World,
 };
 use crate::rendering::{Face, Vertex, VertexDesc};
 
@@ -217,12 +218,7 @@ struct FaceDesc<'a> {
 impl<'a> MeshGenerationContext<'a> {
     fn new(world: &'a World, chunk: &'a Chunk, chunk_coords: ChunkCoords) -> Self {
         let chunks = ChunkNeighborhood::new(world, chunk, chunk_coords);
-
-        let chunk_offset = Vector3 {
-            x: (chunk_coords.x * Chunk::SIZE.x) as f32,
-            y: 0.,
-            z: (chunk_coords.y * Chunk::SIZE.z) as f32,
-        };
+        let chunk_offset = to_chunk_offset(chunk_coords);
 
         MeshGenerationContext {
             chunks,
