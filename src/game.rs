@@ -56,7 +56,7 @@ impl Mycraft {
         let mut world = World::new(context.clone());
         for x in -RENDER_DISTANCE..RENDER_DISTANCE {
             for z in -RENDER_DISTANCE..RENDER_DISTANCE {
-                for y in -1..2 {
+                for y in 0..WORLD_HEIGHT {
                     if x * x + z * z < RENDER_DISTANCE * RENDER_DISTANCE {
                         world.load_chunk(ChunkCoords { x, y, z });
                     }

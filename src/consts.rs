@@ -9,7 +9,8 @@ pub const MAX_UPDATE_TIME: Duration = Duration::from_millis(15);
 pub const CAMERA_MOVEMENT_SPEED: f32 = 8.;
 pub const MOUSE_SENSITIVITY: f32 = 0.2;
 
-pub const RENDER_DISTANCE: i32 = 5;
+pub const RENDER_DISTANCE: i32 = 10;
+pub const WORLD_HEIGHT: i32 = 16;
 pub const MAX_RAYCASTING_DISTANCE: f32 = 6.;
 
 pub const MIDNIGHT_SUNLIGHT: f32 = 0.2;
