@@ -89,6 +89,12 @@ impl ChunkQueue {
         self.queue
             .iter()
             .rev()
-            .filter_map(|x| Some((x.coords, x.chunk.borrow().graphics.as_ref()?.clone())))
+            .filter_map(|x| {
+                if x.in_frustrum {
+                    Some((x.coords, x.chunk.borrow().graphics.as_ref()?.clone()))
+                } else {
+                    None
+                }
+            })
     }
 }
