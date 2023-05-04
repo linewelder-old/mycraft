@@ -90,6 +90,8 @@ impl Generator {
     }
 
     pub fn generate_chunk(&self, chunk: &mut Chunk, chunk_coords: ChunkCoords) {
+        puffin::profile_function!();
+
         for x in -2..(Chunk::SIZE.x + 2) {
             for z in -2..(Chunk::SIZE.z + 2) {
                 let world_coords = Vector2 {

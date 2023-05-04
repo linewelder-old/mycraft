@@ -44,6 +44,8 @@ impl EguiContext {
         target: &wgpu::TextureView,
         do_ui: impl Fn(&egui::Context),
     ) {
+        puffin::profile_function!();
+
         self.platform.begin_frame();
         let context = self.platform.context();
 

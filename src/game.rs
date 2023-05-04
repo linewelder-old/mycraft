@@ -110,6 +110,7 @@ impl Mycraft {
         ]);
 
         let egui = EguiContext::new(context.clone());
+        puffin::set_scopes_on(true);
 
         Ok(Mycraft {
             context,
@@ -241,6 +242,9 @@ impl Mycraft {
     }
 
     pub fn update(&mut self, delta: std::time::Duration) {
+        puffin::GlobalProfiler::lock().new_frame();
+        puffin::profile_function!();
+
         let delta_secs = delta.as_secs_f32();
 
         self.sky.update(delta);
@@ -260,6 +264,8 @@ impl Mycraft {
     }
 
     pub fn render(&mut self, target: &wgpu::TextureView) {
+        puffin::profile_function!();
+
         let mut encoder =
             self.context
                 .device
@@ -290,6 +296,15 @@ impl Mycraft {
             if !self.in_menu {
                 ctx.set_cursor_icon(egui::CursorIcon::None);
             }
+
+            egui::Window::new("Controls").show(ctx, |ui| {
+                let mut profiling_on = puffin::are_scopes_on();
+                if ui.checkbox(&mut profiling_on, "Profiling").changed() {
+                    puffin::set_scopes_on(profiling_on);
+                }
+            });
+
+            puffin_egui::profiler_window(ctx);
         });
 
         self.context.queue.submit(std::iter::once(encoder.finish()));

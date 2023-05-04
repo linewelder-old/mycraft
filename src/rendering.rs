@@ -95,6 +95,8 @@ impl ChunkGraphics {
     }
 
     pub fn sort_water_faces(&self, relative_cam_pos: Vector3<f32>) {
+        puffin::profile_function!();
+
         let mut data = self.graphics_data.borrow_mut();
         data.water_faces_unsorted = false;
 

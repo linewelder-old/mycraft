@@ -152,11 +152,15 @@ impl World {
     }
 
     pub fn update(&mut self, camera: &Camera) {
+        puffin::profile_function!();
+
         let update_start = Instant::now();
 
         self.check_what_is_to_sort(camera.position);
 
         if self.chunk_queue.needs_to_be_sorted() {
+            puffin::profile_scope!("Chunk queue sort");
+
             self.chunk_queue.sort(self.prev_cam_chunk_coords);
             self.render_queue_outdated = true;
         }
@@ -196,6 +200,8 @@ impl World {
         }
 
         if self.render_queue_outdated {
+            puffin::profile_scope!("Render queue update");
+
             self.render_queue_outdated = false;
             self.render_queue.clear();
             self.chunk_queue
@@ -221,6 +227,8 @@ impl World {
     }
 
     fn create_chunk_graphics(&self, coords: ChunkCoords, chunk: &Chunk) -> Rc<ChunkGraphics> {
+        puffin::profile_function!();
+
         let meshes = ChunkMeshes::generate(self, chunk, coords);
         let solid_mesh = ChunkMesh::new(
             self.context.clone(),

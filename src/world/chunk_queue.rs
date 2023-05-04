@@ -86,15 +86,12 @@ impl ChunkQueue {
     }
 
     pub fn iter_graphics(&self) -> impl Iterator<Item = (ChunkCoords, Rc<ChunkGraphics>)> + '_ {
-        self.queue
-            .iter()
-            .rev()
-            .filter_map(|x| {
-                if x.in_frustrum {
-                    Some((x.coords, x.chunk.borrow().graphics.as_ref()?.clone()))
-                } else {
-                    None
-                }
-            })
+        self.queue.iter().rev().filter_map(|x| {
+            if x.in_frustrum {
+                Some((x.coords, x.chunk.borrow().graphics.as_ref()?.clone()))
+            } else {
+                None
+            }
+        })
     }
 }

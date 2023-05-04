@@ -19,6 +19,8 @@ const DIRECTIONS: [Vector3<i32>; 6] = [
 ];
 
 pub fn recalculate_light(world: &World, chunk: &mut Chunk, coords: ChunkCoords) {
+    puffin::profile_function!("Light recalculation");
+
     for x in 0..Chunk::SIZE.x {
         for z in 0..Chunk::SIZE.z {
             let mut sun_light = 15;
