@@ -39,6 +39,7 @@ pub struct Mycraft {
     camera: Camera,
     looking_at: Option<raycasting::Hit>,
     movement_input: Input3d,
+    in_menu: bool,
 
     current_block: BlockId,
     hotbar: HashMap<VirtualKeyCode, BlockId>,
@@ -118,6 +119,7 @@ impl Mycraft {
             camera,
             looking_at: None,
             movement_input,
+            in_menu: false,
 
             current_block: BlockId::Dirt,
             hotbar,
@@ -128,21 +130,31 @@ impl Mycraft {
         })
     }
 
+    fn grab_cursor(&mut self) {
+        let _ = self
+            .context
+            .window
+            .set_cursor_grab(CursorGrabMode::Confined);
+        self.context.window.set_cursor_visible(false);
+    }
+
+    fn ungrab_cursor(&mut self) {
+        let _ = self.context.window.set_cursor_grab(CursorGrabMode::None);
+        self.context.window.set_cursor_visible(true);
+    }
+
     pub fn event(&mut self, event: &Event<()>) {
         match event {
             Event::WindowEvent { window_id, event } if *window_id == self.context.window.id() => {
                 match event {
                     WindowEvent::CursorEntered { .. } => {
-                        let _ = self
-                            .context
-                            .window
-                            .set_cursor_grab(CursorGrabMode::Confined);
-                        self.context.window.set_cursor_visible(false);
+                        if !self.in_menu {
+                            self.grab_cursor();
+                        }
                     }
 
                     WindowEvent::CursorLeft { .. } | WindowEvent::Focused(false) => {
-                        let _ = self.context.window.set_cursor_grab(CursorGrabMode::None);
-                        self.context.window.set_cursor_visible(true);
+                        self.ungrab_cursor();
                     }
 
                     WindowEvent::KeyboardInput { input, .. } => {
@@ -156,6 +168,15 @@ impl Mycraft {
                         {
                             if let Some(block_id) = self.hotbar.get(code) {
                                 self.current_block = *block_id;
+                            }
+
+                            if *code == VirtualKeyCode::Escape {
+                                if self.in_menu {
+                                    self.grab_cursor();
+                                } else {
+                                    self.ungrab_cursor();
+                                }
+                                self.in_menu = !self.in_menu;
                             }
                         }
                     }
@@ -191,12 +212,14 @@ impl Mycraft {
                 event: DeviceEvent::MouseMotion { delta },
                 ..
             } => {
-                self.camera.rotate(
-                    Vector2 {
-                        x: delta.0 as f32,
-                        y: -delta.1 as f32,
-                    } * MOUSE_SENSITIVITY,
-                );
+                if !self.in_menu {
+                    self.camera.rotate(
+                        Vector2 {
+                            x: delta.0 as f32,
+                            y: -delta.1 as f32,
+                        } * MOUSE_SENSITIVITY,
+                    );
+                }
             }
 
             _ => {}
