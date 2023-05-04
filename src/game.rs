@@ -13,6 +13,7 @@ use crate::{
     camera::Camera,
     consts::*,
     context::Context,
+    egui::EguiContext,
     rendering::{
         sky_renderer::SkyRenderer,
         texture::{DepthBuffer, Texture},
@@ -40,6 +41,7 @@ pub struct Mycraft {
     looking_at: Option<raycasting::Hit>,
     movement_input: Input3d,
     in_menu: bool,
+    egui: EguiContext,
 
     current_block: BlockId,
     hotbar: HashMap<VirtualKeyCode, BlockId>,
@@ -107,6 +109,8 @@ impl Mycraft {
             (Minus, BlockId::Torch),
         ]);
 
+        let egui = EguiContext::new(context.clone());
+
         Ok(Mycraft {
             context,
 
@@ -120,6 +124,7 @@ impl Mycraft {
             looking_at: None,
             movement_input,
             in_menu: false,
+            egui,
 
             current_block: BlockId::Dirt,
             hotbar,
@@ -144,6 +149,10 @@ impl Mycraft {
     }
 
     pub fn event(&mut self, event: &Event<()>) {
+        if self.in_menu {
+            self.egui.handle_event(event);
+        }
+
         match event {
             Event::WindowEvent { window_id, event } if *window_id == self.context.window.id() => {
                 match event {
@@ -276,6 +285,12 @@ impl Mycraft {
             self.sky.get_uniform(),
             &self.blocks_texture,
         );
+
+        self.egui.draw_frame(&mut encoder, target, |ctx| {
+            if !self.in_menu {
+                ctx.set_cursor_icon(egui::CursorIcon::None);
+            }
+        });
 
         self.context.queue.submit(std::iter::once(encoder.finish()));
     }

@@ -1,6 +1,7 @@
 mod camera;
 mod consts;
 mod context;
+mod egui;
 mod game;
 mod rendering;
 mod resources;
