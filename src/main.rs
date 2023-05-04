@@ -51,65 +51,68 @@ fn main() -> Result<()> {
     let frame_duration = Duration::new(1, 0) / FPS;
     let mut last_frame_time = Instant::now();
 
-    event_loop.run(move |event, _, control_flow| match event {
-        Event::NewEvents(StartCause::Init)
-        | Event::NewEvents(StartCause::ResumeTimeReached { .. }) => {
-            let current_frame_time = Instant::now();
-            let delta = current_frame_time - last_frame_time;
-            last_frame_time = current_frame_time;
+    event_loop.run(move |event, _, control_flow| {
+        game.event(&event);
+        match event {
+            Event::NewEvents(StartCause::Init)
+            | Event::NewEvents(StartCause::ResumeTimeReached { .. }) => {
+                let current_frame_time = Instant::now();
+                let delta = current_frame_time - last_frame_time;
+                last_frame_time = current_frame_time;
 
-            game.update(delta);
-            context.window.request_redraw();
-            control_flow.set_wait_until(current_frame_time + frame_duration);
+                game.update(delta);
+                context.window.request_redraw();
+                control_flow.set_wait_until(current_frame_time + frame_duration);
 
-            let fps = 1. / delta.as_secs_f64();
-            context.window.set_title(&format!("Mycraft | {:.1} FPS", fps));
-        }
-
-        Event::WindowEvent {
-            event: WindowEvent::CloseRequested,
-            window_id,
-        } if window_id == context.window.id() => {
-            control_flow.set_exit();
-        }
-
-        Event::WindowEvent {
-            event: WindowEvent::Resized(size),
-            window_id,
-        } if window_id == context.window.id() => {
-            resize(&context, &mut game, size);
-        }
-
-        Event::WindowEvent {
-            event: WindowEvent::ScaleFactorChanged { new_inner_size, .. },
-            window_id,
-        } if window_id == context.window.id() => {
-            resize(&context, &mut game, *new_inner_size);
-        }
-
-        Event::RedrawRequested(window_id) if window_id == context.window.id() => {
-            match context.surface.get_current_texture() {
-                Ok(output) => {
-                    let target = output
-                        .texture
-                        .create_view(&wgpu::TextureViewDescriptor::default());
-                    game.render(&target);
-                    output.present();
-                }
-                err @ Err(wgpu::SurfaceError::Lost) => {
-                    drop(err);
-                    context.recofigure_curface();
-                }
-                Err(wgpu::SurfaceError::OutOfMemory) => {
-                    log::error!("Error on frame render: Out of memory");
-                    control_flow.set_exit_with_code(1);
-                }
-                Err(err) => log::error!("Error on frame render: {:?}", err),
+                let fps = 1. / delta.as_secs_f64();
+                context
+                    .window
+                    .set_title(&format!("Mycraft | {:.1} FPS", fps));
             }
-        }
 
-        event => {
-            game.event(&event);
+            Event::WindowEvent {
+                event: WindowEvent::CloseRequested,
+                window_id,
+            } if window_id == context.window.id() => {
+                control_flow.set_exit();
+            }
+
+            Event::WindowEvent {
+                event: WindowEvent::Resized(size),
+                window_id,
+            } if window_id == context.window.id() => {
+                resize(&context, &mut game, size);
+            }
+
+            Event::WindowEvent {
+                event: WindowEvent::ScaleFactorChanged { new_inner_size, .. },
+                window_id,
+            } if window_id == context.window.id() => {
+                resize(&context, &mut game, *new_inner_size);
+            }
+
+            Event::RedrawRequested(window_id) if window_id == context.window.id() => {
+                match context.surface.get_current_texture() {
+                    Ok(output) => {
+                        let target = output
+                            .texture
+                            .create_view(&wgpu::TextureViewDescriptor::default());
+                        game.render(&target);
+                        output.present();
+                    }
+                    err @ Err(wgpu::SurfaceError::Lost) => {
+                        drop(err);
+                        context.recofigure_curface();
+                    }
+                    Err(wgpu::SurfaceError::OutOfMemory) => {
+                        log::error!("Error on frame render: Out of memory");
+                        control_flow.set_exit_with_code(1);
+                    }
+                    Err(err) => log::error!("Error on frame render: {:?}", err),
+                }
+            }
+
+            _ => {}
         }
     });
 }
