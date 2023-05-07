@@ -126,7 +126,8 @@ pub fn cast_ray(
     }
 
     let max_distance_squared = max_distance * max_distance;
-    loop {
+    let max_steps = (max_distance * 3.) as i32;
+    for _ in 0..max_steps {
         let distance_to_xy = origin.distance2(xy_current_point);
         let distance_to_xz = origin.distance2(xz_current_point);
         let distance_to_yz = origin.distance2(yz_current_point);
@@ -144,7 +145,7 @@ pub fn cast_ray(
 
         if next_face_is_xy {
             if distance_to_xy > max_distance_squared {
-                break None;
+                return None;
             }
 
             current_point = xy_current_point;
@@ -162,7 +163,7 @@ pub fn cast_ray(
             xy_current_point += xy_step;
         } else if next_face_is_xz {
             if distance_to_xz > max_distance_squared {
-                break None;
+                return None;
             }
 
             current_point = xz_current_point;
@@ -180,7 +181,7 @@ pub fn cast_ray(
             xz_current_point += xz_step;
         } else {
             if distance_to_yz > max_distance_squared {
-                break None;
+                return None;
             }
 
             current_point = yz_current_point;
@@ -200,7 +201,7 @@ pub fn cast_ray(
 
         if let Some(hit_block) = world.get_block(hit_coords) {
             if !hit_block.is_transparent() {
-                break Some(Hit {
+                return Some(Hit {
                     point: current_point,
                     side: hit_side,
                     coords: hit_coords,
@@ -209,4 +210,6 @@ pub fn cast_ray(
             }
         }
     }
+
+    None
 }
