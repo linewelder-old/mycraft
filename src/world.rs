@@ -113,7 +113,6 @@ pub struct World {
     generator: Generator,
 
     render_queue: Vec<Rc<ChunkGraphics>>,
-    render_queue_outdated: bool,
 
     prev_cam_chunk_coords: ChunkCoords,
     prev_cam_block_coords: BlockCoords,
@@ -129,7 +128,6 @@ impl World {
             generator: Generator::new(0),
 
             render_queue: Vec::new(),
-            render_queue_outdated: true,
 
             prev_cam_block_coords: Vector3::zero(),
             prev_cam_chunk_coords: Vector3::zero(),
@@ -157,8 +155,9 @@ impl World {
             puffin::profile_scope!("Chunk queue sort");
 
             self.chunk_queue.sort(self.prev_cam_chunk_coords);
-            self.render_queue_outdated = true;
         }
+
+        self.chunk_queue.clip_to_frustrum(&camera.get_frustrum());
 
         for (coords, chunk) in self.chunk_queue.iter() {
             let mut chunk = chunk.borrow_mut();
@@ -172,7 +171,6 @@ impl World {
 
             if chunk.status == ChunkStatus::GraphicsOutdated {
                 let graphics = self.create_chunk_graphics(coords, &chunk);
-                self.render_queue_outdated = true;
                 chunk.graphics = graphics;
                 chunk.status = ChunkStatus::Ready;
             }
@@ -192,16 +190,12 @@ impl World {
             }
         }
 
-        if self.render_queue_outdated {
-            puffin::profile_scope!("Render queue update");
+        puffin::profile_scope!("Render queue update");
 
-            self.render_queue_outdated = false;
-            self.render_queue.clear();
-            self.chunk_queue
-                .iter_graphics()
-                .for_each(|x| self.render_queue.push(x.1));
-        }
-        self.chunk_queue.clip_to_frustrum(&camera.get_frustrum());
+        self.render_queue.clear();
+        self.chunk_queue
+            .iter_graphics()
+            .for_each(|x| self.render_queue.push(x.1));
     }
 
     fn check_what_is_to_sort(&mut self, camera_position: Vector3<f32>) {
