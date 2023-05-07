@@ -237,11 +237,7 @@ impl<'a> MeshGenerationContext<'a> {
     }
 
     fn get_light_levels(cell: Option<Cell>) -> (u8, u8) {
-        if let Some(cell) = cell {
-            (cell.sun_light, cell.block_light)
-        } else {
-            (15, 0)
-        }
+        cell.map_or((15, 0), |cell| (cell.sun_light, cell.block_light))
     }
 
     fn emit_face_vertices(
