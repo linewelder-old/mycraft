@@ -173,16 +173,17 @@ impl World {
             if chunk.status == ChunkStatus::GraphicsOutdated {
                 let graphics = self.create_chunk_graphics(coords, &chunk);
                 self.render_queue_outdated = true;
-                chunk.graphics = Some(graphics.clone());
+                chunk.graphics = graphics;
                 chunk.status = ChunkStatus::Ready;
             }
 
-            let graphics = chunk.graphics.as_ref().unwrap();
-            if graphics.needs_water_faces_sorting() {
-                let chunk_offset = to_chunk_offset(coords);
-                let relative_cam_pos = camera.position - chunk_offset;
+            if let Some(graphics) = &chunk.graphics {
+                if graphics.needs_water_faces_sorting() {
+                    let chunk_offset = to_chunk_offset(coords);
+                    let relative_cam_pos = camera.position - chunk_offset;
 
-                graphics.sort_water_faces(relative_cam_pos);
+                    graphics.sort_water_faces(relative_cam_pos);
+                }
             }
 
             let update_time = Instant::now() - update_start;
@@ -218,10 +219,18 @@ impl World {
         }
     }
 
-    fn create_chunk_graphics(&self, coords: ChunkCoords, chunk: &Chunk) -> Rc<ChunkGraphics> {
+    fn create_chunk_graphics(
+        &self,
+        coords: ChunkCoords,
+        chunk: &Chunk,
+    ) -> Option<Rc<ChunkGraphics>> {
         puffin::profile_function!();
 
         let meshes = ChunkMeshes::generate(self, chunk, coords);
+        if meshes.water_vertices.is_empty() && meshes.solid_vertices.is_empty() {
+            return None;
+        }
+
         let solid_mesh = ChunkMesh::new(
             self.context.clone(),
             "Solid Chunk Mesh",
@@ -235,7 +244,7 @@ impl World {
             &Face::generate_indices(&meshes.water_faces),
         );
 
-        Rc::new(ChunkGraphics {
+        Some(Rc::new(ChunkGraphics {
             solid_mesh,
             water_mesh,
 
@@ -243,7 +252,7 @@ impl World {
                 water_faces: meshes.water_faces,
                 water_faces_unsorted: true,
             }),
-        })
+        }))
     }
 
     #[inline]
