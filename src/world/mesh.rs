@@ -233,11 +233,7 @@ impl<'a> MeshGenerationContext<'a> {
     }
 
     fn is_transparent(cell: Option<Cell>) -> bool {
-        if let Some(cell) = cell {
-            cell.get_block().is_transparent()
-        } else {
-            true
-        }
+        cell.map_or(false, |cell| cell.get_block().is_transparent())
     }
 
     fn get_light_levels(cell: Option<Cell>) -> (u8, u8) {
@@ -358,16 +354,16 @@ impl<'a> MeshGenerationContext<'a> {
                 if should_not_emit_face {
                     continue;
                 }
-            }
 
-            self.emit_water_face(FaceDesc {
-                points: &model[i],
-                texture_id,
-                texture_coords: &TEX_COORDS,
-                diffused_light: FACE_LIGHTING[i],
-                sun_light,
-                block_light,
-            });
+                self.emit_water_face(FaceDesc {
+                    points: &model[i],
+                    texture_id,
+                    texture_coords: &TEX_COORDS,
+                    diffused_light: FACE_LIGHTING[i],
+                    sun_light,
+                    block_light,
+                });
+            }
         }
     }
 
