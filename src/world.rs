@@ -46,10 +46,17 @@ impl Cell {
     }
 }
 
+#[derive(PartialEq)]
+enum ChunkStatus {
+    NotGenerated,
+    GraphicsOutdated,
+    Ready,
+}
+
 pub struct Chunk {
     data: [[[Cell; Self::SIZE.z as usize]; Self::SIZE.y as usize]; Self::SIZE.x as usize],
-    is_generated: bool,
     graphics: Option<Rc<ChunkGraphics>>,
+    status: ChunkStatus,
 }
 
 impl Chunk {
@@ -67,26 +74,14 @@ impl Chunk {
                 block_light: 0,
             }; Self::SIZE.z as usize]; Self::SIZE.y as usize];
                 Self::SIZE.x as usize],
-            is_generated: false,
             graphics: None,
+            status: ChunkStatus::NotGenerated,
         }
     }
 
-    fn needs_graphics_update(&self) -> bool {
-        if !self.is_generated {
-            return false;
-        }
-
-        if let Some(graphics) = &self.graphics {
-            graphics.graphics_data.borrow().outdated
-        } else {
-            true
-        }
-    }
-
-    fn invalidate_graphics(&self) {
-        if let Some(graphics) = &self.graphics {
-            graphics.graphics_data.borrow_mut().outdated = true;
+    fn invalidate_graphics(&mut self) {
+        if self.status == ChunkStatus::Ready {
+            self.status = ChunkStatus::GraphicsOutdated;
         }
     }
 }
@@ -168,17 +163,18 @@ impl World {
         for (coords, chunk) in self.chunk_queue.iter() {
             let mut chunk = chunk.borrow_mut();
 
-            if !chunk.is_generated {
+            if chunk.status == ChunkStatus::NotGenerated {
                 self.generator.generate_chunk(&mut chunk, coords);
                 recalculate_light(self, &mut chunk, coords);
-                chunk.is_generated = true;
+                chunk.status = ChunkStatus::GraphicsOutdated;
                 self.invalidate_neighbors_graphics(coords);
             }
 
-            if chunk.needs_graphics_update() {
+            if chunk.status == ChunkStatus::GraphicsOutdated {
                 let graphics = self.create_chunk_graphics(coords, &chunk);
                 self.render_queue_outdated = true;
                 chunk.graphics = Some(graphics.clone());
+                chunk.status = ChunkStatus::Ready;
             }
 
             let graphics = chunk.graphics.as_ref().unwrap();
@@ -245,7 +241,6 @@ impl World {
 
             graphics_data: RefCell::new(ChunkGraphicsData {
                 water_faces: meshes.water_faces,
-                outdated: false,
                 water_faces_unsorted: true,
             }),
         })
@@ -273,7 +268,7 @@ impl World {
                 for z in -1..=1 {
                     if x != 0 || y != 0 || z != 0 {
                         let coords = chunk_coords + ChunkCoords { x, y, z };
-                        if let Some(chunk) = self.borrow_chunk(coords) {
+                        if let Some(mut chunk) = self.borrow_mut_chunk(coords) {
                             chunk.invalidate_graphics();
                         }
                     }

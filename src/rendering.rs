@@ -77,7 +77,6 @@ impl Face {
 
 pub struct ChunkGraphicsData {
     pub water_faces: Vec<Face>,
-    pub outdated: bool,
     pub water_faces_unsorted: bool,
 }
 
