@@ -9,7 +9,9 @@ pub mod world_renderer;
 
 use std::cell::RefCell;
 
-use cgmath::{MetricSpace, Vector2, Vector3};
+use cgmath::{ElementWise, MetricSpace, Vector2, Vector3};
+
+use crate::consts::BLOCK_TEXTURE_ATLAS_SIZE;
 
 use self::{chunk_mesh::ChunkMesh, uniform::Uniform};
 
@@ -23,7 +25,8 @@ pub struct Vertex {
 
 pub struct VertexDesc {
     pub pos: Vector3<f32>,
-    pub tex: Vector2<f32>,
+    pub texture_id: u16,
+    pub texture_coords: Vector2<f32>,
     pub diffused_light: u8,
     pub sun_light: u8,
     pub block_light: u8,
@@ -38,9 +41,17 @@ impl Vertex {
 
     #[inline]
     pub fn new(desc: VertexDesc) -> Self {
+        let texture_atlas_coords = Vector2 {
+            x: desc.texture_id % BLOCK_TEXTURE_ATLAS_SIZE.x,
+            y: desc.texture_id / BLOCK_TEXTURE_ATLAS_SIZE.x,
+        };
+        let unscaled_uv_coords = texture_atlas_coords.map(|x| x as f32) + desc.texture_coords;
+        let uv_coords =
+            unscaled_uv_coords.div_element_wise(BLOCK_TEXTURE_ATLAS_SIZE.map(|x| x as f32));
+
         Vertex {
             pos: desc.pos,
-            tex: desc.tex,
+            tex: uv_coords,
             light: ((desc.diffused_light as u32) << 8)
                 | ((desc.sun_light as u32) << 4)
                 | (desc.block_light as u32),

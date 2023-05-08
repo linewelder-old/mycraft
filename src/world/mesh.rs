@@ -242,18 +242,15 @@ impl<'a> MeshGenerationContext<'a> {
         desc: FaceDesc,
     ) {
         let offset = block_coords.map(|x| x as f32);
-        let base_texture_coords = Vector2 {
-            x: (desc.texture_id % 4) as f32,
-            y: (desc.texture_id / 4) as f32,
-        };
 
         desc.points
             .iter()
             .zip(desc.texture_coords)
-            .map(|(&pos, tex)| {
+            .map(|(&pos, &tex)| {
                 Vertex::new(VertexDesc {
                     pos: pos + offset,
-                    tex: (base_texture_coords + tex) / 4.,
+                    texture_id: desc.texture_id,
+                    texture_coords: tex,
                     diffused_light: desc.diffused_light,
                     sun_light: desc.sun_light,
                     block_light: desc.block_light,

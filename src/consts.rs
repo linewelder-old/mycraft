@@ -1,5 +1,7 @@
 use std::time::Duration;
 
+use cgmath::Vector2;
+
 pub const WIN_TITLE: &str = "Mycraft";
 pub const WIN_SIZE: (u32, u32) = (1080, 720);
 pub const FPS: u32 = 60;
@@ -15,3 +17,5 @@ pub const MAX_RAYCASTING_DISTANCE: f32 = 6.;
 
 pub const MIDNIGHT_SUNLIGHT: f32 = 0.2;
 pub const DAY_LENGTH_SECS: f32 = 10. * 60.;
+
+pub const BLOCK_TEXTURE_ATLAS_SIZE: Vector2<u16> = Vector2::new(4, 4);
