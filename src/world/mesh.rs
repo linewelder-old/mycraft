@@ -7,161 +7,161 @@ use super::{
 use crate::rendering::{Face, Vertex, VertexDesc};
 
 #[rustfmt::skip]
-const SOLID_BLOCK_FACES: [[Vector3<f32>; 4]; 6] = [
+const SOLID_BLOCK_FACES: [[Vector3<u16>; 4]; 6] = [
     // Neg Z
     [
-        Vector3 { x: 1., y: 0., z: 0. },
-        Vector3 { x: 0., y: 0., z: 0. },
-        Vector3 { x: 1., y: 1., z: 0. },
-        Vector3 { x: 0., y: 1., z: 0. },
+        Vector3 { x: 16, y: 0,  z: 0 },
+        Vector3 { x: 0,  y: 0,  z: 0 },
+        Vector3 { x: 16, y: 16, z: 0 },
+        Vector3 { x: 0,  y: 16, z: 0 },
     ],
     // Pos Z
     [
-        Vector3 { x: 0., y: 0., z: 1. },
-        Vector3 { x: 1., y: 0., z: 1. },
-        Vector3 { x: 0., y: 1., z: 1. },
-        Vector3 { x: 1., y: 1., z: 1. },
+        Vector3 { x: 0,  y: 0,  z: 16 },
+        Vector3 { x: 16, y: 0,  z: 16 },
+        Vector3 { x: 0,  y: 16, z: 16 },
+        Vector3 { x: 16, y: 16, z: 16 },
     ],
     // Neg Y
     [
-        Vector3 { x: 0., y: 0., z: 0. },
-        Vector3 { x: 1., y: 0., z: 0. },
-        Vector3 { x: 0., y: 0., z: 1. },
-        Vector3 { x: 1., y: 0., z: 1. },
+        Vector3 { x: 0,  y: 0,  z: 0  },
+        Vector3 { x: 16, y: 0,  z: 0  },
+        Vector3 { x: 0,  y: 0,  z: 16 },
+        Vector3 { x: 16, y: 0,  z: 16 },
     ],
     // Pos Y
     [
-        Vector3 { x: 1., y: 1., z: 0. },
-        Vector3 { x: 0., y: 1., z: 0. },
-        Vector3 { x: 1., y: 1., z: 1. },
-        Vector3 { x: 0., y: 1., z: 1. },
+        Vector3 { x: 16, y: 16, z: 0  },
+        Vector3 { x: 0,  y: 16, z: 0  },
+        Vector3 { x: 16, y: 16, z: 16 },
+        Vector3 { x: 0,  y: 16, z: 16 },
     ],
     // Neg X
     [
-        Vector3 { x: 0., y: 0., z: 0. },
-        Vector3 { x: 0., y: 0., z: 1. },
-        Vector3 { x: 0., y: 1., z: 0. },
-        Vector3 { x: 0., y: 1., z: 1. },
+        Vector3 { x: 0,  y: 0,  z: 0  },
+        Vector3 { x: 0,  y: 0,  z: 16 },
+        Vector3 { x: 0,  y: 16, z: 0  },
+        Vector3 { x: 0,  y: 16, z: 16 },
     ],
     // Pos X
     [
-        Vector3 { x: 1., y: 0., z: 1. },
-        Vector3 { x: 1., y: 0., z: 0. },
-        Vector3 { x: 1., y: 1., z: 1. },
-        Vector3 { x: 1., y: 1., z: 0. },
+        Vector3 { x: 16, y: 0,  z: 16 },
+        Vector3 { x: 16, y: 0,  z: 0  },
+        Vector3 { x: 16, y: 16, z: 16 },
+        Vector3 { x: 16, y: 16, z: 0  },
     ],
 ];
 
 #[rustfmt::skip]
-const FLUID_BLOCK_FACES: [[Vector3<f32>; 4]; 6] = [
+const FLUID_BLOCK_FACES: [[Vector3<u16>; 4]; 6] = [
     // Neg Z
     [
-        Vector3 { x: 1., y: 0.,      z: 0. },
-        Vector3 { x: 0., y: 0.,      z: 0. },
-        Vector3 { x: 1., y: 14./16., z: 0. },
-        Vector3 { x: 0., y: 14./16., z: 0. },
+        Vector3 { x: 16, y: 0,  z: 0 },
+        Vector3 { x: 0,  y: 0,  z: 0 },
+        Vector3 { x: 16, y: 14, z: 0 },
+        Vector3 { x: 0,  y: 14, z: 0 },
     ],
     // Pos Z
     [
-        Vector3 { x: 0., y: 0.,      z: 1. },
-        Vector3 { x: 1., y: 0.,      z: 1. },
-        Vector3 { x: 0., y: 14./16., z: 1. },
-        Vector3 { x: 1., y: 14./16., z: 1. },
+        Vector3 { x: 0,  y: 0,  z: 16 },
+        Vector3 { x: 16, y: 0,  z: 16 },
+        Vector3 { x: 0,  y: 14, z: 16 },
+        Vector3 { x: 16, y: 14, z: 16 },
     ],
     // Neg Y
     [
-        Vector3 { x: 0., y: 0., z: 0. },
-        Vector3 { x: 1., y: 0., z: 0. },
-        Vector3 { x: 0., y: 0., z: 1. },
-        Vector3 { x: 1., y: 0., z: 1. },
+        Vector3 { x: 0,  y: 0,  z: 0  },
+        Vector3 { x: 16, y: 0,  z: 0  },
+        Vector3 { x: 0,  y: 0,  z: 16 },
+        Vector3 { x: 16, y: 0,  z: 16 },
     ],
     // Pos Y
     [
-        Vector3 { x: 1., y: 14./16., z: 0. },
-        Vector3 { x: 0., y: 14./16., z: 0. },
-        Vector3 { x: 1., y: 14./16., z: 1. },
-        Vector3 { x: 0., y: 14./16., z: 1. },
+        Vector3 { x: 16, y: 14, z: 0  },
+        Vector3 { x: 0,  y: 14, z: 0  },
+        Vector3 { x: 16, y: 14, z: 16 },
+        Vector3 { x: 0,  y: 14, z: 16 },
     ],
     // Neg X
     [
-        Vector3 { x: 0., y: 0.,      z: 0. },
-        Vector3 { x: 0., y: 0.,      z: 1. },
-        Vector3 { x: 0., y: 14./16., z: 0. },
-        Vector3 { x: 0., y: 14./16., z: 1. },
+        Vector3 { x: 0,  y: 0,  z: 0 },
+        Vector3 { x: 0,  y: 0,  z: 16 },
+        Vector3 { x: 0,  y: 14, z: 0 },
+        Vector3 { x: 0,  y: 14, z: 16 },
     ],
     // Pos X
     [
-        Vector3 { x: 1., y: 0.,      z: 1. },
-        Vector3 { x: 1., y: 0.,      z: 0. },
-        Vector3 { x: 1., y: 14./16., z: 1. },
-        Vector3 { x: 1., y: 14./16., z: 0. },
+        Vector3 { x: 16, y: 0,  z: 16 },
+        Vector3 { x: 16, y: 0,  z: 0  },
+        Vector3 { x: 16, y: 14, z: 16 },
+        Vector3 { x: 16, y: 14, z: 0  },
     ],
 ];
 
 #[rustfmt::skip]
-const FLOWER_BLOCK_FACES: [[Vector3<f32>; 4]; 4] = [
+const FLOWER_BLOCK_FACES: [[Vector3<u16>; 4]; 4] = [
     [
-        Vector3 { x: 14./16., y: 0., z: 2./16.  },
-        Vector3 { x: 2./16.,  y: 0., z: 14./16. },
-        Vector3 { x: 14./16., y: 1., z: 2./16.  },
-        Vector3 { x: 2./16.,  y: 1., z: 14./16. },
+        Vector3 { x: 14, y: 0,  z: 2  },
+        Vector3 { x: 2,  y: 0,  z: 14 },
+        Vector3 { x: 14, y: 16, z: 2  },
+        Vector3 { x: 2,  y: 16, z: 14 },
     ],
     [
-        Vector3 { x: 2./16.,  y: 0., z: 2./16.  },
-        Vector3 { x: 14./16., y: 0., z: 14./16. },
-        Vector3 { x: 2./16.,  y: 1., z: 2./16.  },
-        Vector3 { x: 14./16., y: 1., z: 14./16. },
+        Vector3 { x: 2,  y: 0,  z: 2  },
+        Vector3 { x: 14, y: 0,  z: 14 },
+        Vector3 { x: 2,  y: 16, z: 2  },
+        Vector3 { x: 14, y: 16, z: 14 },
     ],
     [
-        Vector3 { x: 2./16.,  y: 0., z: 14./16. },
-        Vector3 { x: 14./16., y: 0., z: 2./16.  },
-        Vector3 { x: 2./16.,  y: 1., z: 14./16. },
-        Vector3 { x: 14./16., y: 1., z: 2./16.  },
+        Vector3 { x: 2,  y: 0,  z: 14 },
+        Vector3 { x: 14, y: 0,  z: 2  },
+        Vector3 { x: 2,  y: 16, z: 14 },
+        Vector3 { x: 14, y: 16, z: 2  },
     ],
     [
-        Vector3 { x: 14./16., y: 0., z: 14./16. },
-        Vector3 { x: 2./16.,  y: 0., z: 2./16.  },
-        Vector3 { x: 14./16., y: 1., z: 14./16. },
-        Vector3 { x: 2./16.,  y: 1., z: 2./16.  },
+        Vector3 { x: 14, y: 0,  z: 14 },
+        Vector3 { x: 2,  y: 0,  z: 2  },
+        Vector3 { x: 14, y: 16, z: 14 },
+        Vector3 { x: 2,  y: 16, z: 2  },
     ],
 ];
 
 #[rustfmt::skip]
-const TORCH_BLOCK_FACES: [[Vector3<f32>; 4]; 5] = [
+const TORCH_BLOCK_FACES: [[Vector3<u16>; 4]; 5] = [
     // Pos Y
     [
-        Vector3 { x: 9./16., y: 9./16., z: 7./16. },
-        Vector3 { x: 7./16., y: 9./16., z: 7./16. },
-        Vector3 { x: 9./16., y: 9./16., z: 9./16. },
-        Vector3 { x: 7./16., y: 9./16., z: 9./16. },
+        Vector3 { x: 9, y: 9, z: 7 },
+        Vector3 { x: 7, y: 9, z: 7 },
+        Vector3 { x: 9, y: 9, z: 9 },
+        Vector3 { x: 7, y: 9, z: 9 },
     ],
     // Neg Z
     [
-        Vector3 { x: 1., y: 0., z: 7./16. },
-        Vector3 { x: 0., y: 0., z: 7./16. },
-        Vector3 { x: 1., y: 1., z: 7./16. },
-        Vector3 { x: 0., y: 1., z: 7./16. },
+        Vector3 { x: 16, y: 0,  z: 7 },
+        Vector3 { x: 0,  y: 0,  z: 7 },
+        Vector3 { x: 16, y: 16, z: 7 },
+        Vector3 { x: 0,  y: 16, z: 7 },
     ],
     // Pos Z
     [
-        Vector3 { x: 0., y: 0., z: 9./16. },
-        Vector3 { x: 1., y: 0., z: 9./16. },
-        Vector3 { x: 0., y: 1., z: 9./16. },
-        Vector3 { x: 1., y: 1., z: 9./16. },
+        Vector3 { x: 0,  y: 0,  z: 9 },
+        Vector3 { x: 16, y: 0,  z: 9 },
+        Vector3 { x: 0,  y: 16, z: 9 },
+        Vector3 { x: 16, y: 16, z: 9 },
     ],
     // Neg X
     [
-        Vector3 { x: 7./16., y: 0., z: 0. },
-        Vector3 { x: 7./16., y: 0., z: 1. },
-        Vector3 { x: 7./16., y: 1., z: 0. },
-        Vector3 { x: 7./16., y: 1., z: 1. },
+        Vector3 { x: 7, y: 0,  z: 0  },
+        Vector3 { x: 7, y: 0,  z: 16 },
+        Vector3 { x: 7, y: 16, z: 0  },
+        Vector3 { x: 7, y: 16, z: 16 },
     ],
     // Pos X
     [
-        Vector3 { x: 9./16., y: 0., z: 1. },
-        Vector3 { x: 9./16., y: 0., z: 0. },
-        Vector3 { x: 9./16., y: 1., z: 1. },
-        Vector3 { x: 9./16., y: 1., z: 0. },
+        Vector3 { x: 9, y: 0,  z: 16 },
+        Vector3 { x: 9, y: 0,  z: 0  },
+        Vector3 { x: 9, y: 16, z: 16 },
+        Vector3 { x: 9, y: 16, z: 0  },
     ],
 ];
 
@@ -205,7 +205,7 @@ struct MeshGenerationContext<'a> {
 }
 
 struct FaceDesc<'a> {
-    points: &'a [Vector3<f32>; 4],
+    points: &'a [Vector3<u16>; 4],
     texture_id: u16,
     texture_coords: &'a [Vector2<f32>; 4],
     diffused_light: u8,
@@ -241,7 +241,7 @@ impl<'a> MeshGenerationContext<'a> {
         block_coords: BlockCoords,
         desc: FaceDesc,
     ) {
-        let offset = block_coords.map(|x| x as f32);
+        let offset = block_coords.map(|x| x as u16) * 16;
 
         desc.points
             .iter()
@@ -269,9 +269,12 @@ impl<'a> MeshGenerationContext<'a> {
 
     fn emit_water_face(&mut self, desc: FaceDesc) {
         let offset = self.current_block_coords.map(|x| x as f32);
+        let sum_points = desc.points.iter().sum::<Vector3<u16>>();
+        let center_local = sum_points.map(|x| x as f32) / 16. / 4.;
+
         self.meshes.water_faces.push(Face {
             base_index: self.meshes.water_vertices.len() as u32,
-            center: offset + desc.points.iter().sum::<Vector3<f32>>() / 4.,
+            center: offset + center_local,
             distance: 0.,
         });
 
