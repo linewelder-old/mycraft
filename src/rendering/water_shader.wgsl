@@ -1,14 +1,15 @@
 struct VertexInput {
-    @location(0) position: vec3<f32>,
-    @location(1) tex_coords: vec2<f32>,
-    @location(2) light: u32,
+    @location(0) val: vec2<u32>,
 }
 
 struct VertexOutput {
     @builtin(position) position: vec4<f32>,
     @location(0) tex_coords: vec2<f32>,
-    @location(1) light: u32,
-    @location(2) world_position: vec3<f32>,
+    @location(1) sun_light: f32,
+    @location(2) block_light: f32,
+    @location(3) diffused_light: f32,
+
+    @location(4) world_position: vec3<f32>,
 }
 
 struct Camera {
@@ -26,11 +27,31 @@ var<uniform> chunk_offset: vec3<f32>;
 @vertex
 fn vs_main(in: VertexInput) -> VertexOutput {
     var out: VertexOutput;
-    out.world_position =  chunk_offset + in.position;
-    out.position = camera.matrix * vec4<f32>(out.world_position, 1.);
-    out.tex_coords = in.tex_coords;
-    out.light = in.light;
 
+    let position_x     = (in.val.x) & 0x1FFu;
+    let position_y     = (in.val.x >> 9u) & 0x1FFu;
+    let position_z     = (in.val.x >> 18u) & 0x1FFu;
+    let tex_coords_x   = (in.val.x >> 27u) & 0x1Fu;
+    let tex_coords_y   = (in.val.y) & 0x1Fu;
+    let texture_id     = (in.val.y >> 5u) & 0xFFFFu;
+    let sun_light      = (in.val.y >> 21u) & 0xFu;
+    let block_light    = (in.val.y >> 25u) & 0xFu;
+    let diffused_light = (in.val.y >> 29u) & 0x3u;
+
+    let position = vec3(f32(position_x), f32(position_y), f32(position_z)) / 16.;
+    let tex_coords = vec2(f32(tex_coords_x), f32(tex_coords_y)) / 16.;
+
+    let tex_base = vec2(
+        f32(texture_id % 4u),
+        f32(texture_id / 4u),
+    ) / 4.;
+
+    out.world_position = chunk_offset + position;
+    out.position = camera.matrix * vec4<f32>(out.world_position, 1.0);
+    out.tex_coords = tex_base + tex_coords / 4.;
+    out.sun_light = f32(sun_light) / 15.;
+    out.block_light = f32(block_light) / 15.;
+    out.diffused_light = f32(diffused_light) / 3. * 0.6 + 0.4;
     return out;
 }
 
@@ -105,10 +126,7 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     let reflected = reflect(look_dir, normal);
     let specular_light = 1. + pow(max(dot(sky_uniform.sun_direction, reflected), 0.), 128.);
 
-    let block_light = f32(in.light & 0x0Fu) / 15.;
-    let sun_light = f32((in.light >> 4u) & 0x0Fu) / 15.;
-    let diffuse_light = f32((in.light >> 8u) & 0x03u) / 3. * 0.6 + 0.4;
-    let world_light_unmapped = diffuse_light * max(sky_uniform.sun_light * sun_light, block_light);
+    let world_light_unmapped = in.diffused_light * max(sky_uniform.sun_light * in.sun_light, in.block_light);
     let world_light = world_light_unmapped * world_light_unmapped * specular_light;
 
     let texture_color = textureSample(texture_test, sampler_test, in.tex_coords).xyz;

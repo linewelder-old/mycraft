@@ -9,19 +9,13 @@ pub mod world_renderer;
 
 use std::cell::RefCell;
 
-use cgmath::{ElementWise, MetricSpace, Vector2, Vector3};
-
-use crate::consts::BLOCK_TEXTURE_ATLAS_SIZE;
+use cgmath::{MetricSpace, Vector2, Vector3};
 
 use self::{chunk_mesh::ChunkMesh, uniform::Uniform};
 
 #[derive(Clone, Copy)]
 #[repr(C)]
-pub struct Vertex {
-    pos: Vector3<f32>,
-    tex: Vector2<f32>,
-    light: u32,
-}
+pub struct Vertex(u32, u32);
 
 pub struct VertexDesc {
     pub pos: Vector3<u16>,
@@ -36,28 +30,22 @@ impl Vertex {
     const BUFFER_LAYOUT: wgpu::VertexBufferLayout<'static> = wgpu::VertexBufferLayout {
         array_stride: std::mem::size_of::<Vertex>() as wgpu::BufferAddress,
         step_mode: wgpu::VertexStepMode::Vertex,
-        attributes: &wgpu::vertex_attr_array![0 => Float32x3, 1 => Float32x2, 2 => Uint32],
+        attributes: &wgpu::vertex_attr_array![0 => Uint32x2],
     };
 
     #[inline]
     pub fn new(desc: VertexDesc) -> Self {
-        let texture_atlas_coords = Vector2 {
-            x: desc.texture_id % BLOCK_TEXTURE_ATLAS_SIZE.x,
-            y: desc.texture_id / BLOCK_TEXTURE_ATLAS_SIZE.x,
-        };
-        let texture_offset = desc.texture_coords.map(|x| x as f32) / 16.;
-
-        let unscaled_uv_coords = texture_atlas_coords.map(|x| x as f32) + texture_offset;
-        let uv_coords =
-            unscaled_uv_coords.div_element_wise(BLOCK_TEXTURE_ATLAS_SIZE.map(|x| x as f32));
-
-        Vertex {
-            pos: desc.pos.map(|x| (x as f32) / 16.),
-            tex: uv_coords,
-            light: ((desc.diffused_light as u32) << 8)
-                | ((desc.sun_light as u32) << 4)
-                | (desc.block_light as u32),
-        }
+        Vertex(
+            ((desc.pos.x as u32) & 0x1FF)
+                | (((desc.pos.y as u32) & 0x1FF) << 9)
+                | (((desc.pos.z as u32) & 0x1FF) << 18)
+                | (((desc.texture_coords.x as u32) & 0x1F) << 27),
+            ((desc.texture_coords.y as u32) & 0x1F)
+                | ((desc.texture_id as u32) << 5)
+                | (((desc.sun_light as u32) & 0xF) << 21)
+                | (((desc.block_light as u32) & 0xF) << 25)
+                | (((desc.diffused_light as u32) & 0x3) << 29),
+        )
     }
 }
 
