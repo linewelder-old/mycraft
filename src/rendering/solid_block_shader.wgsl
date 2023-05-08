@@ -54,7 +54,7 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
 
     let block_light = f32(in.light & 0x0Fu) / 15.;
     let sun_light = f32((in.light >> 4u) & 0x0Fu) / 15.;
-    let diffused_light = f32((in.light >> 8u) & 0x0Fu) / 15.;
+    let diffused_light = f32((in.light >> 8u) & 0x03u) / 3. * 0.6 + 0.4;
     let world_light_unmapped = diffused_light * max(sky_uniform.sun_light * sun_light, block_light);
     let world_light = world_light_unmapped * world_light_unmapped;
 

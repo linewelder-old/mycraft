@@ -183,7 +183,7 @@ const NEIGHBOR_OFFSETS: [Vector3<i32>; 6] = [
     Vector3 { x:  1, y:  0, z:  0 },
 ];
 
-const FACE_LIGHTING: [u8; 6] = [9, 9, 6, 15, 12, 12];
+const FACE_LIGHTING: [u8; 6] = [1, 1, 0, 3, 2, 2];
 
 #[rustfmt::skip]
 const TEX_COORDS: [Vector2<u8>; 4] = [
