@@ -2,10 +2,10 @@ use num_enum::{IntoPrimitive, TryFromPrimitive};
 
 pub enum Block {
     Empty,
-    Solid { texture_ids: [u32; 6] },
-    Fluid { texture_id: u32 },
-    Flower { texture_id: u32 },
-    Torch { texture_id: u32 },
+    Solid { texture_ids: [u16; 6] },
+    Fluid { texture_id: u16 },
+    Flower { texture_id: u16 },
+    Torch { texture_id: u16 },
 }
 
 impl Block {

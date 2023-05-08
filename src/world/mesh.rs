@@ -206,7 +206,7 @@ struct MeshGenerationContext<'a> {
 
 struct FaceDesc<'a> {
     points: &'a [Vector3<f32>; 4],
-    texture_id: u32,
+    texture_id: u16,
     texture_coords: &'a [Vector2<f32>; 4],
     diffused_light: u8,
     sun_light: LightLevel,
@@ -285,7 +285,7 @@ impl<'a> MeshGenerationContext<'a> {
         );
     }
 
-    fn emit_solid_block(&mut self, texture_ids: &[u32; 6]) {
+    fn emit_solid_block(&mut self, texture_ids: &[u16; 6]) {
         for (i, neighbor_offset) in NEIGHBOR_OFFSETS.iter().enumerate() {
             let neighbor_coords = self.current_block_coords + neighbor_offset;
             let neighbor_cell = self.chunks.get_cell(neighbor_coords);
@@ -305,7 +305,7 @@ impl<'a> MeshGenerationContext<'a> {
         }
     }
 
-    fn emit_water_block(&mut self, texture_id: u32) {
+    fn emit_water_block(&mut self, texture_id: u16) {
         const TOP_NEIGHBOR_OFFSET_INDEX: usize = 3;
 
         let top_neighbor = self
@@ -356,7 +356,7 @@ impl<'a> MeshGenerationContext<'a> {
         }
     }
 
-    fn emit_flower_block(&mut self, texture_id: u32) {
+    fn emit_flower_block(&mut self, texture_id: u16) {
         let cell = self.chunks.get_cell(self.current_block_coords).unwrap();
         let sun_light = cell.sun_light;
         let block_light = cell.block_light;
@@ -373,7 +373,7 @@ impl<'a> MeshGenerationContext<'a> {
         }
     }
 
-    fn emit_torch_block(&mut self, texture_id: u32) {
+    fn emit_torch_block(&mut self, texture_id: u16) {
         let cell = self.chunks.get_cell(self.current_block_coords).unwrap();
         let sun_light = cell.sun_light;
         let block_light = cell.block_light;
