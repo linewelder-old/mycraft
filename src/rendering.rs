@@ -11,7 +11,7 @@ use std::cell::RefCell;
 
 use cgmath::{MetricSpace, Vector2, Vector3};
 
-use self::chunk_mesh::ChunkMesh;
+use self::{chunk_mesh::ChunkMesh, uniform::Uniform};
 
 #[derive(Clone, Copy)]
 #[repr(C)]
@@ -83,6 +83,7 @@ pub struct ChunkGraphicsData {
 pub struct ChunkGraphics {
     pub solid_mesh: ChunkMesh,
     pub water_mesh: ChunkMesh,
+    pub offset: Uniform<Vector3<f32>>,
 
     pub graphics_data: RefCell<ChunkGraphicsData>,
 }

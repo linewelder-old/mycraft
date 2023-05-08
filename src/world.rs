@@ -27,7 +27,7 @@ use crate::{
     camera::Camera,
     consts::MAX_UPDATE_TIME,
     context::Context,
-    rendering::{chunk_mesh::ChunkMesh, ChunkGraphics, ChunkGraphicsData, Face},
+    rendering::{chunk_mesh::ChunkMesh, uniform::Uniform, ChunkGraphics, ChunkGraphicsData, Face},
 };
 
 pub type LightLevel = u8;
@@ -238,9 +238,16 @@ impl World {
             &Face::generate_indices(&meshes.water_faces),
         );
 
+        let offset = Uniform::new(
+            self.context.clone(),
+            "Chunk Offset",
+            to_chunk_offset(coords),
+        );
+
         Some(Rc::new(ChunkGraphics {
             solid_mesh,
             water_mesh,
+            offset,
 
             graphics_data: RefCell::new(ChunkGraphicsData {
                 water_faces: meshes.water_faces,

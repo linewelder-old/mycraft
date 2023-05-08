@@ -1,4 +1,4 @@
-use cgmath::Matrix4;
+use cgmath::{Matrix4, Vector3};
 
 use super::{
     sky_renderer::SkyUniform,
@@ -18,6 +18,7 @@ impl SolidBlockPipeline {
             &Uniform::<Matrix4<f32>>::create_bind_group_layout(context),
             &Uniform::<SkyUniform>::create_bind_group_layout(context),
             &Texture::create_bind_group_layout(context),
+            &Uniform::<Vector3<f32>>::create_bind_group_layout(context),
         ];
 
         let layout = context
@@ -89,6 +90,8 @@ impl SolidBlockPipeline {
         render_pass.set_bind_group(2, texture.get_bind_group(), &[]);
 
         for chunk in chunks {
+            render_pass.set_bind_group(3, chunk.offset.get_bind_group(), &[]);
+
             render_pass.set_vertex_buffer(0, chunk.solid_mesh.vertices.slice(..));
             render_pass.set_index_buffer(
                 chunk.solid_mesh.indices.slice(..),

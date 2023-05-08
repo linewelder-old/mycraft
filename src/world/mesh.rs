@@ -1,9 +1,8 @@
 use cgmath::{Vector2, Vector3, Zero};
 
 use super::{
-    blocks::Block,
-    utils::{to_chunk_offset, ChunkNeighborhood},
-    BlockCoords, Cell, Chunk, ChunkCoords, LightLevel, World,
+    blocks::Block, utils::ChunkNeighborhood, BlockCoords, Cell, Chunk, ChunkCoords, LightLevel,
+    World,
 };
 use crate::rendering::{Face, Vertex, VertexDesc};
 
@@ -201,7 +200,6 @@ pub struct ChunkMeshes {
 
 struct MeshGenerationContext<'a> {
     chunks: ChunkNeighborhood<'a>,
-    chunk_offset: Vector3<f32>,
     current_block_coords: BlockCoords,
     meshes: ChunkMeshes,
 }
@@ -218,11 +216,9 @@ struct FaceDesc<'a> {
 impl<'a> MeshGenerationContext<'a> {
     fn new(world: &'a World, chunk: &'a Chunk, chunk_coords: ChunkCoords) -> Self {
         let chunks = ChunkNeighborhood::new(world, chunk, chunk_coords);
-        let chunk_offset = to_chunk_offset(chunk_coords);
 
         MeshGenerationContext {
             chunks,
-            chunk_offset,
             current_block_coords: BlockCoords::zero(),
             meshes: ChunkMeshes {
                 solid_vertices: vec![],
@@ -242,11 +238,10 @@ impl<'a> MeshGenerationContext<'a> {
 
     fn emit_face_vertices(
         vertex_array: &mut Vec<Vertex>,
-        chunk_offset: Vector3<f32>,
         block_coords: BlockCoords,
         desc: FaceDesc,
     ) {
-        let offset = chunk_offset + block_coords.map(|x| x as f32);
+        let offset = block_coords.map(|x| x as f32);
         let base_texture_coords = Vector2 {
             x: (desc.texture_id % 4) as f32,
             y: (desc.texture_id / 4) as f32,
@@ -270,7 +265,6 @@ impl<'a> MeshGenerationContext<'a> {
     fn emit_solid_face(&mut self, desc: FaceDesc) {
         Self::emit_face_vertices(
             &mut self.meshes.solid_vertices,
-            self.chunk_offset,
             self.current_block_coords,
             desc,
         );
@@ -286,7 +280,6 @@ impl<'a> MeshGenerationContext<'a> {
 
         Self::emit_face_vertices(
             &mut self.meshes.water_vertices,
-            self.chunk_offset,
             self.current_block_coords,
             desc,
         );
