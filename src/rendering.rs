@@ -26,7 +26,7 @@ pub struct Vertex {
 pub struct VertexDesc {
     pub pos: Vector3<u16>,
     pub texture_id: u16,
-    pub texture_coords: Vector2<f32>,
+    pub texture_coords: Vector2<u8>,
     pub diffused_light: u8,
     pub sun_light: u8,
     pub block_light: u8,
@@ -45,7 +45,9 @@ impl Vertex {
             x: desc.texture_id % BLOCK_TEXTURE_ATLAS_SIZE.x,
             y: desc.texture_id / BLOCK_TEXTURE_ATLAS_SIZE.x,
         };
-        let unscaled_uv_coords = texture_atlas_coords.map(|x| x as f32) + desc.texture_coords;
+        let texture_offset = desc.texture_coords.map(|x| x as f32) / 16.;
+
+        let unscaled_uv_coords = texture_atlas_coords.map(|x| x as f32) + texture_offset;
         let uv_coords =
             unscaled_uv_coords.div_element_wise(BLOCK_TEXTURE_ATLAS_SIZE.map(|x| x as f32));
 

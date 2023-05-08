@@ -166,11 +166,11 @@ const TORCH_BLOCK_FACES: [[Vector3<u16>; 4]; 5] = [
 ];
 
 #[rustfmt::skip]
-const TORCH_TOP_TEX_COORDS: [Vector2<f32>; 4] = [
-    Vector2 { x: 7./16., y: 9./16. },
-    Vector2 { x: 9./16., y: 9./16. },
-    Vector2 { x: 7./16., y: 7./16. },
-    Vector2 { x: 9./16., y: 7./16. },
+const TORCH_TOP_TEX_COORDS: [Vector2<u8>; 4] = [
+    Vector2 { x: 7, y: 9 },
+    Vector2 { x: 9, y: 9 },
+    Vector2 { x: 7, y: 7 },
+    Vector2 { x: 9, y: 7 },
 ];
 
 #[rustfmt::skip]
@@ -185,11 +185,12 @@ const NEIGHBOR_OFFSETS: [Vector3<i32>; 6] = [
 
 const FACE_LIGHTING: [u8; 6] = [9, 9, 6, 15, 12, 12];
 
-const TEX_COORDS: [Vector2<f32>; 4] = [
-    Vector2 { x: 0., y: 1. },
-    Vector2 { x: 1., y: 1. },
-    Vector2 { x: 0., y: 0. },
-    Vector2 { x: 1., y: 0. },
+#[rustfmt::skip]
+const TEX_COORDS: [Vector2<u8>; 4] = [
+    Vector2 { x: 0,  y: 16 },
+    Vector2 { x: 16, y: 16 },
+    Vector2 { x: 0,  y: 0  },
+    Vector2 { x: 16, y: 0  },
 ];
 
 pub struct ChunkMeshes {
@@ -207,7 +208,7 @@ struct MeshGenerationContext<'a> {
 struct FaceDesc<'a> {
     points: &'a [Vector3<u16>; 4],
     texture_id: u16,
-    texture_coords: &'a [Vector2<f32>; 4],
+    texture_coords: &'a [Vector2<u8>; 4],
     diffused_light: u8,
     sun_light: LightLevel,
     block_light: LightLevel,
