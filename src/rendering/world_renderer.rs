@@ -1,7 +1,6 @@
-use crate::{camera::Camera, context::Context};
+use crate::{camera::Camera, context::Context, sky::SkyUniform};
 
 use super::{
-    sky_renderer::SkyUniform,
     solid_block_pipeline::SolidBlockPipeline,
     texture::{DepthBuffer, Texture},
     uniform::Uniform,

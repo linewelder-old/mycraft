@@ -1,12 +1,11 @@
 use cgmath::{Matrix4, Vector3};
 
 use super::{
-    sky_renderer::SkyUniform,
     texture::{DepthBuffer, Texture},
     uniform::Uniform,
     ChunkGraphics, Vertex,
 };
-use crate::{camera::Camera, context::Context};
+use crate::{camera::Camera, context::Context, sky::SkyUniform};
 
 pub struct SolidBlockPipeline {
     render_pipeline: wgpu::RenderPipeline,

@@ -1,19 +1,12 @@
-use cgmath::{Matrix4, Vector2, Vector3};
+use cgmath::{Matrix4, Vector2};
 use wgpu::util::DeviceExt;
 
 use super::{texture::Texture, uniform::Uniform};
-use crate::{camera::Camera, context::Context, utils::as_bytes_slice};
+use crate::{camera::Camera, context::Context, sky::SkyUniform, utils::as_bytes_slice};
 
 pub struct SkyRenderer {
     render_pipeline: wgpu::RenderPipeline,
     screen_quad: wgpu::Buffer,
-}
-
-#[repr(C, align(16))]
-pub struct SkyUniform {
-    pub sun_direction: Vector3<f32>,
-    pub time: f32,
-    pub sun_light: f32,
 }
 
 impl SkyRenderer {

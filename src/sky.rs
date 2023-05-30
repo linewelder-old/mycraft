@@ -2,15 +2,18 @@ use std::{f32::consts::PI, rc::Rc};
 
 use cgmath::{Vector3, Zero};
 
-use crate::{
-    consts::*,
-    context::Context,
-    rendering::{sky_renderer::SkyUniform, uniform::Uniform},
-};
+use crate::{consts::*, context::Context, rendering::uniform::Uniform};
 
 pub struct Sky {
     uniform: Uniform<SkyUniform>,
     time: f32,
+}
+
+#[repr(C, align(16))]
+pub struct SkyUniform {
+    pub sun_direction: Vector3<f32>,
+    pub time: f32,
+    pub sun_light: f32,
 }
 
 impl Sky {
