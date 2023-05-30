@@ -1,4 +1,4 @@
-use cgmath::{ElementWise, InnerSpace, Vector2};
+use cgmath::{ElementWise, InnerSpace, Vector2, Vector3};
 use noise::{NoiseFn, Perlin};
 
 use super::{blocks::BlockId, BlockCoords, Chunk, ChunkCoords};
@@ -69,6 +69,11 @@ impl Generator {
         (self.noise.get((offset / freq).into()) / 2. + 0.5) * scale
     }
 
+    #[inline]
+    fn get_noise_3d(&self, offset: Vector3<f64>, freq: f64, scale: f64) -> f64 {
+        (self.noise.get((offset / freq).into()) / 2. + 0.5) * scale
+    }
+
     fn get_height(&self, x: i32, z: i32) -> i32 {
         let offset = Vector2 {
             x: x as f64,
@@ -84,6 +89,16 @@ impl Generator {
 
         let height = Self::BASE_HEIGHT + octaves.iter().sum::<f64>();
         height as i32
+    }
+
+    fn is_in_cave(&self, coords: BlockCoords) -> bool {
+        let offset = coords.map(|x| x as f64);
+        let octaves = [
+            self.get_noise_3d(offset, 40., 0.8),
+            self.get_noise_3d(offset, 20., 0.6),
+        ];
+
+        octaves.iter().sum::<f64>() > 0.9
     }
 
     pub fn generate_chunk(&self, chunk: &mut Chunk, chunk_coords: ChunkCoords) {
@@ -120,7 +135,11 @@ impl Generator {
                             z: chunk_z,
                         };
                         chunk[chunk_coords].block_id = if world_coords.y < height - 3 {
-                            BlockId::Stone
+                            if self.is_in_cave(world_coords) {
+                                BlockId::Air
+                            } else {
+                                BlockId::Stone
+                            }
                         } else if world_coords.y < height {
                             BlockId::Dirt
                         } else if world_coords.y == height {
