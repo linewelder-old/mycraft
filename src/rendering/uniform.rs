@@ -4,6 +4,8 @@ use wgpu::util::DeviceExt;
 
 use crate::{context::Context, utils::as_bytes};
 
+use super::Bindable;
+
 pub struct Uniform<T> {
     context: Rc<Context>,
     buffer: wgpu::Buffer,
@@ -30,8 +32,10 @@ impl<T> Uniform<T> {
             .queue
             .write_buffer(&self.buffer, 0 as wgpu::BufferAddress, as_bytes(&value));
     }
+}
 
-    pub fn create_bind_group_layout(context: &Context) -> wgpu::BindGroupLayout {
+impl<T> Bindable for Uniform<T> {
+    fn create_bind_group_layout(context: &Context) -> wgpu::BindGroupLayout {
         context
             .device
             .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -50,7 +54,7 @@ impl<T> Uniform<T> {
     }
 
     #[inline]
-    pub fn get_bind_group(&self) -> &wgpu::BindGroup {
+    fn get_bind_group(&self) -> &wgpu::BindGroup {
         &self.bind_group
     }
 }

@@ -2,7 +2,11 @@ use std::{f32::consts::PI, rc::Rc};
 
 use cgmath::{Vector3, Zero};
 
-use crate::{consts::*, context::Context, rendering::uniform::Uniform};
+use crate::{
+    consts::*,
+    context::Context,
+    rendering::{uniform::Uniform, Bindable},
+};
 
 pub struct Sky {
     uniform: Uniform<SkyUniform>,
@@ -48,9 +52,15 @@ impl Sky {
         self.time += delta.as_secs_f32() / DAY_LENGTH_SECS;
         self.uniform.write(self.get_uniform_data());
     }
+}
+
+impl Bindable for Sky {
+    fn create_bind_group_layout(context: &Context) -> wgpu::BindGroupLayout {
+        Uniform::<SkyUniform>::create_bind_group_layout(context)
+    }
 
     #[inline]
-    pub fn get_uniform(&self) -> &Uniform<SkyUniform> {
-        &self.uniform
+    fn get_bind_group(&self) -> &wgpu::BindGroup {
+        self.uniform.get_bind_group()
     }
 }

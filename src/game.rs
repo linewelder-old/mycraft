@@ -275,7 +275,7 @@ impl Mycraft {
             &mut encoder,
             target,
             &self.camera,
-            self.sky.get_uniform(),
+            &self.sky,
             &self.resources.sky_texture,
         );
         self.world_renderer.draw(
@@ -286,7 +286,7 @@ impl Mycraft {
             },
             &self.camera,
             self.world.render_queue_iter(),
-            self.sky.get_uniform(),
+            &self.sky,
             &self.resources.blocks_texture,
         );
 

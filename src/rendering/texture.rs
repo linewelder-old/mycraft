@@ -4,6 +4,8 @@ use cgmath::Vector2;
 
 use crate::context::Context;
 
+use super::Bindable;
+
 pub struct Texture {
     bind_group: wgpu::BindGroup,
 }
@@ -78,8 +80,10 @@ impl Texture {
 
         Texture { bind_group }
     }
+}
 
-    pub fn create_bind_group_layout(context: &Context) -> wgpu::BindGroupLayout {
+impl Bindable for Texture {
+    fn create_bind_group_layout(context: &Context) -> wgpu::BindGroupLayout {
         context
             .device
             .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -105,7 +109,7 @@ impl Texture {
             })
     }
 
-    pub fn get_bind_group(&self) -> &wgpu::BindGroup {
+    fn get_bind_group(&self) -> &wgpu::BindGroup {
         &self.bind_group
     }
 }

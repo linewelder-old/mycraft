@@ -1,9 +1,8 @@
-use crate::{camera::Camera, context::Context, sky::SkyUniform};
+use crate::{camera::Camera, context::Context, sky::Sky};
 
 use super::{
     solid_block_pipeline::SolidBlockPipeline,
     texture::{DepthBuffer, Texture},
-    uniform::Uniform,
     water_pipeline::WaterPipeline,
     ChunkGraphics,
 };
@@ -35,7 +34,7 @@ impl WorldRenderer {
         target: WorldRendererTarget<'a>,
         camera: &'a Camera,
         chunks: impl Iterator<Item = &'a ChunkGraphics> + Clone,
-        sky_uniform: &'a Uniform<SkyUniform>,
+        sky: &'a Sky,
         texture: &'a Texture,
     ) {
         let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -58,14 +57,9 @@ impl WorldRenderer {
             }),
         });
 
-        self.solid_block_pipeline.draw(
-            &mut render_pass,
-            camera,
-            chunks.clone(),
-            sky_uniform,
-            texture,
-        );
+        self.solid_block_pipeline
+            .draw(&mut render_pass, camera, chunks.clone(), sky, texture);
         self.water_pipeline
-            .draw(&mut render_pass, camera, chunks, sky_uniform, texture);
+            .draw(&mut render_pass, camera, chunks, sky, texture);
     }
 }

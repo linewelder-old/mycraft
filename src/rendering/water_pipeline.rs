@@ -1,11 +1,11 @@
-use cgmath::{Matrix4, Vector3};
+use cgmath::Vector3;
 
 use super::{
     texture::{DepthBuffer, Texture},
     uniform::Uniform,
-    ChunkGraphics, Vertex,
+    Bindable, ChunkGraphics, Vertex,
 };
-use crate::{camera::Camera, context::Context, sky::SkyUniform};
+use crate::{camera::Camera, context::Context, sky::Sky};
 
 pub struct WaterPipeline {
     render_pipeline: wgpu::RenderPipeline,
@@ -14,8 +14,8 @@ pub struct WaterPipeline {
 impl WaterPipeline {
     pub fn new(context: &Context) -> Self {
         let bind_group_layouts = &[
-            &Uniform::<Matrix4<f32>>::create_bind_group_layout(context),
-            &Uniform::<SkyUniform>::create_bind_group_layout(context),
+            &Camera::create_bind_group_layout(context),
+            &Sky::create_bind_group_layout(context),
             &Texture::create_bind_group_layout(context),
             &Uniform::<Vector3<f32>>::create_bind_group_layout(context),
         ];
@@ -80,12 +80,12 @@ impl WaterPipeline {
         render_pass: &mut wgpu::RenderPass<'a>,
         camera: &'a Camera,
         chunks: impl Iterator<Item = &'a ChunkGraphics>,
-        sky_uniform: &'a Uniform<SkyUniform>,
+        sky: &'a Sky,
         texture: &'a Texture,
     ) {
         render_pass.set_pipeline(&self.render_pipeline);
         render_pass.set_bind_group(0, camera.get_bind_group(), &[]);
-        render_pass.set_bind_group(1, sky_uniform.get_bind_group(), &[]);
+        render_pass.set_bind_group(1, sky.get_bind_group(), &[]);
         render_pass.set_bind_group(2, texture.get_bind_group(), &[]);
 
         for chunk in chunks {

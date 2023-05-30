@@ -4,7 +4,7 @@ use cgmath::{Matrix4, SquareMatrix, Vector2, Vector3, Vector4, Zero};
 
 use crate::{
     context::Context,
-    rendering::{frustrum::Frustrum, uniform::Uniform},
+    rendering::{frustrum::Frustrum, uniform::Uniform, Bindable},
 };
 
 #[repr(C)]
@@ -113,9 +113,14 @@ impl Camera {
 
         Vector3::new(vec4.x, vec4.y, vec4.z)
     }
+}
 
-    #[inline]
-    pub fn get_bind_group(&self) -> &wgpu::BindGroup {
+impl Bindable for Camera {
+    fn create_bind_group_layout(context: &Context) -> wgpu::BindGroupLayout {
+        Uniform::<Matrix4<f32>>::create_bind_group_layout(context)
+    }
+
+    fn get_bind_group(&self) -> &wgpu::BindGroup {
         self.matrix_uniform.get_bind_group()
     }
 }

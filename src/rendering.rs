@@ -13,6 +13,8 @@ use cgmath::{MetricSpace, Vector2, Vector3};
 
 use self::{chunk_mesh::ChunkMesh, uniform::Uniform};
 
+use crate::context::Context;
+
 #[derive(Clone, Copy)]
 #[repr(C)]
 pub struct Vertex(u32, u32);
@@ -110,4 +112,9 @@ impl ChunkGraphics {
         self.water_mesh
             .write_indices(&Face::generate_indices(&data.water_faces));
     }
+}
+
+pub trait Bindable {
+    fn create_bind_group_layout(context: &Context) -> wgpu::BindGroupLayout;
+    fn get_bind_group(&self) -> &wgpu::BindGroup;
 }
