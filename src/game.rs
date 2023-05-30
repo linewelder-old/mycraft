@@ -16,7 +16,7 @@ use crate::{
     egui::EguiContext,
     rendering::{
         sky_renderer::SkyRenderer,
-        texture::{DepthBuffer, Texture},
+        texture::DepthBuffer,
         world_renderer::{WorldRenderer, WorldRendererTarget},
     },
     resources::Resources,
@@ -30,6 +30,7 @@ use crate::{
 
 pub struct Mycraft {
     context: Rc<Context>,
+    resources: Resources,
 
     depth_buffer: DepthBuffer,
     world_renderer: WorldRenderer,
@@ -47,8 +48,6 @@ pub struct Mycraft {
     hotbar: HashMap<VirtualKeyCode, BlockId>,
 
     world: World,
-    blocks_texture: Texture,
-    sky_texture: Texture,
 }
 
 impl Mycraft {
@@ -64,9 +63,7 @@ impl Mycraft {
             }
         }
 
-        let resources = Resources::try_load("./res")?;
-        let blocks_texture = Texture::new(&context, "Blocks Texture", resources.blocks_image);
-        let sky_texture = Texture::new(&context, "Sky Texture", resources.sky_image);
+        let resources = Resources::try_load(&context, "./res")?;
 
         let depth_buffer = {
             let surface_config = context.surface_config.borrow();
@@ -116,6 +113,7 @@ impl Mycraft {
 
         Ok(Mycraft {
             context,
+            resources,
 
             depth_buffer,
             world_renderer,
@@ -133,8 +131,6 @@ impl Mycraft {
             hotbar,
 
             world,
-            blocks_texture,
-            sky_texture,
         })
     }
 
@@ -280,7 +276,7 @@ impl Mycraft {
             target,
             &self.camera,
             self.sky.get_uniform(),
-            &self.sky_texture,
+            &self.resources.sky_texture,
         );
         self.world_renderer.draw(
             &mut encoder,
@@ -291,7 +287,7 @@ impl Mycraft {
             &self.camera,
             self.world.render_queue_iter(),
             self.sky.get_uniform(),
-            &self.blocks_texture,
+            &self.resources.blocks_texture,
         );
 
         self.egui.draw_frame(&mut encoder, target, |ctx| {

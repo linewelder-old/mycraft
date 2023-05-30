@@ -1,14 +1,18 @@
 use std::path::Path;
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use image::DynamicImage;
 
+use crate::{context::Context, rendering::texture::Texture};
+
 pub struct Resources {
-    pub blocks_image: DynamicImage,
-    pub sky_image: DynamicImage,
+    pub blocks_texture: Texture,
+    pub sky_texture: Texture,
 }
 
 fn load_image(path: &Path, name: &str) -> Result<DynamicImage> {
+    use anyhow::Context;
+
     let full_name = path.join("textures").join(name);
     let data =
         std::fs::read(full_name).with_context(|| format!("Failed to load image {}", name))?;
@@ -17,13 +21,18 @@ fn load_image(path: &Path, name: &str) -> Result<DynamicImage> {
     Ok(image)
 }
 
+fn load_texture(context: &Context, path: &Path, name: &str) -> Result<Texture> {
+    let image = load_image(path, name)?;
+    Ok(Texture::new(context, name, image))
+}
+
 impl Resources {
-    pub fn try_load(path: impl AsRef<Path>) -> Result<Self> {
+    pub fn try_load(context: &Context, path: impl AsRef<Path>) -> Result<Self> {
         let path = path.as_ref();
 
         Ok(Resources {
-            blocks_image: load_image(path, "blocks.png")?,
-            sky_image: load_image(path, "sky.png")?,
+            blocks_texture: load_texture(context, path, "blocks.png")?,
+            sky_texture: load_texture(context, path, "sky.png")?,
         })
     }
 }
