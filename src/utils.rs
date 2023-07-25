@@ -14,7 +14,7 @@ pub(crate) fn as_bytes<T>(value: &T) -> &[u8] {
 pub(crate) fn as_bytes_slice<T>(slice: &[T]) -> &[u8] {
     unsafe {
         let pointer = slice.as_ptr() as *const u8;
-        let length = slice.len() * std::mem::size_of::<T>();
+        let length = std::mem::size_of_val(slice);
         std::slice::from_raw_parts(pointer, length)
     }
 }
