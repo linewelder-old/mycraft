@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::{path::Path, rc::Rc};
 
 use anyhow::Result;
 use image::DynamicImage;
@@ -6,8 +6,8 @@ use image::DynamicImage;
 use crate::{context::Context, rendering::texture::Texture};
 
 pub struct Resources {
-    pub blocks_texture: Texture,
-    pub sky_texture: Texture,
+    pub blocks_texture: Rc<Texture>,
+    pub sky_texture: Rc<Texture>,
 }
 
 fn load_image(path: &Path, name: &str) -> Result<DynamicImage> {
@@ -30,9 +30,15 @@ impl Resources {
     pub fn try_load(context: &Context, path: impl AsRef<Path>) -> Result<Self> {
         let path = path.as_ref();
 
+        macro_rules! load_texture {
+            ($name:literal) => {
+                Rc::new(load_texture(context, path, $name)?)
+            };
+        }
+
         Ok(Resources {
-            blocks_texture: load_texture(context, path, "blocks.png")?,
-            sky_texture: load_texture(context, path, "sky.png")?,
+            blocks_texture: load_texture!("blocks.png"),
+            sky_texture: load_texture!("sky.png"),
         })
     }
 }

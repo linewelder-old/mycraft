@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use crate::{camera::Camera, context::Context, sky::Sky};
 
 use super::{
@@ -8,15 +10,17 @@ use super::{
 pub struct WorldRenderer {
     solid_block_pipeline: SolidBlockPipeline,
     water_pipeline: WaterPipeline,
+    blocks_texture: Rc<Texture>,
 }
 
 impl WorldRenderer {
-    pub fn new(context: &Context) -> Self {
+    pub fn new(context: &Context, blocks_texture: Rc<Texture>) -> Self {
         let solid_block_pipeline = SolidBlockPipeline::new(context);
         let water_pipeline = WaterPipeline::new(context);
         WorldRenderer {
             solid_block_pipeline,
             water_pipeline,
+            blocks_texture,
         }
     }
 
@@ -27,7 +31,6 @@ impl WorldRenderer {
         camera: &'a Camera,
         chunks: impl Iterator<Item = &'a ChunkGraphics> + Clone,
         sky: &'a Sky,
-        texture: &'a Texture,
     ) {
         let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: Some("World Render Pass"),
@@ -49,9 +52,14 @@ impl WorldRenderer {
             }),
         });
 
-        self.solid_block_pipeline
-            .draw(&mut render_pass, camera, chunks.clone(), sky, texture);
+        self.solid_block_pipeline.draw(
+            &mut render_pass,
+            camera,
+            chunks.clone(),
+            sky,
+            &self.blocks_texture,
+        );
         self.water_pipeline
-            .draw(&mut render_pass, camera, chunks, sky, texture);
+            .draw(&mut render_pass, camera, chunks, sky, &self.blocks_texture);
     }
 }

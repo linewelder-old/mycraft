@@ -26,7 +26,6 @@ use crate::{
 
 pub struct Mycraft {
     context: Rc<Context>,
-    resources: Resources,
 
     depth_buffer: DepthBuffer,
     world_renderer: WorldRenderer,
@@ -61,6 +60,8 @@ impl Mycraft {
 
         let resources = Resources::try_load(&context, "./res")?;
 
+        let sky = Sky::new(context.clone());
+
         let depth_buffer = {
             let surface_config = context.surface_config.borrow();
             DepthBuffer::new(
@@ -72,10 +73,8 @@ impl Mycraft {
                 },
             )
         };
-        let world_renderer = WorldRenderer::new(&context);
-        let sky_renderer = SkyRenderer::new(&context);
-
-        let sky = Sky::new(context.clone());
+        let world_renderer = WorldRenderer::new(&context, resources.blocks_texture);
+        let sky_renderer = SkyRenderer::new(&context, resources.sky_texture);
 
         let mut camera = Camera::new(context.clone(), "Camera");
         camera.position = Vector3::new(0., 40., 0.);
@@ -109,7 +108,6 @@ impl Mycraft {
 
         Ok(Mycraft {
             context,
-            resources,
 
             depth_buffer,
             world_renderer,
@@ -272,20 +270,14 @@ impl Mycraft {
             depth: self.depth_buffer.get_texture_view(),
         };
 
-        self.sky_renderer.draw(
-            &mut encoder,
-            target,
-            &self.camera,
-            &self.sky,
-            &self.resources.sky_texture,
-        );
+        self.sky_renderer
+            .draw(&mut encoder, target, &self.camera, &self.sky);
         self.world_renderer.draw(
             &mut encoder,
             target_with_depth,
             &self.camera,
             self.world.render_queue_iter(),
             &self.sky,
-            &self.resources.blocks_texture,
         );
 
         self.egui.draw_frame(&mut encoder, target, |ctx| {

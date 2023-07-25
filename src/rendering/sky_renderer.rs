@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use cgmath::Vector2;
 use wgpu::util::DeviceExt;
 
@@ -7,6 +9,7 @@ use crate::{camera::Camera, context::Context, sky::Sky, utils::as_bytes_slice};
 pub struct SkyRenderer {
     render_pipeline: wgpu::RenderPipeline,
     screen_quad: wgpu::Buffer,
+    sky_texture: Rc<Texture>,
 }
 
 impl SkyRenderer {
@@ -25,7 +28,7 @@ impl SkyRenderer {
         attributes: &wgpu::vertex_attr_array![0 => Float32x2],
     };
 
-    pub fn new(context: &Context) -> Self {
+    pub fn new(context: &Context, sky_texture: Rc<Texture>) -> Self {
         let bind_group_layouts = &[
             &Camera::create_bind_group_layout(context),
             &Sky::create_bind_group_layout(context),
@@ -89,6 +92,7 @@ impl SkyRenderer {
         SkyRenderer {
             render_pipeline,
             screen_quad,
+            sky_texture,
         }
     }
 
@@ -98,7 +102,6 @@ impl SkyRenderer {
         target: &wgpu::TextureView,
         camera: &Camera,
         sky: &Sky,
-        texture: &Texture,
     ) {
         let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: Some("Sky Render Pass"),
@@ -116,7 +119,7 @@ impl SkyRenderer {
         render_pass.set_pipeline(&self.render_pipeline);
         render_pass.set_bind_group(0, camera.get_bind_group(), &[]);
         render_pass.set_bind_group(1, sky.get_bind_group(), &[]);
-        render_pass.set_bind_group(2, texture.get_bind_group(), &[]);
+        render_pass.set_bind_group(2, self.sky_texture.get_bind_group(), &[]);
         render_pass.set_vertex_buffer(0, self.screen_quad.slice(..));
         render_pass.draw(0..(Self::SCREEN_QUAD_VERTICES.len() as u32), 0..1);
     }
