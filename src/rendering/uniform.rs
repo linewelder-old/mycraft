@@ -22,7 +22,7 @@ impl<T> Uniform<T> {
             context,
             buffer,
             bind_group,
-            phantom: PhantomData::default(),
+            phantom: PhantomData,
         }
     }
 
