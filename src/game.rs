@@ -14,10 +14,7 @@ use crate::{
     consts::*,
     context::Context,
     egui::EguiContext,
-    rendering::{
-        sky_renderer::SkyRenderer, texture::DepthBuffer, world_renderer::WorldRenderer,
-        RenderTargetWithDepth,
-    },
+    rendering::{texture::DepthBuffer, RenderTargetWithDepth, SkyRenderer, WorldRenderer},
     resources::Resources,
     sky::Sky,
     utils::{

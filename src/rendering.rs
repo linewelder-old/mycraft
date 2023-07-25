@@ -1,11 +1,14 @@
 pub mod chunk_mesh;
 pub mod frustrum;
-pub mod sky_renderer;
+mod sky_renderer;
 mod solid_block_pipeline;
 pub mod texture;
 pub mod uniform;
 mod water_pipeline;
-pub mod world_renderer;
+mod world_renderer;
+
+pub use sky_renderer::SkyRenderer;
+pub use world_renderer::WorldRenderer;
 
 use std::cell::RefCell;
 
