@@ -5,20 +5,20 @@ edition = "2021"
 
 [dependencies]
 cgmath = "0.18.0"
-winit = "0.28.3"
-wgpu = "0.16"
-image = { version = "0.24", default-features = false, features = ["png"] }
-log = "0.4.17"
+winit = "0.28.6"
+wgpu = "0.16.3"
+image = { version = "0.24.6", default-features = false, features = ["png"] }
+log = "0.4.19"
 env_logger = "0.10.0"
 pollster = "0.3.0"
 noise = "0.8.2"
-num_enum = "0.5.11"
-anyhow = "1.0.70"
-egui = "0.21"
-egui_wgpu_backend = "0.23"
-egui_winit_platform = "0.18"
-puffin = "0.15.0"
-puffin_egui = "0.21.0"
+num_enum = "0.6.1"
+anyhow = "1.0.72"
+egui = "0.22"
+egui_wgpu_backend = "0.24"
+egui_winit_platform = "0.19"
+puffin = "0.16"
+puffin_egui = "0.22"
 
 [profile.dev]
 opt-level = 1
