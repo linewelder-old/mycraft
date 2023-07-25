@@ -15,9 +15,8 @@ use crate::{
     context::Context,
     egui::EguiContext,
     rendering::{
-        sky_renderer::SkyRenderer,
-        texture::DepthBuffer,
-        world_renderer::{WorldRenderer, WorldRendererTarget},
+        sky_renderer::SkyRenderer, texture::DepthBuffer, world_renderer::WorldRenderer,
+        RenderTargetWithDepth,
     },
     resources::Resources,
     sky::Sky,
@@ -271,6 +270,11 @@ impl Mycraft {
                     label: Some("Render Encoder"),
                 });
 
+        let target_with_depth = RenderTargetWithDepth {
+            color: target,
+            depth: self.depth_buffer.get_texture_view(),
+        };
+
         self.sky_renderer.draw(
             &mut encoder,
             target,
@@ -280,10 +284,7 @@ impl Mycraft {
         );
         self.world_renderer.draw(
             &mut encoder,
-            WorldRendererTarget {
-                output: target,
-                depth_buffer: &self.depth_buffer,
-            },
+            target_with_depth,
             &self.camera,
             self.world.render_queue_iter(),
             &self.sky,

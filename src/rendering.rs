@@ -118,3 +118,9 @@ pub trait Bindable {
     fn create_bind_group_layout(context: &Context) -> wgpu::BindGroupLayout;
     fn get_bind_group(&self) -> &wgpu::BindGroup;
 }
+
+#[derive(Clone, Copy)]
+pub struct RenderTargetWithDepth<'a> {
+    pub color: &'a wgpu::TextureView,
+    pub depth: &'a wgpu::TextureView,
+}
