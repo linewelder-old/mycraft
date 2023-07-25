@@ -1,3 +1,7 @@
+// Rust Analyzer doesn't like that num_enum creates constants named for example
+// `Air__num_num_0__`. Enven though `cargo check` is perfectly fine with it.
+#![allow(non_upper_case_globals)]
+
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 
 pub enum Block {
