@@ -46,3 +46,26 @@ impl ChunkMesh {
             .write_buffer(&self.indices, 0, as_bytes_slice(indices));
     }
 }
+
+pub struct LineMesh {
+    pub vertices: wgpu::Buffer,
+    pub vertex_count: u32,
+}
+
+impl LineMesh {
+    pub fn new(context: &Context, label: &str, vertices: &[Vector3<f32>]) -> Self {
+        let vertex_count = vertices.len() as u32;
+        let vertices = context
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some(&format!("{} Vertices", label)),
+                contents: as_bytes_slice(vertices),
+                usage: wgpu::BufferUsages::VERTEX,
+            });
+
+        LineMesh {
+            vertices,
+            vertex_count,
+        }
+    }
+}

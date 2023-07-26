@@ -1,10 +1,12 @@
 pub mod frustrum;
+mod line_renderer;
 pub mod meshes;
 mod sky_renderer;
 pub mod texture;
 pub mod uniform;
 mod world_renderer;
 
+pub use line_renderer::LineRenderer;
 pub use sky_renderer::SkyRenderer;
 pub use world_renderer::WorldRenderer;
 

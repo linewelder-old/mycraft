@@ -14,7 +14,9 @@ use crate::{
     consts::*,
     context::Context,
     egui::EguiContext,
-    rendering::{texture::DepthBuffer, RenderTargetWithDepth, SkyRenderer, WorldRenderer},
+    rendering::{
+        texture::DepthBuffer, LineRenderer, RenderTargetWithDepth, SkyRenderer, WorldRenderer,
+    },
     resources::Resources,
     sky::Sky,
     utils::{
@@ -30,6 +32,7 @@ pub struct Mycraft {
     depth_buffer: DepthBuffer,
     world_renderer: WorldRenderer,
     sky_renderer: SkyRenderer,
+    line_renderer: LineRenderer,
 
     sky: Sky,
 
@@ -75,6 +78,7 @@ impl Mycraft {
         };
         let world_renderer = WorldRenderer::new(&context, resources.blocks_texture);
         let sky_renderer = SkyRenderer::new(&context, resources.sky_texture);
+        let line_renderer = LineRenderer::new(&context);
 
         let mut camera = Camera::new(context.clone(), "Camera");
         camera.position = Vector3::new(0., 40., 0.);
@@ -112,6 +116,7 @@ impl Mycraft {
             depth_buffer,
             world_renderer,
             sky_renderer,
+            line_renderer,
 
             sky,
 
