@@ -285,7 +285,13 @@ impl Mycraft {
                 ctx.set_cursor_icon(egui::CursorIcon::None);
             }
 
-            egui::Window::new("Controls").show(ctx, |ui| {
+            egui::Window::new("Debug").show(ctx, |ui| {
+                ui.label(format!("Chunks loaded: {}", self.world.num_chunks_loaded()));
+                ui.label(format!(
+                    "Chunks rendered: {}",
+                    self.world.num_chunks_rendered()
+                ));
+
                 let mut profiling_on = puffin::are_scopes_on();
                 if ui.checkbox(&mut profiling_on, "Profiling").changed() {
                     puffin::set_scopes_on(profiling_on);

@@ -303,4 +303,12 @@ impl World {
     pub fn render_queue_iter(&self) -> impl Iterator<Item = &ChunkGraphics> + Clone {
         self.render_queue.iter().map(|x| x.as_ref())
     }
+
+    pub fn num_chunks_loaded(&self) -> usize {
+        self.chunks.len()
+    }
+
+    pub fn num_chunks_rendered(&self) -> usize {
+        self.render_queue.len()
+    }
 }
