@@ -15,7 +15,8 @@ use crate::{
     context::Context,
     egui::EguiContext,
     rendering::{
-        texture::DepthBuffer, LineRenderer, RenderTargetWithDepth, SkyRenderer, WorldRenderer,
+        meshes::LineMesh, texture::DepthBuffer, LineRenderer, RenderTargetWithDepth, SkyRenderer,
+        WorldRenderer,
     },
     resources::Resources,
     sky::Sky,
@@ -35,6 +36,7 @@ pub struct Mycraft {
     line_renderer: LineRenderer,
 
     sky: Sky,
+    block_selection: LineMesh,
 
     camera: Camera,
     looking_at: Option<raycasting::Hit>,
@@ -47,6 +49,42 @@ pub struct Mycraft {
 
     world: World,
 }
+
+#[rustfmt::skip]
+const fn create_cube_line_mesh(start: Vector3<f32>, end: Vector3<f32>) -> [Vector3<f32>; 12 * 2] {
+    const fn vec3(x: f32, y: f32, z: f32) -> Vector3<f32> {
+        Vector3 { x, y, z }
+    }
+
+    [
+        vec3(start.x, start.y, start.z), vec3(end.x, start.y, start.z),
+        vec3(start.x, start.y, start.z), vec3(start.x, end.y, start.z),
+        vec3(end.x, start.y, start.z), vec3(end.x, end.y, start.z),
+        vec3(start.x, end.y, start.z), vec3(end.x, end.y, start.z),
+        vec3(start.x, start.y, start.z), vec3(start.x, start.y, end.z),
+        vec3(end.x, start.y, start.z), vec3(end.x, start.y, end.z),
+        vec3(start.x, end.y, start.z), vec3(start.x, end.y, end.z),
+        vec3(end.x, end.y, start.z), vec3(end.x, end.y, end.z),
+        vec3(start.x, start.y, end.z), vec3(end.x, start.y, end.z),
+        vec3(start.x, start.y, end.z), vec3(start.x, end.y, end.z),
+        vec3(end.x, start.y, end.z), vec3(end.x, end.y, end.z),
+        vec3(start.x, end.y, end.z), vec3(end.x, end.y, end.z),
+    ]
+}
+
+const BLOCK_SELECTION_PADDING: f32 = 0.01;
+const BLOCK_SELECTION_VERTICES: &[Vector3<f32>] = &create_cube_line_mesh(
+    Vector3 {
+        x: -BLOCK_SELECTION_PADDING,
+        y: -BLOCK_SELECTION_PADDING,
+        z: -BLOCK_SELECTION_PADDING,
+    },
+    Vector3 {
+        x: 1. + BLOCK_SELECTION_PADDING,
+        y: 1. + BLOCK_SELECTION_PADDING,
+        z: 1. + BLOCK_SELECTION_PADDING,
+    },
+);
 
 impl Mycraft {
     pub fn try_new(context: Rc<Context>) -> Result<Self> {
@@ -64,6 +102,12 @@ impl Mycraft {
         let resources = Resources::try_load(&context, "./res")?;
 
         let sky = Sky::new(context.clone());
+
+        let block_selection = LineMesh::new(
+            context.clone(),
+            "Block Selection",
+            &BLOCK_SELECTION_VERTICES,
+        );
 
         let depth_buffer = {
             let surface_config = context.surface_config.borrow();
@@ -119,6 +163,7 @@ impl Mycraft {
             line_renderer,
 
             sky,
+            block_selection,
 
             camera,
             looking_at: None,
@@ -256,6 +301,11 @@ impl Mycraft {
             self.camera.get_direction(),
             MAX_RAYCASTING_DISTANCE,
         );
+        if let Some(looking_at) = &self.looking_at {
+            self.block_selection
+                .offset
+                .write(looking_at.coords.map(|x| x as f32));
+        }
 
         self.world.update(&self.camera);
     }
@@ -284,6 +334,15 @@ impl Mycraft {
             self.world.render_queue_iter(),
             &self.sky,
         );
+
+        if self.looking_at.is_some() {
+            self.line_renderer.draw(
+                &mut encoder,
+                target_with_depth,
+                &self.camera,
+                &self.block_selection,
+            );
+        }
 
         self.egui.draw_frame(&mut encoder, target, |ctx| {
             if !self.in_menu {
