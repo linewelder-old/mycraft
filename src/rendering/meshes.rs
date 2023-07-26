@@ -1,9 +1,9 @@
 use std::rc::Rc;
 
-use cgmath::Vector3;
+use cgmath::{Vector3, Zero};
 use wgpu::util::DeviceExt;
 
-use super::Vertex;
+use super::{uniform::Uniform, Vertex};
 use crate::{context::Context, utils::as_bytes_slice};
 
 pub struct ChunkMesh {
@@ -50,10 +50,11 @@ impl ChunkMesh {
 pub struct LineMesh {
     pub vertices: wgpu::Buffer,
     pub vertex_count: u32,
+    pub offset: Uniform<Vector3<f32>>,
 }
 
 impl LineMesh {
-    pub fn new(context: &Context, label: &str, vertices: &[Vector3<f32>]) -> Self {
+    pub fn new(context: Rc<Context>, label: &str, vertices: &[Vector3<f32>]) -> Self {
         let vertex_count = vertices.len() as u32;
         let vertices = context
             .device
@@ -66,6 +67,7 @@ impl LineMesh {
         LineMesh {
             vertices,
             vertex_count,
+            offset: Uniform::new(context, label, Vector3::zero()),
         }
     }
 }

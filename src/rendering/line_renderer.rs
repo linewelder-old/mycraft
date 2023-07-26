@@ -1,6 +1,8 @@
 use cgmath::Vector3;
 
-use super::{meshes::LineMesh, texture::DepthBuffer, Bindable, RenderTargetWithDepth};
+use super::{
+    meshes::LineMesh, texture::DepthBuffer, uniform::Uniform, Bindable, RenderTargetWithDepth,
+};
 use crate::{camera::Camera, context::Context};
 
 pub struct LineRenderer {
@@ -15,7 +17,10 @@ impl LineRenderer {
     };
 
     pub fn new(context: &Context) -> Self {
-        let bind_group_layouts = &[&Camera::create_bind_group_layout(context)];
+        let bind_group_layouts = &[
+            &Camera::create_bind_group_layout(context),
+            &Uniform::<Vector3<f32>>::create_bind_group_layout(context),
+        ];
 
         let layout = context
             .device
@@ -101,6 +106,7 @@ impl LineRenderer {
 
         render_pass.set_pipeline(&self.render_pipeline);
         render_pass.set_bind_group(0, camera.get_bind_group(), &[]);
+        render_pass.set_bind_group(1, mesh.offset.get_bind_group(), &[]);
         render_pass.set_vertex_buffer(0, mesh.vertices.slice(..));
         render_pass.draw(0..mesh.vertex_count, 0..1);
     }
