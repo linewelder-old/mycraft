@@ -1,5 +1,6 @@
 use std::rc::Rc;
 
+use cgmath::Vector3;
 use wgpu::util::DeviceExt;
 
 use super::Vertex;

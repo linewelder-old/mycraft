@@ -1,5 +1,5 @@
-pub mod chunk_mesh;
 pub mod frustrum;
+pub mod meshes;
 mod sky_renderer;
 pub mod texture;
 pub mod uniform;
@@ -12,7 +12,7 @@ use std::cell::RefCell;
 
 use cgmath::{MetricSpace, Vector2, Vector3};
 
-use self::{chunk_mesh::ChunkMesh, uniform::Uniform};
+use self::{meshes::ChunkMesh, uniform::Uniform};
 
 use crate::context::Context;
 
