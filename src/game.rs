@@ -104,7 +104,7 @@ impl Mycraft {
         ]);
 
         let egui = EguiContext::new(context.clone());
-        puffin::set_scopes_on(true);
+        puffin::set_scopes_on(false);
 
         Ok(Mycraft {
             context,
