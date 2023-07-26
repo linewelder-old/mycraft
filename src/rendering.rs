@@ -1,10 +1,8 @@
 pub mod chunk_mesh;
 pub mod frustrum;
 mod sky_renderer;
-mod solid_block_pipeline;
 pub mod texture;
 pub mod uniform;
-mod water_pipeline;
 mod world_renderer;
 
 pub use sky_renderer::SkyRenderer;
