@@ -258,12 +258,12 @@ impl World {
 
     #[inline]
     pub fn borrow_chunk(&self, coords: ChunkCoords) -> Option<Ref<Chunk>> {
-        self.chunks.get(&coords).map(|chunk| chunk.borrow())
+        Some(self.chunks.get(&coords)?.borrow())
     }
 
     #[inline]
     pub fn borrow_mut_chunk(&self, coords: ChunkCoords) -> Option<RefMut<Chunk>> {
-        self.chunks.get(&coords).map(|chunk| chunk.borrow_mut())
+        Some(self.chunks.get(&coords)?.borrow_mut())
     }
 
     pub fn get_block(&self, coords: BlockCoords) -> Option<&'static Block> {
