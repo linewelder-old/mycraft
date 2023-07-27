@@ -46,7 +46,7 @@ impl Cell {
     }
 }
 
-#[derive(PartialEq)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 enum ChunkStatus {
     NotGenerated,
     GraphicsOutdated,
@@ -79,10 +79,9 @@ impl Chunk {
         }
     }
 
-    fn invalidate_graphics(&mut self) {
-        if self.status == ChunkStatus::Ready {
-            self.status = ChunkStatus::GraphicsOutdated;
-        }
+    /// Change the chunk status if the current one is higher.
+    fn invalidate(&mut self, new_status: ChunkStatus) {
+        self.status = self.status.min(new_status);
     }
 }
 
@@ -166,7 +165,8 @@ impl World {
                 self.generator.generate_chunk(&mut chunk, coords);
                 recalculate_light(self, &mut chunk, coords);
                 chunk.status = ChunkStatus::GraphicsOutdated;
-                self.invalidate_neighbors_graphics(coords);
+                self.invalidate_neighbors(coords, ChunkStatus::GraphicsOutdated);
+            }
             }
 
             if chunk.status == ChunkStatus::GraphicsOutdated {
@@ -272,14 +272,14 @@ impl World {
             .map(|chunk| chunk[block_coords].get_block())
     }
 
-    fn invalidate_neighbors_graphics(&self, chunk_coords: ChunkCoords) {
+    fn invalidate_neighbors(&self, chunk_coords: ChunkCoords, new_status: ChunkStatus) {
         for x in -1..=1 {
             for y in -1..=1 {
                 for z in -1..=1 {
                     if x != 0 || y != 0 || z != 0 {
                         let coords = chunk_coords + ChunkCoords { x, y, z };
                         if let Some(mut chunk) = self.borrow_mut_chunk(coords) {
-                            chunk.invalidate_graphics();
+                            chunk.invalidate(new_status);
                         }
                     }
                 }
@@ -295,8 +295,8 @@ impl World {
                 let mut updater = LightUpdater::new(self, &mut chunk, chunk_coords);
                 updater.on_block_placed(block_coords, Block::by_id(block_id));
             }
-            chunk.invalidate_graphics();
-            self.invalidate_neighbors_graphics(chunk_coords);
+            chunk.invalidate(ChunkStatus::GraphicsOutdated);
+            self.invalidate_neighbors(chunk_coords, ChunkStatus::GraphicsOutdated);
         }
     }
 
