@@ -19,7 +19,7 @@ use self::{
     blocks::{Block, BlockId},
     chunk_queue::ChunkQueue,
     generation::Generator,
-    light::{recalculate_light, LightUpdater},
+    light::recalculate_light,
     mesh::ChunkMeshes,
     utils::{get_chunk_and_block_coords, to_chunk_offset, to_local_chunk_coords},
 };
@@ -49,6 +49,7 @@ impl Cell {
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 enum ChunkStatus {
     NotGenerated,
+    LightmapOutdated,
     GraphicsOutdated,
     Ready,
 }
@@ -164,9 +165,13 @@ impl World {
             if chunk.status == ChunkStatus::NotGenerated {
                 self.generator.generate_chunk(&mut chunk, coords);
                 recalculate_light(self, &mut chunk, coords);
-                chunk.status = ChunkStatus::GraphicsOutdated;
-                self.invalidate_neighbors(coords, ChunkStatus::GraphicsOutdated);
+                self.invalidate_neighbors(coords, ChunkStatus::LightmapOutdated);
+                chunk.status = ChunkStatus::LightmapOutdated;
             }
+
+            if chunk.status == ChunkStatus::LightmapOutdated {
+                recalculate_light(self, &mut chunk, coords);
+                chunk.status = ChunkStatus::GraphicsOutdated;
             }
 
             if chunk.status == ChunkStatus::GraphicsOutdated {
@@ -291,12 +296,8 @@ impl World {
         let (chunk_coords, block_coords) = to_local_chunk_coords(coords);
         if let Some(mut chunk) = self.borrow_mut_chunk(chunk_coords) {
             chunk[block_coords].block_id = block_id;
-            {
-                let mut updater = LightUpdater::new(self, &mut chunk, chunk_coords);
-                updater.on_block_placed(block_coords, Block::by_id(block_id));
-            }
-            chunk.invalidate(ChunkStatus::GraphicsOutdated);
-            self.invalidate_neighbors(chunk_coords, ChunkStatus::GraphicsOutdated);
+            chunk.invalidate(ChunkStatus::LightmapOutdated);
+            self.invalidate_neighbors(chunk_coords, ChunkStatus::LightmapOutdated);
         }
     }
 
