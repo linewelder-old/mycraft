@@ -179,10 +179,13 @@ impl Mycraft {
     }
 
     fn grab_cursor(&mut self) {
-        let _ = self
-            .context
-            .window
-            .set_cursor_grab(CursorGrabMode::Confined);
+        const GRAB_MODE: CursorGrabMode = if cfg!(target_os = "macos") {
+            CursorGrabMode::Locked
+        } else {
+            CursorGrabMode::Confined
+        };
+
+        let _ = self.context.window.set_cursor_grab(GRAB_MODE);
         self.context.window.set_cursor_visible(false);
     }
 
