@@ -72,22 +72,17 @@ impl ChunkQueue {
     }
 
     pub fn iter(&self) -> impl Iterator<Item = (ChunkCoords, &RefCell<Chunk>)> {
-        self.queue.iter().filter_map(|x| {
-            if x.in_frustrum {
-                Some((x.coords, x.chunk.as_ref()))
-            } else {
-                None
-            }
-        })
+        self.queue
+            .iter()
+            .filter(|x| x.in_frustrum)
+            .map(|x| (x.coords, x.chunk.as_ref()))
     }
 
     pub fn iter_graphics(&self) -> impl Iterator<Item = (ChunkCoords, Rc<ChunkGraphics>)> + '_ {
-        self.queue.iter().rev().filter_map(|x| {
-            if x.in_frustrum {
-                Some((x.coords, x.chunk.borrow().graphics.as_ref()?.clone()))
-            } else {
-                None
-            }
-        })
+        self.queue
+            .iter()
+            .rev()
+            .filter(|x| x.in_frustrum)
+            .filter_map(|x| Some((x.coords, x.chunk.borrow().graphics.as_ref()?.clone())))
     }
 }
