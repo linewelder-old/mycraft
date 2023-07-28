@@ -15,7 +15,12 @@ impl Context {
         let size = window.inner_size();
 
         let instance = wgpu::Instance::new(Default::default());
-        let surface = unsafe { instance.create_surface(&window).unwrap() };
+        let surface = unsafe {
+            instance
+                .create_surface(&window)
+                .expect("Failed to create the window surface.")
+        };
+
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions {
                 power_preference: wgpu::PowerPreference::default(),
@@ -23,7 +28,7 @@ impl Context {
                 force_fallback_adapter: false,
             })
             .await
-            .unwrap();
+            .expect("Failed to get the device adapter.");
 
         let (device, queue) = adapter
             .request_device(
@@ -35,11 +40,11 @@ impl Context {
                 None,
             )
             .await
-            .unwrap();
+            .expect("Failed to get the graphics device and the command queue.");
 
         let surface_config = surface
             .get_default_config(&adapter, size.width, size.height)
-            .unwrap();
+            .expect("Failed to get the default surface config.");
         surface.configure(&device, &surface_config);
 
         Context {

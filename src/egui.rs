@@ -75,7 +75,7 @@ impl EguiContext {
 
         self.render_pass
             .execute(encoder, target, &paint_jobs, &screen_descriptor, None)
-            .unwrap();
+            .expect("Failed to execute the egui render pass.");
 
         self.render_pass
             .remove_textures(textures_delta)
