@@ -3,6 +3,7 @@ mod consts;
 mod context;
 mod egui;
 mod game;
+mod meshes;
 mod rendering;
 mod resources;
 mod sky;
