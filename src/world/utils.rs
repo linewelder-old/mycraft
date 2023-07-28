@@ -74,9 +74,9 @@ impl<'a> ChunkNeighborhood<'a> {
 
     // Coords are relative to middle chunk in chunks array
     pub fn get_cell(&self, coords: Vector3<i32>) -> Option<Cell> {
-        if (coords.x >= 0 && coords.x < Chunk::SIZE)
-            && (coords.y >= 0 && coords.y < Chunk::SIZE)
-            && (coords.z >= 0 && coords.z < Chunk::SIZE)
+        if (0..Chunk::SIZE).contains(&coords.x)
+            && (0..Chunk::SIZE).contains(&coords.y)
+            && (0..Chunk::SIZE).contains(&coords.z)
         {
             return Some(self.chunk[coords]);
         }
@@ -102,9 +102,9 @@ impl<'a> ChunkNeighborhoodMut<'a> {
     }
 
     pub fn get_cell(&self, coords: Vector3<i32>) -> Option<Cell> {
-        if (coords.x >= 0 && coords.x < Chunk::SIZE)
-            && (coords.y >= 0 && coords.y < Chunk::SIZE)
-            && (coords.z >= 0 && coords.z < Chunk::SIZE)
+        if (0..Chunk::SIZE).contains(&coords.x)
+            && (0..Chunk::SIZE).contains(&coords.y)
+            && (0..Chunk::SIZE).contains(&coords.z)
         {
             return Some(self.chunk[coords]);
         }
@@ -117,9 +117,9 @@ impl<'a> ChunkNeighborhoodMut<'a> {
     }
 
     pub fn get_cell_mut(&mut self, coords: Vector3<i32>) -> Option<&mut Cell> {
-        if (coords.x >= 0 && coords.x < Chunk::SIZE)
-            && (coords.y >= 0 && coords.y < Chunk::SIZE)
-            && (coords.z >= 0 && coords.z < Chunk::SIZE)
+        if (0..Chunk::SIZE).contains(&coords.x)
+            && (0..Chunk::SIZE).contains(&coords.y)
+            && (0..Chunk::SIZE).contains(&coords.z)
         {
             return Some(&mut self.chunk[coords]);
         }

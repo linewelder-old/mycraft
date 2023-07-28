@@ -14,9 +14,9 @@ fn hash(seed: Vector2<f64>) -> f64 {
 }
 
 fn set_block(chunk: &mut Chunk, coords: BlockCoords, id: BlockId) {
-    if (coords.x >= 0 && coords.x < Chunk::SIZE)
-        && (coords.y >= 0 && coords.y < Chunk::SIZE)
-        && (coords.z >= 0 && coords.z < Chunk::SIZE)
+    if (0..Chunk::SIZE).contains(&coords.x)
+        && (0..Chunk::SIZE).contains(&coords.y)
+        && (0..Chunk::SIZE).contains(&coords.z)
     {
         chunk[coords].block_id = id;
     }
@@ -119,9 +119,7 @@ impl Generator {
 
                 let is_grass = height > sand_height;
 
-                if (chunk_x >= 0 && chunk_x < Chunk::SIZE)
-                    && (chunk_z >= 0 && chunk_z < Chunk::SIZE)
-                {
+                if (0..Chunk::SIZE).contains(&chunk_x) && (0..Chunk::SIZE).contains(&chunk_z) {
                     for chunk_y in 0..Chunk::SIZE {
                         let world_coords = BlockCoords {
                             x: world_coords.x,
