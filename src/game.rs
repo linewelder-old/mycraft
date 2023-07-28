@@ -74,7 +74,7 @@ impl Mycraft {
         let block_selection = LineMesh::new(
             context.clone(),
             "Block Selection",
-            &BLOCK_SELECTION_VERTICES,
+            BLOCK_SELECTION_VERTICES,
             LineMeshUniform {
                 color: BLOCK_SELECTION_COLOR,
                 padding: 0.,
