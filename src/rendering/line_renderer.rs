@@ -1,9 +1,47 @@
-use cgmath::Vector3;
+use std::rc::Rc;
 
-use super::{
-    meshes::LineMesh, texture::DepthBuffer, uniform::Uniform, Bindable, RenderTargetWithDepth,
-};
-use crate::{camera::Camera, context::Context};
+use cgmath::Vector3;
+use wgpu::util::DeviceExt;
+
+use super::{texture::DepthBuffer, uniform::Uniform, Bindable, RenderTargetWithDepth};
+use crate::{camera::Camera, context::Context, utils::as_bytes_slice};
+
+#[repr(C, align(16))]
+pub struct LineMeshUniform {
+    pub color: Vector3<f32>,
+    pub padding: f32,
+    pub offset: Vector3<f32>,
+}
+
+pub struct LineMesh {
+    pub vertices: wgpu::Buffer,
+    pub vertex_count: u32,
+    pub uniform: Uniform<LineMeshUniform>,
+}
+
+impl LineMesh {
+    pub fn new(
+        context: Rc<Context>,
+        label: &str,
+        vertices: &[Vector3<f32>],
+        uniform: LineMeshUniform,
+    ) -> Self {
+        let vertex_count = vertices.len() as u32;
+        let vertices = context
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some(&format!("{} Vertices", label)),
+                contents: as_bytes_slice(vertices),
+                usage: wgpu::BufferUsages::VERTEX,
+            });
+
+        LineMesh {
+            vertices,
+            vertex_count,
+            uniform: Uniform::new(context, label, uniform),
+        }
+    }
+}
 
 pub struct LineRenderer {
     render_pipeline: wgpu::RenderPipeline,

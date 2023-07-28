@@ -27,7 +27,10 @@ use crate::{
     camera::Camera,
     consts::MAX_UPDATE_TIME,
     context::Context,
-    rendering::{meshes::ChunkMesh, uniform::Uniform, ChunkGraphics, ChunkGraphicsData, Face},
+    rendering::{
+        uniform::Uniform,
+        world_renderer::{ChunkGraphics, ChunkGraphicsData, ChunkMesh, Face},
+    },
 };
 
 pub type LightLevel = u8;

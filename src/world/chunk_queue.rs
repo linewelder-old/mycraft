@@ -3,7 +3,7 @@ use std::{cell::RefCell, rc::Rc};
 use cgmath::{MetricSpace, Zero};
 
 use crate::{
-    rendering::{frustrum::Frustrum, ChunkGraphics},
+    rendering::{frustrum::Frustrum, world_renderer::ChunkGraphics},
     utils::aabb::Aabb,
 };
 

@@ -4,7 +4,7 @@ use super::{
     blocks::Block, utils::ChunkNeighborhood, BlockCoords, Cell, Chunk, ChunkCoords, LightLevel,
     World,
 };
-use crate::rendering::{Face, Vertex, VertexDesc};
+use crate::rendering::world_renderer::{Face, Vertex, VertexDesc};
 
 #[rustfmt::skip]
 const SOLID_BLOCK_FACES: [[Vector3<u16>; 4]; 6] = [

@@ -15,9 +15,11 @@ use crate::{
     context::Context,
     egui::EguiContext,
     rendering::{
-        meshes::{LineMesh, LineMeshUniform},
+        line_renderer::{LineMesh, LineMeshUniform, LineRenderer},
+        sky_renderer::SkyRenderer,
         texture::DepthBuffer,
-        LineRenderer, RenderTargetWithDepth, SkyRenderer, WorldRenderer,
+        world_renderer::WorldRenderer,
+        RenderTargetWithDepth,
     },
     resources::Resources,
     sky::Sky,
