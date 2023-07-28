@@ -401,9 +401,9 @@ impl ChunkMeshes {
     pub fn generate(world: &World, chunk: &Chunk, chunk_coords: ChunkCoords) -> Self {
         let mut generation_context = MeshGenerationContext::new(world, chunk, chunk_coords);
 
-        for x in 0..Chunk::SIZE.x {
-            for y in 0..Chunk::SIZE.y {
-                for z in 0..Chunk::SIZE.z {
+        for x in 0..Chunk::SIZE {
+            for y in 0..Chunk::SIZE {
+                for z in 0..Chunk::SIZE {
                     generation_context.current_block_coords = BlockCoords { x, y, z };
                     let current_cell = chunk[generation_context.current_block_coords];
 

@@ -15,10 +15,10 @@ const DIRECTIONS: [Vector3<i32>; 6] = [
 pub fn recalculate_light(world: &World, chunk: &mut Chunk, coords: ChunkCoords) {
     puffin::profile_function!("Light recalculation");
 
-    for x in 0..Chunk::SIZE.x {
-        for z in 0..Chunk::SIZE.z {
+    for x in 0..Chunk::SIZE {
+        for z in 0..Chunk::SIZE {
             let mut sun_light = 15;
-            for y in (0..Chunk::SIZE.y).rev() {
+            for y in (0..Chunk::SIZE).rev() {
                 let coords = BlockCoords { x, y, z };
                 let cell = &mut chunk[coords];
                 let block = cell.get_block();
@@ -48,9 +48,9 @@ fn propagated(light: LightLevel) -> LightLevel {
 }
 
 fn propagate_light(chunk: &Chunk, neighbors: &ChunkNeighborhood) {
-    for x in 0..Chunk::SIZE.x {
-        for y in 0..Chunk::SIZE.y {
-            for z in 0..Chunk::SIZE.z {
+    for x in 0..Chunk::SIZE {
+        for y in 0..Chunk::SIZE {
+            for z in 0..Chunk::SIZE {
                 let coords = BlockCoords { x, y, z };
                 let cell = &chunk[coords];
 

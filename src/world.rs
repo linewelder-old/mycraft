@@ -55,17 +55,13 @@ enum ChunkStatus {
 }
 
 pub struct Chunk {
-    data: [[[Cell; Self::SIZE.z as usize]; Self::SIZE.y as usize]; Self::SIZE.x as usize],
+    data: [[[Cell; Self::SIZE as usize]; Self::SIZE as usize]; Self::SIZE as usize],
     graphics: Option<Rc<ChunkGraphics>>,
     status: ChunkStatus,
 }
 
 impl Chunk {
-    pub const SIZE: Vector3<i32> = Vector3 {
-        x: 16,
-        y: 16,
-        z: 16,
-    };
+    pub const SIZE: i32 = 16;
 
     fn new() -> Self {
         Chunk {
@@ -73,8 +69,7 @@ impl Chunk {
                 block_id: BlockId::Air,
                 sun_light: 0,
                 block_light: 0,
-            }; Self::SIZE.z as usize]; Self::SIZE.y as usize];
-                Self::SIZE.x as usize],
+            }; Self::SIZE as usize]; Self::SIZE as usize]; Self::SIZE as usize],
             graphics: None,
             status: ChunkStatus::NotGenerated,
         }

@@ -14,9 +14,9 @@ fn hash(seed: Vector2<f64>) -> f64 {
 }
 
 fn set_block(chunk: &mut Chunk, coords: BlockCoords, id: BlockId) {
-    if (coords.x >= 0 && coords.x < Chunk::SIZE.x)
-        && (coords.y >= 0 && coords.y < Chunk::SIZE.y)
-        && (coords.z >= 0 && coords.z < Chunk::SIZE.z)
+    if (coords.x >= 0 && coords.x < Chunk::SIZE)
+        && (coords.y >= 0 && coords.y < Chunk::SIZE)
+        && (coords.z >= 0 && coords.z < Chunk::SIZE)
     {
         chunk[coords].block_id = id;
     }
@@ -105,8 +105,8 @@ impl Generator {
         puffin::profile_function!();
 
         let chunk_offset = chunk_coords.mul_element_wise(Chunk::SIZE);
-        for chunk_x in -2..(Chunk::SIZE.x + 2) {
-            for chunk_z in -2..(Chunk::SIZE.z + 2) {
+        for chunk_x in -2..(Chunk::SIZE + 2) {
+            for chunk_z in -2..(Chunk::SIZE + 2) {
                 let world_coords = Vector2 {
                     x: chunk_x + chunk_offset.x,
                     y: chunk_z + chunk_offset.z,
@@ -119,10 +119,10 @@ impl Generator {
 
                 let is_grass = height > sand_height;
 
-                if (chunk_x >= 0 && chunk_x < Chunk::SIZE.x)
-                    && (chunk_z >= 0 && chunk_z < Chunk::SIZE.z)
+                if (chunk_x >= 0 && chunk_x < Chunk::SIZE)
+                    && (chunk_z >= 0 && chunk_z < Chunk::SIZE)
                 {
-                    for chunk_y in 0..Chunk::SIZE.y {
+                    for chunk_y in 0..Chunk::SIZE {
                         let world_coords = BlockCoords {
                             x: world_coords.x,
                             y: chunk_y + chunk_offset.y,

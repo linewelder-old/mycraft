@@ -23,8 +23,8 @@ pub struct ChunkQueue {
 
 fn chunk_aabb(coords: ChunkCoords) -> Aabb {
     Aabb {
-        start: coords.zip(Chunk::SIZE, |x, y| (x * y) as f32),
-        size: Chunk::SIZE.map(|x| x as f32),
+        start: (coords * Chunk::SIZE).map(|x| x as f32),
+        size: [Chunk::SIZE as f32; 3].into(),
     }
 }
 

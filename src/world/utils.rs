@@ -5,7 +5,7 @@ use cgmath::{ElementWise, Vector3};
 use super::{BlockCoords, Cell, Chunk, ChunkCoords, World};
 
 fn get_chunk_coords(block_coords: BlockCoords) -> ChunkCoords {
-    block_coords.zip(Chunk::SIZE, i32::div_euclid)
+    block_coords.map(|x| x.div_euclid(Chunk::SIZE))
 }
 
 pub fn get_chunk_and_block_coords(position: Vector3<f32>) -> (ChunkCoords, BlockCoords) {
@@ -18,7 +18,7 @@ pub fn get_chunk_and_block_coords(position: Vector3<f32>) -> (ChunkCoords, Block
 /// Returns the chunk coords of the given block, and the coords within the chunk
 pub fn to_local_chunk_coords(block_coords: BlockCoords) -> (ChunkCoords, BlockCoords) {
     let chunk_coords = get_chunk_coords(block_coords);
-    let block_coords = block_coords.zip(Chunk::SIZE, i32::rem_euclid);
+    let block_coords = block_coords.map(|x| x.rem_euclid(Chunk::SIZE));
 
     (chunk_coords, block_coords)
 }
@@ -74,9 +74,9 @@ impl<'a> ChunkNeighborhood<'a> {
 
     // Coords are relative to middle chunk in chunks array
     pub fn get_cell(&self, coords: Vector3<i32>) -> Option<Cell> {
-        if (coords.x >= 0 && coords.x < Chunk::SIZE.x)
-            && (coords.y >= 0 && coords.y < Chunk::SIZE.y)
-            && (coords.z >= 0 && coords.z < Chunk::SIZE.z)
+        if (coords.x >= 0 && coords.x < Chunk::SIZE)
+            && (coords.y >= 0 && coords.y < Chunk::SIZE)
+            && (coords.z >= 0 && coords.z < Chunk::SIZE)
         {
             return Some(self.chunk[coords]);
         }
@@ -102,9 +102,9 @@ impl<'a> ChunkNeighborhoodMut<'a> {
     }
 
     pub fn get_cell(&self, coords: Vector3<i32>) -> Option<Cell> {
-        if (coords.x >= 0 && coords.x < Chunk::SIZE.x)
-            && (coords.y >= 0 && coords.y < Chunk::SIZE.y)
-            && (coords.z >= 0 && coords.z < Chunk::SIZE.z)
+        if (coords.x >= 0 && coords.x < Chunk::SIZE)
+            && (coords.y >= 0 && coords.y < Chunk::SIZE)
+            && (coords.z >= 0 && coords.z < Chunk::SIZE)
         {
             return Some(self.chunk[coords]);
         }
@@ -117,9 +117,9 @@ impl<'a> ChunkNeighborhoodMut<'a> {
     }
 
     pub fn get_cell_mut(&mut self, coords: Vector3<i32>) -> Option<&mut Cell> {
-        if (coords.x >= 0 && coords.x < Chunk::SIZE.x)
-            && (coords.y >= 0 && coords.y < Chunk::SIZE.y)
-            && (coords.z >= 0 && coords.z < Chunk::SIZE.z)
+        if (coords.x >= 0 && coords.x < Chunk::SIZE)
+            && (coords.y >= 0 && coords.y < Chunk::SIZE)
+            && (coords.z >= 0 && coords.z < Chunk::SIZE)
         {
             return Some(&mut self.chunk[coords]);
         }
