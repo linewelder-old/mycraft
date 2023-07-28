@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use cgmath::{Vector3, Zero};
+use cgmath::Vector3;
 use wgpu::util::DeviceExt;
 
 use super::{uniform::Uniform, Vertex};
@@ -47,14 +47,26 @@ impl ChunkMesh {
     }
 }
 
+#[repr(C, align(16))]
+pub struct LineMeshUniform {
+    pub color: Vector3<f32>,
+    pub padding: f32,
+    pub offset: Vector3<f32>,
+}
+
 pub struct LineMesh {
     pub vertices: wgpu::Buffer,
     pub vertex_count: u32,
-    pub offset: Uniform<Vector3<f32>>,
+    pub uniform: Uniform<LineMeshUniform>,
 }
 
 impl LineMesh {
-    pub fn new(context: Rc<Context>, label: &str, vertices: &[Vector3<f32>]) -> Self {
+    pub fn new(
+        context: Rc<Context>,
+        label: &str,
+        vertices: &[Vector3<f32>],
+        uniform: LineMeshUniform,
+    ) -> Self {
         let vertex_count = vertices.len() as u32;
         let vertices = context
             .device
@@ -67,7 +79,7 @@ impl LineMesh {
         LineMesh {
             vertices,
             vertex_count,
-            offset: Uniform::new(context, label, Vector3::zero()),
+            uniform: Uniform::new(context, label, uniform),
         }
     }
 }

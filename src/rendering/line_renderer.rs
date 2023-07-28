@@ -106,7 +106,7 @@ impl LineRenderer {
 
         render_pass.set_pipeline(&self.render_pipeline);
         render_pass.set_bind_group(0, camera.get_bind_group(), &[]);
-        render_pass.set_bind_group(1, mesh.offset.get_bind_group(), &[]);
+        render_pass.set_bind_group(1, mesh.uniform.get_bind_group(), &[]);
         render_pass.set_vertex_buffer(0, mesh.vertices.slice(..));
         render_pass.draw(0..mesh.vertex_count, 0..1);
     }

@@ -15,8 +15,9 @@ use crate::{
     context::Context,
     egui::EguiContext,
     rendering::{
-        meshes::LineMesh, texture::DepthBuffer, LineRenderer, RenderTargetWithDepth, SkyRenderer,
-        WorldRenderer,
+        meshes::{LineMesh, LineMeshUniform},
+        texture::DepthBuffer,
+        LineRenderer, RenderTargetWithDepth, SkyRenderer, WorldRenderer,
     },
     resources::Resources,
     sky::Sky,
@@ -72,6 +73,8 @@ const fn create_cube_line_mesh(start: Vector3<f32>, end: Vector3<f32>) -> [Vecto
     ]
 }
 
+#[rustfmt::skip]
+const BLOCK_SELECTION_COLOR: Vector3<f32> = Vector3 { x: 0., y: 0., z: 0. };
 const BLOCK_SELECTION_PADDING: f32 = 0.01;
 const BLOCK_SELECTION_VERTICES: &[Vector3<f32>] = &create_cube_line_mesh(
     Vector3 {
@@ -107,6 +110,12 @@ impl Mycraft {
             context.clone(),
             "Block Selection",
             &BLOCK_SELECTION_VERTICES,
+            LineMeshUniform {
+                color: BLOCK_SELECTION_COLOR,
+                padding: 0.,
+                offset: Vector3::zero(),
+            },
+        );
         );
 
         let depth_buffer = {
@@ -305,9 +314,11 @@ impl Mycraft {
             MAX_RAYCASTING_DISTANCE,
         );
         if let Some(looking_at) = &self.looking_at {
-            self.block_selection
-                .offset
-                .write(looking_at.coords.map(|x| x as f32));
+            self.block_selection.uniform.write(LineMeshUniform {
+                color: BLOCK_SELECTION_COLOR,
+                padding: 0.,
+                offset: looking_at.coords.map(|x| x as f32),
+            });
         }
 
         self.world.update(&self.camera);
