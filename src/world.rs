@@ -5,6 +5,8 @@ mod light;
 pub mod mesh;
 mod utils;
 
+pub use utils::{get_chunk_and_block_coords, to_chunk_offset, to_local_chunk_coords};
+
 use std::{
     cell::{Ref, RefCell, RefMut},
     collections::HashMap,
@@ -21,7 +23,6 @@ use self::{
     generation::Generator,
     light::recalculate_light,
     mesh::ChunkMeshes,
-    utils::{get_chunk_and_block_coords, to_chunk_offset, to_local_chunk_coords},
 };
 use crate::{
     camera::Camera,
