@@ -42,7 +42,7 @@ impl EguiContext {
         &mut self,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
-        do_ui: impl Fn(&egui::Context),
+        do_ui: impl FnOnce(&egui::Context),
     ) {
         puffin::profile_function!();
 
