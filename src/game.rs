@@ -1,7 +1,7 @@
 use std::{collections::HashMap, rc::Rc};
 
 use anyhow::Result;
-use cgmath::{Vector2, Vector3};
+use cgmath::{Vector2, Vector3, Zero};
 use winit::{
     event::{
         DeviceEvent, ElementState, Event, KeyboardInput, MouseButton, VirtualKeyCode, WindowEvent,
@@ -28,7 +28,7 @@ use crate::{
         input::{Input3d, Input3dDesc},
         raycasting,
     },
-    world::{blocks::BlockId, ChunkCoords, World},
+    world::{blocks::BlockId, get_chunk_and_block_coords, to_chunk_offset, ChunkCoords, World},
 };
 
 pub struct Mycraft {
@@ -41,6 +41,9 @@ pub struct Mycraft {
 
     sky: Sky,
     block_selection: LineMesh,
+
+    chunk_borders: LineMesh,
+    draw_chunk_borders: bool,
 
     camera: Camera,
     looking_at: Option<raycasting::Hit>,
@@ -81,6 +84,16 @@ impl Mycraft {
                 offset: Vector3::zero(),
             },
         );
+
+        let chunk_borders = LineMesh::new(
+            context.clone(),
+            "Chunk Borders",
+            CHUNK_BORDERS_VERTICES,
+            LineMeshUniform {
+                color: CHUNK_BORDERS_COLOR,
+                padding: 0.,
+                offset: Vector3::zero(),
+            },
         );
 
         let depth_buffer = {
@@ -138,6 +151,9 @@ impl Mycraft {
 
             sky,
             block_selection,
+
+            chunk_borders,
+            draw_chunk_borders: false,
 
             camera,
             looking_at: None,
@@ -286,6 +302,12 @@ impl Mycraft {
             });
         }
 
+        self.chunk_borders.uniform.write(LineMeshUniform {
+            color: CHUNK_BORDERS_COLOR,
+            padding: 0.,
+            offset: to_chunk_offset(get_chunk_and_block_coords(self.camera.position).0),
+        });
+
         self.world.update(&self.camera);
     }
 
@@ -323,6 +345,15 @@ impl Mycraft {
             );
         }
 
+        if self.draw_chunk_borders {
+            self.line_renderer.draw(
+                &mut encoder,
+                target_with_depth,
+                &self.camera,
+                &self.chunk_borders,
+            );
+        }
+
         self.egui.draw_frame(&mut encoder, target, |ctx| {
             if !self.in_menu {
                 ctx.set_cursor_icon(egui::CursorIcon::None);
@@ -334,6 +365,8 @@ impl Mycraft {
                     "Chunks rendered: {}",
                     self.world.num_chunks_rendered()
                 ));
+
+                ui.checkbox(&mut self.draw_chunk_borders, "Draw chunk borders");
 
                 let mut profiling_on = puffin::are_scopes_on();
                 if ui.checkbox(&mut profiling_on, "Profiling").changed() {
